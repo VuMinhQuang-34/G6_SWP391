@@ -1,4 +1,3 @@
-// dbConnection.js
 import mysql from "mysql2/promise"; // Sử dụng giao diện dựa trên promise
 import chalk from "chalk";
 import { config } from "dotenv";
@@ -20,19 +19,33 @@ const pool = mysql.createPool({
 });
 
 /**
+ * Hàm kiểm tra và tạo cơ sở dữ liệu nếu chưa tồn tại
+ */
+const createDatabaseIfNotExists = async () => {
+  const connection = await pool.getConnection();
+  try {
+    await connection.query(`CREATE DATABASE IF NOT EXISTS ${DB_NAME}`);
+    console.log(chalk.green(`Đã tạo cơ sở dữ liệu ${DB_NAME} nếu chưa tồn tại.`));
+  } catch (err) {
+    console.error(chalk.red("Lỗi khi tạo cơ sở dữ liệu: " + err.message));
+  } finally {
+    connection.release();
+  }
+};
+
+/**
  * Hàm thử kết nối tới cơ sở dữ liệu với cơ chế retry sau 60 giây nếu thất bại.
  */
 const connectWithRetry = async () => {
   try {
+    await createDatabaseIfNotExists();  // Kiểm tra và tạo cơ sở dữ liệu nếu chưa tồn tại
     const connection = await pool.getConnection();
-    console.log(
-      chalk.green(`Đã kết nối tới cơ sở dữ liệu MySQL! Database: ${DB_NAME}`)
-    );
+    console.log(chalk.green(`Đã kết nối tới cơ sở dữ liệu MySQL! Database: ${DB_NAME}`));
     connection.release(); // Giải phóng kết nối trở lại pool
   } catch (err) {
     console.error(chalk.red("Lỗi khi kết nối tới MySQL: " + err.message));
     console.log(chalk.yellow("Thử kết nối lại sau 30 giây..."));
-    setTimeout(connectWithRetry, 30000); // Thử lại sau 60 giây (60000ms)
+    setTimeout(connectWithRetry, 30000); // Thử lại sau 30 giây
   }
 };
 
