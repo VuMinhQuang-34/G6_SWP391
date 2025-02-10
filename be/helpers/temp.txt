@@ -1,0 +1,46 @@
+import {
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { OAuth2Client } from 'google-auth-library';
+import { ConfigService } from '@nestjs/config';
+import { ENV_CONFIG } from 'src/common/env';
+
+@Injectable()
+export class GoogleAuthService {
+  private readonly clientId: string;
+  private client: OAuth2Client;
+
+  constructor(private readonly configService: ConfigService) {
+    (this.clientId = this.configService.get(ENV_CONFIG.GOOGLE_CLIENT_ID)),
+      (this.client = new OAuth2Client(
+        this.configService.get(ENV_CONFIG.GOOGLE_CLIENT_ID),
+      ));
+  }
+
+  async googleAuth(idToken: string) {
+    try {
+      const payload = await this.client.verifyIdToken({
+        idToken,
+        audience: this.clientId,
+      });
+
+      if (!payload.getPayload().email_verified) {
+        throw new UnauthorizedException('Verify failed');
+      }
+
+      const email = payload.getPayload().email;
+      const firstname = payload.getPayload().given_name;
+      const lastname = payload.getPayload().family_name;
+
+      return {
+        email,
+        firstname,
+        lastname,
+      };
+    } catch (error) {
+      throw new ForbiddenException(error.message);
+    }
+  }
+}
