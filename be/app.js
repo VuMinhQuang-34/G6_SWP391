@@ -17,11 +17,11 @@ import { errorHandler, notFoundHandler } from "./middlewares/index.js";
 import authRoutes from "./routes/authRoutes.js";
 
 // ===== Import Sequelize (models/index.js) =====
-import db from "./models/index.js"; 
+import db from "./models/index.js";
 
 // Tải các biến môi trường
 config();
-  
+
 // Khởi tạo ứng dụng Express
 const app = express();
 
@@ -40,17 +40,6 @@ app.use(
     },
   })
 );
-
-// Hoặc dùng express-winston nâng cao (nếu muốn):
-// app.use(
-//   expressWinston.logger({
-//     winstonInstance: logger,
-//     meta: true,
-//     msg: "HTTP {{req.method}} {{req.url}}",
-//     expressFormat: true,
-//     colorize: false,
-//   })
-// );
 
 // Middleware phân tích body
 app.use(express.json());
@@ -86,6 +75,10 @@ app.use(errorHandler);
 /* ------------------------ */
 const startServer = async () => {
   try {
+    // Kiểm tra và tạo cơ sở dữ liệu nếu chưa tồn tại
+    await db.sequelize.query(`CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME}`);
+    logger.info(`Đã tạo cơ sở dữ liệu ${process.env.DB_NAME} nếu chưa tồn tại.`);
+
     // ===== Dùng Sequelize để kiểm tra kết nối DB =====
     await db.sequelize.authenticate();
     logger.info("Kết nối Sequelize tới cơ sở dữ liệu thành công.");
@@ -105,7 +98,7 @@ const startServer = async () => {
       console.log(
         chalk.bold(
           chalk.bgGreenBright.white("Server đang chạy trên cổng ") +
-            chalk.bgRed.white(` ${port} `)
+          chalk.bgRed.white(` ${port} `)
         )
       );
     });
@@ -114,7 +107,7 @@ const startServer = async () => {
     console.error(
       chalk.red("Không thể kết nối tới cơ sở dữ liệu. Thử lại sau 30 giây...")
     );
-    setTimeout(startServer, 30000);
+    setTimeout(startServer, 30000); // Thử lại sau 30 giây
   }
 };
 
