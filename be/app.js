@@ -6,110 +6,65 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import expressWinston from "express-winston";
-import logger from "./configs/logger.js"; // Winston logger
-
-// ===== Nếu muốn bỏ dbPool thì comment dòng này lại =====
-import dbPool from "./configs/dbConnection.js";
-
+import logger from "./configs/logger.js";
 import { errorHandler, notFoundHandler } from "./middlewares/index.js";
-
-// Routes
 import authRoutes from "./routes/authRoutes.js";
-
-// ===== Import Sequelize (models/index.js) =====
 import db from "./models/index.js";
+import { Sequelize } from 'sequelize';
 
-// Tải các biến môi trường
+const { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME } = process.env;
+
 config();
 
-// Khởi tạo ứng dụng Express
 const app = express();
 
-/* ------------------------ */
-/* Các middleware toàn cục  */
-/* ------------------------ */
-
+// Middleware
 app.use(helmet());
 app.use(cors());
-
-// Ghi log request bằng Morgan => đẩy message vào logger Winston
-app.use(
-  morgan("combined", {
-    stream: {
-      write: (message) => logger.info(message.trim()),
-    },
-  })
-);
-
-// Middleware phân tích body
+app.use(morgan("combined", {
+  stream: {
+    write: (message) => logger.info(message.trim()),
+  },
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-/* ------------------------ */
-/*           Routes         */
-/* ------------------------ */
-
-// Ví dụ route chính
+// Routes
 app.get("/", (req, res) => {
   res.send("<h1>Xin chào Thế giới!</h1>");
 });
-
-// Routes cho xác thực
 app.use("/api", authRoutes);
 
-/* ------------------------ */
-/*   Xử lý 404 và lỗi chung  */
-/* ------------------------ */
+// Error handling
 app.use(notFoundHandler);
-
-app.use(
-  expressWinston.errorLogger({
-    winstonInstance: logger,
-  })
-);
-
+app.use(expressWinston.errorLogger({ winstonInstance: logger }));
 app.use(errorHandler);
 
-/* ------------------------ */
-/*  Hàm khởi động server    */
-/* ------------------------ */
+// Server startup
 const startServer = async () => {
   try {
-    // Kiểm tra và tạo cơ sở dữ liệu nếu chưa tồn tại
-    await db.sequelize.query(`CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME}`);
-    logger.info(`Đã tạo cơ sở dữ liệu ${process.env.DB_NAME} nếu chưa tồn tại.`);
-
-    // ===== Dùng Sequelize để kiểm tra kết nối DB =====
-    await db.sequelize.authenticate();
-    logger.info("Kết nối Sequelize tới cơ sở dữ liệu thành công.");
-
-    // Tự động tạo bảng nếu chưa có (hoặc update cấu trúc, tuỳ biến)
-    await db.sequelize.sync({
-      force: false, // true sẽ xóa bảng cũ (cẩn thận mất dữ liệu)
-      alter: false, // true sẽ cố gắng sửa bảng cũ cho khớp model
+    // Tạo kết nối không cần database
+    const tempSequelize = new Sequelize('', DB_USER, DB_PASSWORD, {
+      host: DB_HOST,
+      dialect: 'mysql'
     });
-    logger.info("Đã sync (tạo/kiểm tra) các bảng thành công.");
 
-    // Lấy PORT từ .env hoặc mặc định là 9999
+    // Tạo database nếu chưa có
+    await tempSequelize.query(`CREATE DATABASE IF NOT EXISTS ${DB_NAME}`);
+    await tempSequelize.close();
+
+    // Kết nối với database đã tạo
+    await db.sequelize.authenticate();
+    await db.sequelize.sync({ force: false });
+
     const port = process.env.PORT || 9999;
-
-    // Bắt đầu lắng nghe request
     app.listen(port, () => {
-      console.log(
-        chalk.bold(
-          chalk.bgGreenBright.white("Server đang chạy trên cổng ") +
-          chalk.bgRed.white(` ${port} `)
-        )
-      );
+      console.log(`Server running on port ${port}`);
     });
   } catch (err) {
-    logger.error(`Kết nối tới DB thất bại: ${err.message}`);
-    console.error(
-      chalk.red("Không thể kết nối tới cơ sở dữ liệu. Thử lại sau 30 giây...")
-    );
-    setTimeout(startServer, 30000); // Thử lại sau 30 giây
+    logger.error(`Server startup error: ${err.message}`);
+    setTimeout(startServer, 30000);
   }
 };
-
-// Bắt đầu khởi động server
 startServer();
+
