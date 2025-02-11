@@ -1,17 +1,10 @@
-// dbConnection.js
 import mysql from "mysql2/promise";
-import chalk from "chalk";
 import { config } from "dotenv";
+import chalk from "chalk";
 
 config();
 
-const {
-  DB_HOST = 'localhost',
-  DB_PORT = 3306,
-  DB_USER = 'root',
-  DB_PASSWORD = '',
-  DB_NAME = 'G6_SWP'
-} = process.env;
+const { DB_HOST = 'localhost', DB_PORT = 3306, DB_USER = 'root', DB_PASSWORD = '', DB_NAME = 'G6_SWP' } = process.env;
 
 const pool = mysql.createPool({
   host: DB_HOST,
