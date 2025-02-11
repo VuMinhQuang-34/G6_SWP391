@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Card, Descriptions, Button, Spin, message, Avatar, Tag, Divider, Input, Form } from "antd";
+import { Card, Descriptions, Button, Spin, message, Avatar, Tag, Divider, Input } from "antd";
 import { UserOutlined, PhoneOutlined, MailOutlined, EditOutlined, SaveOutlined, CloseOutlined } from "@ant-design/icons";
+import axios from "axios";
 
 const UserDetail = () => {
   const { id } = useParams(); // Lấy ID từ URL
@@ -11,32 +12,20 @@ const UserDetail = () => {
   const [formData, setFormData] = useState({ email: "", phoneNumber: "" });
   const [errors, setErrors] = useState({ email: "", phoneNumber: "" });
 
-  // Giả lập API call
+  // Gọi API lấy thông tin user
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        setTimeout(() => {
-          const mockData = {
-            userId: id,
-            FullName: `User ${id}`,
-            Email: `user${id}@example.com`,
-            roleId: "Admin",
-            Status: "Active",
-            Created_Date: "2024-02-11",
-            Edit_Date: "2024-02-12",
-            PhoneNumber: `+84 123 456 789`,
-            avatarUrl: `https://api.dicebear.com/7.x/identicon/svg?seed=${id}`
-          };
-          setUser(mockData);
-          setFormData({ email: mockData.Email, phoneNumber: mockData.PhoneNumber });
-          setLoading(false);
-        }, 1000);
+        const response = await axios.get(`http://localhost:9999/api/users/${id}`);
+        const userData = response.data;
+        setUser(userData);
+        setFormData({ email: userData.Email, phoneNumber: userData.PhoneNumber });
+        setLoading(false);
       } catch (error) {
         message.error("Lỗi khi tải dữ liệu người dùng!");
         setLoading(false);
       }
     };
-
     fetchUser();
   }, [id]);
 
@@ -52,10 +41,10 @@ const UserDetail = () => {
       isValid = false;
     }
 
-    // Validate Số điện thoại Việt Nam
-    const phoneRegex = /^(0|\+84)[3|5|7|8|9][0-9]{8}$/;
+    // Validate Số điện thoại Việt Nam (10 chữ số, bắt đầu bằng 0)
+    const phoneRegex = /^0[3|5|7|8|9][0-9]{8}$/;
     if (!formData.phoneNumber.match(phoneRegex)) {
-      newErrors.phoneNumber = "Số điện thoại không hợp lệ!";
+      newErrors.phoneNumber = "Số điện thoại không hợp lệ! (10 chữ số, bắt đầu bằng 0)";
       isValid = false;
     }
 
@@ -68,12 +57,26 @@ const UserDetail = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Xử lý lưu dữ liệu
-  const handleSave = () => {
-    if (validate()) {
+  // Gọi API cập nhật user
+  const updateUser = async () => {
+    try {
+      await axios.put(`http://localhost:9999/api/users/${id}`, {
+        Email: formData.email,
+        PhoneNumber: formData.phoneNumber,
+      });
+
       setUser({ ...user, Email: formData.email, PhoneNumber: formData.phoneNumber });
       setIsEditing(false);
       message.success("Cập nhật thông tin thành công!");
+    } catch (error) {
+      message.error("Lỗi khi cập nhật thông tin người dùng!");
+    }
+  };
+
+  // Xử lý lưu dữ liệu sau khi validate
+  const handleSave = () => {
+    if (validate()) {
+      updateUser();
     }
   };
 
@@ -101,7 +104,7 @@ const UserDetail = () => {
     >
       {/* Avatar + Thông tin chính */}
       <div style={{ textAlign: "center", marginBottom: 20 }}>
-        <Avatar size={80} src={user.avatarUrl} icon={<UserOutlined />} />
+        <Avatar size={80} src={`https://api.dicebear.com/7.x/identicon/svg?seed=${id}`} icon={<UserOutlined />} />
         <h2 style={{ marginTop: 10 }}>{user.FullName}</h2>
         <Tag color={user.Status === "Active" ? "green" : "red"}>{user.Status}</Tag>
       </div>
@@ -110,10 +113,10 @@ const UserDetail = () => {
 
       {/* Form cập nhật thông tin */}
       <Descriptions bordered column={1} size="middle">
-        <Descriptions.Item label="User ID">{user.userId}</Descriptions.Item>
-        <Descriptions.Item label="Quyền">{user.roleId}</Descriptions.Item>
-        <Descriptions.Item label="Ngày tạo">{user.Created_Date}</Descriptions.Item>
-        <Descriptions.Item label="Lần chỉnh sửa gần nhất">{user.Edit_Date}</Descriptions.Item>
+        <Descriptions.Item label="Mã nhân viên">{user.userId}</Descriptions.Item>
+        <Descriptions.Item label="Vị trí">{user.Role.Role_Name}</Descriptions.Item>
+        {/* <Descriptions.Item label="Ngày tạo">{user.Created_Date}</Descriptions.Item> */}
+        {/* <Descriptions.Item label="Lần chỉnh sửa gần nhất">{user.Edit_Date}</Descriptions.Item> */}
 
         {/* Email */}
         <Descriptions.Item label="Email">

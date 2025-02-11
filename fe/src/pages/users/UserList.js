@@ -203,7 +203,7 @@ const UserList = () => {
   // Cấu hình cột hiển thị trong bảng
   const columns = [
     {
-      title: "User ID",
+      title: "Mã nhân viên",
       dataIndex: "userId",
       key: "userId",
       width: 80,
@@ -213,7 +213,7 @@ const UserList = () => {
     { title: "Email", dataIndex: "Email", key: "Email" },
     { title: "Số điện thoại", dataIndex: "PhoneNumber", key: "PhoneNumber" },
     {
-      title: "Quyền",
+      title: "Vị trí",
       dataIndex: "roleId",
       key: "roleId",
       render: (role) => (
@@ -404,8 +404,8 @@ const UserList = () => {
           {/* Quyền */}
           <Form.Item
             name="roleId"
-            label="Quyền"
-            rules={[{ required: true, message: "Vui lòng chọn quyền!" }]}
+            label="Vị trí"
+            rules={[{ required: true, message: "Vui lòng chọn vị trí công việc!" }]}
           >
             <Select>
               <Option value={1}>Admin</Option>

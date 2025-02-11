@@ -41,8 +41,15 @@ export const getAllUsers = async (req, res) => {
 export const getUserById = async (req, res) => {
     try {
         const { id } = req.params;
-        const user = await User.findByPk(id);
-
+        //const user = await User.findByPk(id);
+        const user = await User.findByPk(id, {
+            include: [
+                {
+                    model: Role,
+                    attributes: ["Role_Name"], // Chỉ lấy roleName, tránh dư thừa dữ liệu
+                },
+            ],
+        });
         if (!user) {
             return res.status(404).json({ message: "User không tồn tại!" });
         }
