@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { Form, Input, Button, Modal, message, Tooltip, notification } from 'antd';
 import { MailOutlined, LockOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { AuthContext } from "../../context/AuthContext"; // Import AuthContext
 
 const LoginPage = () => {
+    const { login } = useContext(AuthContext); // Lấy hàm login từ AuthContext
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [form] = Form.useForm();
     const navigate = useNavigate(); // Hook to navigate between routes
+    const [loading, setLoading] = useState(false); // Trạng thái loading khi đăng nhập
 
     // API URL
     const apiUrl = 'http://localhost:9999/api/auth/login';
@@ -21,19 +24,25 @@ const LoginPage = () => {
             });
 
             // Kiểm tra kết quả trả về từ API
-            if (response.data.code === 200) {
+            if (response.data.code == 200) {
                 // Lưu token vào localStorage
-                localStorage.setItem('accessToken', response.data.tokens.accessToken);
-                localStorage.setItem('refreshToken', response.data.tokens.refreshToken);
+                //localStorage.setItem('accessToken', response.data.tokens.accessToken);
+                //localStorage.setItem('refreshToken', response.data.tokens.refreshToken);
+
+                const { accessToken, refreshToken } = response.data.tokens;
+                const user = response.data.data.user; // Lấy thông tin user từ response
+
+                // Gọi hàm login từ AuthContext, local
+                login(user, accessToken, refreshToken);
 
                 // Hiển thị thông báo thành công
-                notification.success({
-                    message: 'Đăng nhập thành công!',
-                    description: 'Bạn đã đăng nhập vào hệ thống thành công.',
-                });
+                // notification.success({
+                //     message: 'Đăng nhập thành công!',
+                //     description: 'Bạn đã đăng nhập vào hệ thống thành công.',
+                // });
 
                 // Chuyển hướng đến trang chính sau khi đăng nhập thành công
-                // navigate('/home'); // Hoặc bất kỳ trang nào bạn muốn chuyển hướng đến
+                navigate('/'); // Hoặc bất kỳ trang nào bạn muốn chuyển hướng đến
             } else {
                 notification.error({
                     message: 'Sai thông tin đăng nhập',

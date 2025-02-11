@@ -15,7 +15,7 @@ const AppHeader = () => {
         {/* Logo */}
         <div style={{ fontSize: '36px', fontWeight: 'bold', color: '#6c63ff' }}>
           <Link to="/" style={{ color: '#6c63ff', display: 'flex', alignItems: 'center' }}>
-            MyWebsite
+            Book
           </Link>
         </div>
 
