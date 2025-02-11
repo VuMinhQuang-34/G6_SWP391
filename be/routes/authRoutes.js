@@ -15,7 +15,7 @@ router.post(
   "/auth/register",
   // Bỏ comment dòng sau để kích hoạt xác thực đăng ký
   // validation.signUpValidation,
-  authController.register
+  authController.register2
 );
 
 /**

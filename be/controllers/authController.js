@@ -36,44 +36,20 @@ export const register2 = async (req, res) => {
   }
 
   try {
-    // Hash mật khẩu với Bcrypt
-    const saltRounds = 10; // Số lần salt
+    if (!req.body.password || !req.body.email) {
+      console.log(req.body)
+      return res.status(400).json({ code: 400, message: "Email and password are required!" });
+    }
+
+    const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(req.body.password, saltRounds);
 
-    // Lưu người dùng vào CSDL
-    const id = await authRepository.insertUser(
-      req.body.email,
-      hashedPassword,
-      false
-    );
-    await authRepository.insertUserProfile(
-      id,
-      req.body.firstName,
-      req.body.lastName,
-      req.body.image || null
-    );
-
-    // Tạo OTP và nội dung email
-    const otp = generateOTP(); // Tạo OTP ngẫu nhiên
-    const mailSubject = "Email Verification OTP";
-    const content = `<p>Hi ${req.body.email},<br>
-      Your OTP for email verification is: <strong>${otp}</strong><br>
-      Please enter this OTP in the application to verify your email.</p>`;
-
-    // Cập nhật OTP cho người dùng trong Redis
-    await authRepository.updateUserOTP(req.body.email, otp);
-
-    // Gửi email chứa OTP xác nhận
-    await sendMail(req.body.email, mailSubject, content);
+    const id = await authRepository.insertUser(req.body.email, hashedPassword, false);
 
     logger.info(`User registered successfully: ${req.body.email}`);
-    return res
-      .status(200)
-      .json({ code: 200, message: "User created and OTP sent!" });
+    return res.status(200).json({ code: 200, message: "User created!" });
   } catch (error) {
-    logger.error(
-      `Register2 failed for email ${req.body.email}: ${error.message}`
-    );
+    logger.error(`Register2 failed for email ${req.body.email}: ${error.message}`);
     return res.status(500).json({ code: 500, message: error.message });
   }
 };
@@ -277,7 +253,8 @@ export const login = async (req, res) => {
 
   try {
     const result = await authRepository.findUserByEmail(req.body.email);
-    if (!result.length) {
+
+    if (!result || result.length === 0) {
       logger.warn(`Login failed - Email not found: ${req.body.email}`);
       return res.status(401).json({
         code: 401,
@@ -285,9 +262,16 @@ export const login = async (req, res) => {
       });
     }
 
-    const user = result[0];
-
-    // Add status check before further authentication
+    const user = result[0]; // Chỉ cần lấy phần tử đầu tiên của mảng kết quả
+    logger.warn(`Login: ${result}`);
+    // Kiểm tra user là object hợp lệ
+    if (!user) {
+      logger.warn(`Login failed - No user data returned for email: ${req.body.email}`);
+      return res.status(500).json({
+        code: 500,
+        message: "Unexpected error: No user data found.",
+      });
+    }    // Add status check before further authentication
     if (user.Status === 0 || user.Status === "0") {
       logger.warn(`Login failed - Unverified email: ${req.body.email}`);
       return res.status(401).json({
@@ -319,11 +303,11 @@ export const login = async (req, res) => {
     );
 
     if (isPasswordValid) {
-      const accessToken = await jwtHelpers.signAccessToken(user.ID);
-      const refreshToken = await jwtHelpers.signRefreshToken(user.ID);
+      const accessToken = await jwtHelpers.signAccessToken(user.userId);
+      const refreshToken = await jwtHelpers.signRefreshToken(user.userId);
 
       // Fetch user profile
-      const profile = await authRepository.getUserProfile(user.ID);
+      // const profile = await authRepository.getUserProfile(user.userId);
 
       logger.info(`User logged in successfully: ${req.body.email}`);
       return res.status(200).json({
@@ -334,8 +318,9 @@ export const login = async (req, res) => {
           refreshToken,
         },
         data: {
-          role: profile?.role || "student",
-          profile,
+          // role: profile?.role || "student",
+          // profile,
+          user
         },
       });
     } else {
@@ -348,7 +333,7 @@ export const login = async (req, res) => {
       });
     }
   } catch (err) {
-    logger.error(`Login error for email ${req.body.email}: ${err.message}`);
+    logger.error(`Login error for email ${req.body.email}: ${err}`);
     return res.status(500).json({
       code: 500,
       message: err.message,

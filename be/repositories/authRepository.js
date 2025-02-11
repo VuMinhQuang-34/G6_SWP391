@@ -18,7 +18,7 @@ export const findUserByEmail = async (email, connection = null) => {
     }
 
     const query = `       
-      SELECT * FROM ${process.env.DB_NAME}.Account        
+      SELECT * FROM ${process.env.DB_NAME}.user        
       WHERE LOWER(email) = LOWER(?);     
     `;
 
@@ -27,10 +27,15 @@ export const findUserByEmail = async (email, connection = null) => {
       : await dbPool.execute(query, [email]);
 
     logger.info(`Tìm kiếm người dùng với email: ${email}`);
-    return rows;
+
+    if (!rows || rows.length === 0) {
+      logger.warn(`No user found for email: ${email}`);
+      return []; // Trả về mảng rỗng nếu không có người dùng
+    }
+    return rows;  // Trả về kết quả hợp lệ
   } catch (err) {
     logger.error(
-      `Lỗi khi tìm kiếm người dùng với email ${email}: ${err.message}`
+      `Lỗi khi tìm kiếm người dùng với email ${email}: ${err.message} `
     );
     throw err;
   }
@@ -41,17 +46,17 @@ export const findUserByEmailForgotPassword = async (
 ) => {
   try {
     const query = `
-      SELECT * FROM ${process.env.DB_NAME}.Account 
+  SELECT * FROM ${process.env.DB_NAME}.user
       WHERE LOWER(email) = LOWER(?) AND Password != 'google';
-    `;
+  `;
     const [rows] = connection
       ? await connection.execute(query, [email])
       : await dbPool.execute(query, [email]);
-    logger.info(`Tìm kiếm người dùng với email: ${email}`);
+    logger.info(`Tìm kiếm người dùng với email: ${email} `);
     return rows;
   } catch (err) {
     logger.error(
-      `Lỗi khi tìm kiếm người dùng với email ${email}: ${err.message}`
+      `Lỗi khi tìm kiếm người dùng với email ${email}: ${err.message} `
     );
     throw err;
   }
@@ -75,21 +80,21 @@ export const insertUser = async (
 ) => {
   try {
     const query = `
-      INSERT INTO ${process.env.DB_NAME}.Account (Email, Password, Status, RoleID)
-      VALUES (?, ?, ?, 2);
-    `;
+      INSERT INTO ${process.env.DB_NAME}.user(Email, Password, Status, roleId)
+  VALUES(?, ?, ?, 2);
+  `;
     const status = registerWithGoogle ? 1 : 0;
     const password = registerWithGoogle ? "google" : hashedPassword; // Đặt Password là "google" nếu đăng ký với Google
     const [result] = connection
       ? await connection.execute(query, [email, password, status])
       : await dbPool.execute(query, [email, password, status]);
     logger.info(
-      `Chèn người dùng mới với email: ${email}, ID: ${result.insertId}`
+      `Chèn người dùng mới với email: ${email}, ID: ${result.insertId} `
     );
     return result.insertId;
   } catch (err) {
     logger.error(
-      `Lỗi khi chèn người dùng mới với email ${email}: ${err.message}`
+      `Lỗi khi chèn người dùng mới với email ${email}: ${err.message} `
     );
     throw err;
   }
@@ -113,19 +118,19 @@ export const insertUserProfile = async (
   try {
     const profileImage = image ? image : null;
     const query = `
-      INSERT INTO ${process.env.DB_NAME}.Student (AccountID, FirstName, LastName, ProfileImage)
-      VALUES (?, ?, ?, ?);
-    `;
+      INSERT INTO ${process.env.DB_NAME}.Student(AccountID, FirstName, LastName, ProfileImage)
+  VALUES(?, ?, ?, ?);
+  `;
     const [result] = connection
       ? await connection.execute(query, [id, firstname, lastName, profileImage])
       : await dbPool.execute(query, [id, firstname, lastName, profileImage]);
     logger.info(
-      `Chèn hồ sơ người dùng với AccountID: ${id}, ProfileID: ${result.insertId}`
+      `Chèn hồ sơ người dùng với AccountID: ${id}, ProfileID: ${result.insertId} `
     );
     return result.insertId;
   } catch (err) {
     logger.error(
-      `Lỗi khi chèn hồ sơ người dùng với AccountID ${id}: ${err.message}`
+      `Lỗi khi chèn hồ sơ người dùng với AccountID ${id}: ${err.message} `
     );
     throw err;
   }
@@ -140,39 +145,39 @@ export const insertUserProfile = async (
 export const getUserProfile = async (id, connection = null) => {
   try {
     // Truy vấn RoleID của người dùng
-    const queryRole = `SELECT RoleID FROM ${process.env.DB_NAME}.Account WHERE ID = ?`;
+    const queryRole = `SELECT RoleID FROM ${process.env.DB_NAME}.user WHERE ID = ? `;
     const [roleResult] = connection
       ? await connection.execute(queryRole, [id])
       : await dbPool.execute(queryRole, [id]);
 
     if (roleResult.length === 0) {
-      logger.warn(`Không tìm thấy tài khoản với ID: ${id}`);
+      logger.warn(`Không tìm thấy tài khoản với ID: ${id} `);
       return null; // Không tìm thấy tài khoản
     }
 
     const role = roleResult[0].RoleID;
-    logger.info(`Lấy hồ sơ người dùng với ID: ${id}, RoleID: ${role}`);
+    logger.info(`Lấy hồ sơ người dùng với ID: ${id}, RoleID: ${role} `);
 
     // Định nghĩa các truy vấn cho từng vai trò
     const roleQueries = {
-      1: `SELECT r.RoleName AS role FROM ${process.env.DB_NAME}.Role r WHERE r.RoleID = ${role}`, // Admin
-      4: `SELECT r.RoleName AS role FROM ${process.env.DB_NAME}.Role r WHERE r.RoleID = ${role}`, // Referee
-      5: `SELECT r.RoleName AS role FROM ${process.env.DB_NAME}.Role r WHERE r.RoleID = ${role}`, // Manager
+      1: `SELECT r.RoleName AS role FROM ${process.env.DB_NAME}.Role r WHERE r.RoleID = ${role} `, // Admin
+      4: `SELECT r.RoleName AS role FROM ${process.env.DB_NAME}.Role r WHERE r.RoleID = ${role} `, // Referee
+      5: `SELECT r.RoleName AS role FROM ${process.env.DB_NAME}.Role r WHERE r.RoleID = ${role} `, // Manager
       2: `SELECT st.ProfileImage, st.FirstName, st.LastName, r.RoleName AS role, a.Email, st.ID AS StudentID, st.AccountID 
           FROM ${process.env.DB_NAME}.Student st
-          LEFT JOIN ${process.env.DB_NAME}.Account a ON a.ID = st.AccountID 
+          LEFT JOIN ${process.env.DB_NAME}.user a ON a.ID = st.AccountID 
           LEFT JOIN ${process.env.DB_NAME}.Role r ON r.RoleID = a.RoleID
-          WHERE st.AccountID = ?;`, // Student
+          WHERE st.AccountID = ?; `, // Student
       3: `SELECT st.ProfileImage, st.FirstName, st.LastName, r.RoleName AS role, a.Email, st.ID AS TeacherID, st.AccountID 
           FROM ${process.env.DB_NAME}.Teacher st
-          LEFT JOIN ${process.env.DB_NAME}.Account a ON a.ID = st.AccountID 
+          LEFT JOIN ${process.env.DB_NAME}.user a ON a.ID = st.AccountID 
           LEFT JOIN ${process.env.DB_NAME}.Role r ON r.RoleID = a.RoleID
-          WHERE st.AccountID = ?;`, // Teacher
+          WHERE st.AccountID = ?; `, // Teacher
     };
 
     // Kiểm tra xem có truy vấn cho vai trò này không
     if (!roleQueries[role]) {
-      logger.warn(`Không có truy vấn cho vai trò với RoleID: ${role}`);
+      logger.warn(`Không có truy vấn cho vai trò với RoleID: ${role} `);
       return null;
     }
 
@@ -182,15 +187,15 @@ export const getUserProfile = async (id, connection = null) => {
       : await dbPool.execute(roleQueries[role], [id]);
 
     if (profileResult.length === 0) {
-      logger.warn(`Không tìm thấy hồ sơ cho người dùng với ID: ${id}`);
+      logger.warn(`Không tìm thấy hồ sơ cho người dùng với ID: ${id} `);
       return null; // Không tìm thấy hồ sơ
     }
 
-    logger.info(`Lấy hồ sơ thành công cho người dùng với ID: ${id}`);
+    logger.info(`Lấy hồ sơ thành công cho người dùng với ID: ${id} `);
     return profileResult[0]; // Trả về hồ sơ người dùng
   } catch (error) {
     logger.error(
-      `Lỗi khi lấy hồ sơ người dùng với ID: ${id}, lỗi: ${error.message}`
+      `Lỗi khi lấy hồ sơ người dùng với ID: ${id}, lỗi: ${error.message} `
     );
     return null; // Trả về null nếu có lỗi
   }
@@ -206,17 +211,17 @@ export const getUserProfile = async (id, connection = null) => {
 export const updateUserOTP = async (email, otp, type) => {
   try {
     // Xác định khóa dựa trên mục đích
-    const key = `${type}:${email}`;
+    const key = `${type}:${email} `;
     // Lưu OTP vào Redis với khóa xác định và thời gian sống 10 phút
     await client.SET(key, otp, {
       EX: 600, // 10 phút
     });
     logger.info(
-      `Cập nhật OTP cho email: ${email}, mục đích: ${type}, OTP: ${otp}`
+      `Cập nhật OTP cho email: ${email}, mục đích: ${type}, OTP: ${otp} `
     );
     return { message: "OTP stored successfully in Redis" };
   } catch (err) {
-    logger.error(`Lỗi khi cập nhật OTP cho email ${email}: ${err.message}`);
+    logger.error(`Lỗi khi cập nhật OTP cho email ${email}: ${err.message} `);
     throw err;
   }
 };
@@ -230,19 +235,19 @@ export const updateUserOTP = async (email, otp, type) => {
  */
 export const verifyUserOTP = async (email, otp, type) => {
   try {
-    const key = `${type}:${email}`;
+    const key = `${type}:${email} `;
     const storedOTP = await client.GET(key);
     if (storedOTP == otp) {
-      logger.info(`OTP hợp lệ cho email: ${email}, mục đích: ${type}`);
+      logger.info(`OTP hợp lệ cho email: ${email}, mục đích: ${type} `);
       // Xóa OTP sau khi xác minh thành công
       await client.DEL(key);
       return true;
     } else {
-      logger.warn(`OTP không hợp lệ cho email: ${email}, mục đích: ${type}`);
+      logger.warn(`OTP không hợp lệ cho email: ${email}, mục đích: ${type} `);
       return false;
     }
   } catch (err) {
-    logger.error(`Lỗi khi xác minh OTP cho email ${email}: ${err.message}`);
+    logger.error(`Lỗi khi xác minh OTP cho email ${email}: ${err.message} `);
     throw err;
   }
 };
@@ -259,18 +264,18 @@ export const updateEmailVerificationStatus = async (
 ) => {
   try {
     // Cập nhật trạng thái isVerified trong MySQL
-    const updateQuery = `UPDATE ${process.env.DB_NAME}.Account SET Status = 1 WHERE email = ?`;
+    const updateQuery = `UPDATE ${process.env.DB_NAME}.user SET Status = 1 WHERE email = ? `;
     const [result] = connection
       ? await connection.execute(updateQuery, [email])
       : await dbPool.execute(updateQuery, [email]);
 
     logger.info(
-      `Cập nhật trạng thái xác thực email thành công cho email: ${email}`
+      `Cập nhật trạng thái xác thực email thành công cho email: ${email} `
     );
     return result;
   } catch (err) {
     logger.error(
-      `Lỗi khi cập nhật trạng thái xác thực email ${email}: ${err.message}`
+      `Lỗi khi cập nhật trạng thái xác thực email ${email}: ${err.message} `
     );
     throw err;
   }
@@ -283,11 +288,11 @@ export const updateEmailVerificationStatus = async (
  */
 export const deleteToken = async (token) => {
   try {
-    await client.DEL(`token:${token}`);
+    await client.DEL(`token:${token} `);
     logger.info(`Xóa token: ${token} khỏi Redis`);
     return { message: "Token deleted successfully from Redis" };
   } catch (err) {
-    logger.error(`Lỗi khi xóa token ${token}: ${err.message}`);
+    logger.error(`Lỗi khi xóa token ${token}: ${err.message} `);
     throw err; // Xử lý lỗi nếu có
   }
 };
@@ -299,14 +304,14 @@ export const deleteToken = async (token) => {
  */
 export const deleteTokensByUserId = async (userId) => {
   try {
-    logger.info(`Xóa tokens của userId: ${userId}`);
+    logger.info(`Xóa tokens của userId: ${userId} `);
     // Xóa accessToken và refreshToken của user trong Redis
-    await client.DEL(`accessToken:${userId}`);
-    await client.DEL(`refreshToken:${userId}`);
-    logger.info(`Xóa accessToken và refreshToken của userId: ${userId}`);
+    await client.DEL(`accessToken:${userId} `);
+    await client.DEL(`refreshToken:${userId} `);
+    logger.info(`Xóa accessToken và refreshToken của userId: ${userId} `);
     return { message: "Tokens deleted successfully from Redis" };
   } catch (err) {
-    logger.error(`Lỗi khi xóa tokens cho userId ${userId}: ${err.message}`);
+    logger.error(`Lỗi khi xóa tokens cho userId ${userId}: ${err.message} `);
     throw err; // Xử lý lỗi nếu có
   }
 };
@@ -318,10 +323,10 @@ export const deleteTokensByUserId = async (userId) => {
 export const pingRedis = async () => {
   try {
     const response = await client.PING();
-    logger.info(`Redis PING response: ${response}`);
+    logger.info(`Redis PING response: ${response} `);
     return response;
   } catch (err) {
-    logger.error(`Redis PING failed: ${err.message}`);
+    logger.error(`Redis PING failed: ${err.message} `);
     throw err;
   }
 };
@@ -339,17 +344,17 @@ export const incrementResendCount = async (
   windowSeconds = 20
 ) => {
   try {
-    const key = `resendCount:${email}`;
+    const key = `resendCount:${email} `;
     const currentCount = await client.INCR(key);
     if (currentCount === 1) {
       // Đặt thời gian hết hạn cho khóa
       await client.EXPIRE(key, windowSeconds);
     }
-    logger.info(`Resend count for ${email}: ${currentCount}`);
+    logger.info(`Resend count for ${email}: ${currentCount} `);
     return currentCount;
   } catch (err) {
     logger.error(
-      `Lỗi khi tăng resend count cho email ${email}: ${err.message}`
+      `Lỗi khi tăng resend count cho email ${email}: ${err.message} `
     );
     throw err;
   }
@@ -362,11 +367,11 @@ export const incrementResendCount = async (
  */
 export const getResendCount = async (email) => {
   try {
-    const key = `resendCount:${email}`;
+    const key = `resendCount:${email} `;
     const count = await client.GET(key);
     return count ? parseInt(count, 10) : 0;
   } catch (err) {
-    logger.error(`Lỗi khi lấy resend count cho email ${email}: ${err.message}`);
+    logger.error(`Lỗi khi lấy resend count cho email ${email}: ${err.message} `);
     throw err;
   }
 };
@@ -378,12 +383,12 @@ export const getResendCount = async (email) => {
  */
 export const resetResendCount = async (email) => {
   try {
-    const key = `resendCount:${email}`;
+    const key = `resendCount:${email} `;
     await client.DEL(key);
-    logger.info(`Đặt lại resend count cho email: ${email}`);
+    logger.info(`Đặt lại resend count cho email: ${email} `);
   } catch (err) {
     logger.error(
-      `Lỗi khi đặt lại resend count cho email ${email}: ${err.message}`
+      `Lỗi khi đặt lại resend count cho email ${email}: ${err.message} `
     );
     throw err;
   }
@@ -402,16 +407,16 @@ export const updateUserPassword = async (
   connection = null
 ) => {
   try {
-    const query = `UPDATE ${process.env.DB_NAME}.Account SET Password = ? WHERE email = ?`;
+    const query = `UPDATE ${process.env.DB_NAME}.user SET Password = ? WHERE email = ? `;
     const [result] = connection
       ? await connection.execute(query, [hashedPassword, email])
       : await dbPool.execute(query, [hashedPassword, email]);
 
-    logger.info(`Cập nhật mật khẩu cho email: ${email}`);
+    logger.info(`Cập nhật mật khẩu cho email: ${email} `);
     return result;
   } catch (err) {
     logger.error(
-      `Lỗi khi cập nhật mật khẩu cho email ${email}: ${err.message}`
+      `Lỗi khi cập nhật mật khẩu cho email ${email}: ${err.message} `
     );
     throw err;
   }

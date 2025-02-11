@@ -1,22 +1,81 @@
 import React, { useState } from 'react';
-import { Form, Input, Button, Modal, message, Tooltip } from 'antd';
+import { Form, Input, Button, Modal, message, Tooltip, notification } from 'antd';
 import { MailOutlined, LockOutlined } from '@ant-design/icons';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const LoginPage = () => {
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [form] = Form.useForm();
+    const navigate = useNavigate(); // Hook to navigate between routes
 
-    const handleLogin = (values) => {
-        // Xử lý đăng nhập (có thể thay bằng API thực tế)
-        console.log('Login values:', values);
-        message.success('Đăng nhập thành công');
+    // API URL
+    const apiUrl = 'http://localhost:9999/api/auth/login';
+
+    const handleLogin = async (values) => {
+        try {
+            // Gửi request đăng nhập đến API
+            const response = await axios.post(apiUrl, {
+                email: values.email,
+                password: values.password,
+            });
+
+            // Kiểm tra kết quả trả về từ API
+            if (response.data.code === 200) {
+                // Lưu token vào localStorage
+                localStorage.setItem('accessToken', response.data.tokens.accessToken);
+                localStorage.setItem('refreshToken', response.data.tokens.refreshToken);
+
+                // Hiển thị thông báo thành công
+                notification.success({
+                    message: 'Đăng nhập thành công!',
+                    description: 'Bạn đã đăng nhập vào hệ thống thành công.',
+                });
+
+                // Chuyển hướng đến trang chính sau khi đăng nhập thành công
+                // navigate('/home'); // Hoặc bất kỳ trang nào bạn muốn chuyển hướng đến
+            } else {
+                notification.error({
+                    message: 'Sai thông tin đăng nhập',
+                    description: 'Vui lòng kiểm tra lại email hoặc mật khẩu.',
+                });
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            notification.error({
+                message: 'Đã xảy ra lỗi khi đăng nhập',
+                description: 'Vui lòng thử lại sau.',
+            });
+        }
     };
 
-    const handleForgotPassword = () => {
-        // Xử lý quên mật khẩu (có thể thay bằng API thực tế)
-        console.log('Quên mật khẩu');
-        message.success('Mật khẩu đã được gửi lại qua email');
-        setIsModalVisible(false);
+    const handleForgotPassword = async (values) => {
+        try {
+            // Gửi request quên mật khẩu đến API
+            const response = await axios.post('http://localhost:9999/api/auth/forgot-password', {
+                email: values.email,
+            });
+
+            // Kiểm tra kết quả trả về từ API
+            if (response.data.success) {
+                notification.success({
+                    message: 'Mật khẩu đã được gửi lại qua email',
+                    description: 'Kiểm tra email của bạn để lấy lại mật khẩu.',
+                });
+                setIsModalVisible(false);
+            } else {
+                notification.error({
+                    message: 'Email không tồn tại hoặc có lỗi xảy ra',
+                    description: 'Vui lòng kiểm tra lại email đã nhập.',
+                });
+            }
+        } catch (error) {
+            console.error('Forgot password error:', error);
+            notification.error({
+                message: 'Đã xảy ra lỗi khi gửi yêu cầu',
+                description: 'Vui lòng thử lại sau.',
+            });
+        }
     };
 
     const showForgotPasswordModal = () => {
@@ -47,10 +106,7 @@ const LoginPage = () => {
             <Form form={form} onFinish={handleLogin}>
                 <Form.Item
                     name="email"
-                    rules={[
-                        { required: true, message: 'Vui lòng nhập email!' },
-                        { type: 'email', message: 'Email không hợp lệ!' }
-                    ]}
+                    rules={[{ required: true, message: 'Vui lòng nhập email!' }, { type: 'email', message: 'Email không hợp lệ!' }]}
                 >
                     <Input
                         prefix={<MailOutlined />}
@@ -60,10 +116,7 @@ const LoginPage = () => {
                 </Form.Item>
                 <Form.Item
                     name="password"
-                    rules={[
-                        { required: true, message: 'Vui lòng nhập mật khẩu!' },
-                        { min: 6, message: 'Mật khẩu phải có ít nhất 6 ký tự!' }
-                    ]}
+                    rules={[{ required: true, message: 'Vui lòng nhập mật khẩu!' }, { min: 6, message: 'Mật khẩu phải có ít nhất 6 ký tự!' }]}
                 >
                     <Input.Password
                         prefix={<LockOutlined />}
@@ -118,10 +171,7 @@ const LoginPage = () => {
                 <Form onFinish={handleForgotPassword}>
                     <Form.Item
                         name="email"
-                        rules={[
-                            { required: true, message: 'Vui lòng nhập email!' },
-                            { type: 'email', message: 'Email không hợp lệ!' }
-                        ]}
+                        rules={[{ required: true, message: 'Vui lòng nhập email!' }, { type: 'email', message: 'Email không hợp lệ!' }]}
                     >
                         <Input
                             prefix={<MailOutlined />}
