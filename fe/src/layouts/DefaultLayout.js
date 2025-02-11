@@ -35,12 +35,27 @@ const DefaultLayout = ({ children }) => {
                             <Link to="/">Dashboard</Link>
                         </Menu.Item>
                         <Menu.Item key="2" icon={<UserOutlined />}>
-                            <Link to="/admin/users">Account</Link>
+                            <Link to="/admin/users">Nhân viên</Link>
                         </Menu.Item>
                         <Menu.Item key="3" icon={<SettingOutlined />}>
-                            <Link to="/settings">Settings</Link>
+                            <Link to="/settings">Kho sách</Link>
                         </Menu.Item>
-                        <Menu.Item key="4" icon={<LogoutOutlined />} danger>
+                        <Menu.Item key="4" icon={<SettingOutlined />}>
+                            <Link to="/settings">Hàng tồn kho</Link>
+                        </Menu.Item>
+                        <Menu.Item key="5" icon={<SettingOutlined />}>
+                            <Link to="/settings">Đơn nhập kho</Link>
+                        </Menu.Item>
+                        <Menu.Item key="6" icon={<SettingOutlined />}>
+                            <Link to="/settings">Đơn xuất kho</Link>
+                        </Menu.Item>
+                        <Menu.Item key="7" icon={<SettingOutlined />}>
+                            <Link to="/settings">Lịch sử</Link>
+                        </Menu.Item>
+                        <Menu.Item key="8" icon={<SettingOutlined />}>
+                            <Link to="/settings">Quản lý phê duyệt</Link>
+                        </Menu.Item>
+                        <Menu.Item key="9" icon={<LogoutOutlined />} danger>
                             Logout
                         </Menu.Item>
                     </Menu>
