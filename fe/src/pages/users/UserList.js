@@ -1,0 +1,202 @@
+import React, { useEffect, useState } from "react";
+import { Table, Button, Input, Space, Tag, Modal, Select, message, Form } from "antd";
+import { EditOutlined, DeleteOutlined, PlusOutlined, SearchOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+
+
+
+//Thông báo
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+const { confirm } = Modal;
+const { Option } = Select;
+
+const UserList = () => {
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [searchText, setSearchText] = useState("");
+    const [statusFilter, setStatusFilter] = useState("");
+    const [roleFilter, setRoleFilter] = useState("");
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [form] = Form.useForm();
+    const navigate = useNavigate();
+
+    // Gọi API lấy danh sách Users
+    useEffect(() => {
+        fetchUsers();
+    }, []);
+
+    const fetchUsers = async () => {
+        try {
+            const response = await axios.get("http://localhost:9999/api/users");
+            setUsers(response.data);
+            setLoading(false);
+        } catch (error) {
+            message.error("Lỗi khi tải danh sách người dùng!");
+            setLoading(false);
+        }
+    };
+
+    // Xử lý tìm kiếm theo email
+    const handleSearch = (e) => {
+        setSearchText(e.target.value);
+    };
+
+    // Xử lý lọc theo Trạng thái (Active/Inactive)
+    const handleStatusFilter = (value) => {
+        setStatusFilter(value);
+    };
+
+    // Xử lý lọc theo Quyền (Admin/Staff)
+    const handleRoleFilter = (value) => {
+        setRoleFilter(value);
+    };
+
+    // Xử lý khi nhấn "Chỉnh sửa"
+    const handleEdit = (id) => {
+        navigate(`/admin/users/${id}`);
+    };
+
+    // Xác nhận cập nhật trạng thái user
+    const showDeleteConfirm = (user) => {
+        console.log("Clicked delete for user:", user);
+    
+        Modal.confirm({
+            title: `Bạn có chắc chắn muốn cập nhật trạng thái user này?`,
+            icon: React.createElement(ExclamationCircleOutlined),
+            content: `User sẽ được chuyển sang trạng thái ${user.Status === "Active" ? "Inactive" : "Active"}`,
+            okText: "Xác nhận",
+            okType: "danger",
+            cancelText: "Hủy",
+            onOk() {
+                handleToggleStatus(user);
+            },
+        });
+    };
+    // Xử lý cập nhật trạng thái User (Active ⇆ Inactive)
+    const handleToggleStatus = async (user) => {
+        try {
+            const newStatus = user.Status == "Active" ? "Inactive" : "Active";
+            await axios.put(`http://localhost:9999/api/users/${user.userId}`, { Status: newStatus });
+            setUsers(users.map((u) => (u.userId === user.userId ? { ...u, Status: newStatus } : u)));
+            message.success(`User đã chuyển sang trạng thái ${newStatus}`);
+        } catch (error) {
+            message.error("Lỗi khi cập nhật trạng thái user!");
+        }
+    };
+
+    // Xử lý mở Modal thêm tài khoản
+    const showAddUserModal = () => {
+        setIsModalOpen(true);
+    };
+
+    // Xử lý đóng Modal thêm tài khoản
+    const handleCancel = () => {
+        setIsModalOpen(false);
+        form.resetFields();
+    };
+
+    // Xử lý submit form để thêm tài khoản
+    const handleAddUser = async (values) => {
+        try {
+            const response = await axios.post("http://localhost:9999/api/users", values);
+    
+            // Sau khi tạo user thành công, gọi API lấy danh sách user mới nhất
+            const updatedUsers = await axios.get("http://localhost:9999/api/users");
+    
+            // Cập nhật lại danh sách user từ API
+            setUsers(updatedUsers.data);
+    
+            // Hiển thị thông báo thành công
+            message.success("Thêm user thành công!");
+    
+            // Hiển thị toast thông báo thành công
+            toast.success("🎉 User đã được thêm thành công!", {
+                position: "top-right",
+                autoClose: 3000, // 3 giây
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true
+            });
+
+            // Đóng popup thêm user
+            handleCancel();
+        } catch (error) {
+            message.error("Lỗi khi thêm user!");
+        }
+    };
+    
+
+    // Lọc danh sách user theo điều kiện tìm kiếm & filter
+    const filteredUsers = users.filter((user) => {
+        const matchEmail = user.Email ? user.Email.toLowerCase().includes(searchText.toLowerCase()) : false;
+        const matchStatus = statusFilter ? user.Status === statusFilter : true;
+        const matchRole = roleFilter ? user.roleId === roleFilter : true;
+        return matchEmail && matchStatus && matchRole;
+    });
+
+
+    // Cấu hình cột hiển thị trong bảng
+    const columns = [
+        { title: "User ID", dataIndex: "userId", key: "userId", width: 80, sorter: (a, b) => a.userId - b.userId },
+        { title: "Họ và Tên", dataIndex: "FullName", key: "FullName" },
+        { title: "Email", dataIndex: "Email", key: "Email" },
+        { title: "Số điện thoại", dataIndex: "PhoneNumber", key: "PhoneNumber" },
+        {
+            title: "Quyền", dataIndex: "roleId", key: "roleId",
+            render: (role) => <Tag color={role === 1 ? "red" : role === 2 ? "gold" : "blue"}>{role === 1 ? "Admin" : role === 2 ? "Manager" : "Staff"}</Tag>,
+        },
+        { title: "Trạng thái", dataIndex: "Status", key: "Status", render: (status) => <Tag color={status === "Active" ? "green" : "volcano"}>{status}</Tag> },
+        {
+            title: "Hành động",
+            key: "actions",
+            render: (text, record) => (
+                <Space>
+                    <Button type="primary" icon={<EditOutlined />} onClick={() => handleEdit(record.userId)}>Chỉnh sửa</Button>
+                    <Button type="danger" icon={<DeleteOutlined />} onClick={() => showDeleteConfirm(record)}>Cập nhật trạng thái</Button>
+                </Space>
+            ),
+        },
+    ];
+
+    return (
+        <div style={{ padding: "20px" }}>
+            <h2>Quản lý người dùng</h2>
+
+            <Space style={{ marginBottom: 20 }}>
+                <Button type="primary" icon={<PlusOutlined />} onClick={showAddUserModal}>Thêm tài khoản</Button>
+                <Input placeholder="Tìm kiếm theo Email..." prefix={<SearchOutlined />} value={searchText} onChange={handleSearch} style={{ width: 250 }} />
+                <Select placeholder="Lọc theo trạng thái" style={{ width: 180 }} onChange={handleStatusFilter} allowClear>
+                    <Option value="Active">Hoạt động</Option>
+                    <Option value="Inactive">Không hoạt động</Option>
+                </Select>
+                {/* <Select placeholder="Lọc theo quyền" style={{ width: 150 }} onChange={handleRoleFilter} allowClear>
+                    <Option value="1">Admin</Option>
+                    <Option value="2">Manager</Option>
+                    <Option value="3">Staff</Option>
+                </Select> */}
+            </Space>
+
+            <Table columns={columns} dataSource={filteredUsers} rowKey="userId" loading={loading} bordered pagination={{ pageSize: 10 }} />
+
+            {/* Modal Thêm tài khoản */}
+            <Modal title="Thêm tài khoản" open={isModalOpen} onCancel={handleCancel} footer={null}>
+                <Form form={form} layout="vertical" onFinish={handleAddUser}>
+                    <Form.Item name="FullName" label="Họ và Tên" rules={[{ required: true, message: "Vui lòng nhập họ và tên!" }]}><Input /></Form.Item>
+                    <Form.Item name="Email" label="Email" rules={[{ type: "email", required: true, message: "Email không hợp lệ!" }]}><Input /></Form.Item>
+                    <Form.Item name="Password" label="Mật khẩu" rules={[{ required: true, message: "Vui lòng nhập mật khẩu!" }]}><Input.Password /></Form.Item>
+                    <Form.Item name="PhoneNumber" label="Số điện thoại" rules={[{ required: true, message: "Vui lòng nhập số điện thoại!" }]}><Input /></Form.Item>
+                    <Form.Item name="roleId" label="Quyền" rules={[{ required: true }]}><Select><Option value="1">Admin</Option><Option value="2">Manager</Option><Option value="3">Staff</Option></Select></Form.Item>
+                    <Button type="primary" htmlType="submit">Thêm</Button>
+                </Form>
+            </Modal>
+
+            
+        </div>
+    );
+};
+
+export default UserList;

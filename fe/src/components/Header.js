@@ -20,13 +20,13 @@ const AppHeader = () => {
         </div>
 
         {/* Menu */}
-        <Menu theme="light" mode="horizontal" style={{ flex: 1, justifyContent: 'center', margin: 0, fontSize: '20px' }}>
+        {/* <Menu theme="light" mode="horizontal" style={{ flex: 1, justifyContent: 'center', margin: 0, fontSize: '20px' }}>
           <Menu.Item key="1" icon={<HomeOutlined />}><Link to="/">Home</Link></Menu.Item>
           <Menu.Item key="2" icon={<ShopOutlined />}><Link to="/company">Company</Link></Menu.Item>
           <Menu.Item key="3" icon={<DatabaseOutlined />}><Link to="/platform">Platform</Link></Menu.Item>
           <Menu.Item key="4" icon={<PhoneOutlined />}><Link to="/pricing">Pricing</Link></Menu.Item>
           <Menu.Item key="5" icon={<PhoneOutlined />}><Link to="/contact">Contact</Link></Menu.Item>
-        </Menu>
+        </Menu> */}
 
         {/* Buttons */}
         <Space size="large">

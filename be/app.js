@@ -8,9 +8,12 @@ import morgan from "morgan";
 import expressWinston from "express-winston";
 import logger from "./configs/logger.js";
 import { errorHandler, notFoundHandler } from "./middlewares/index.js";
-import authRoutes from "./routes/authRoutes.js";
 import db from "./models/index.js";
 import { Sequelize } from 'sequelize';
+
+// import routes
+import authRoutes from "./routes/authRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 
 const { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME } = process.env;
 
@@ -34,6 +37,7 @@ app.get("/", (req, res) => {
   res.send("<h1>Xin chào Thế giới!</h1>");
 });
 app.use("/api", authRoutes);
+app.use("/api", userRoutes);
 
 // Error handling
 app.use(notFoundHandler);
