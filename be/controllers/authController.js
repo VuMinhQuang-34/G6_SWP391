@@ -4,6 +4,7 @@ import bcrypt from "bcrypt"; // Thay thế crypto bằng bcrypt cho bảo mật 
 import axios from "axios";
 import { OAuth2Client } from "google-auth-library";
 
+import model from "../models/index.js";
 import db from "../configs/dbConnection.js"; // Import connection pool
 import sendMail from "../helpers/sendMail.js";
 import authRepository from "../repositories/authRepository.js";
@@ -13,6 +14,7 @@ import logger from "../configs/logger.js"; // Import logger của Winston
 // Initialize Google OAuth2 Client
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+const { User, Role } = model;
 /**
  * Hàm tạo OTP ngẫu nhiên (6 số)
  * @returns {string} - OTP
@@ -886,6 +888,43 @@ export const resetPassword = async (req, res) => {
       .json({ code: 500, message: "Đặt lại mật khẩu thất bại." });
   }
 };
+
+// Xử lý đổi mật khẩu
+export const changePassword = async (req, res) => {
+  try {
+    const { userId, oldPassword, newPassword } = req.body;
+
+    // Kiểm tra các trường dữ liệu
+    if (!userId || !oldPassword || !newPassword) {
+      return res.status(400).json({ message: "Vui lòng nhập đầy đủ thông tin!" });
+    }
+
+    // Tìm người dùng trong cơ sở dữ liệu
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User không tồn tại!" });
+    }
+
+    // Kiểm tra mật khẩu cũ có đúng không
+    const isMatch = await bcrypt.compare(oldPassword, user.Password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Mật khẩu cũ không chính xác!" });
+    }
+
+    // Hash mật khẩu mới
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Cập nhật mật khẩu mới vào cơ sở dữ liệu
+    await user.update({ Password: hashedPassword });
+
+    // Trả về thông báo thành công
+    res.status(200).json({ success: true, message: "Mật khẩu đã được thay đổi thành công!" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Lỗi server, vui lòng thử lại sau!" });
+  }
+};
+
 // Export an object containing the functions
 const authController = {
   register,
@@ -900,6 +939,7 @@ const authController = {
   forgotPasswordRequest,
   verifyPasswordResetOTP,
   resetPassword,
+  changePassword
   // Thêm phương thức mới
   // googleAuthCallback,
   // loginSuccess,

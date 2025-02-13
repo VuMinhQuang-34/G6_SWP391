@@ -1,16 +1,24 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { Form, Input, Button, Modal, message, Tooltip, notification } from 'antd';
 import { MailOutlined, LockOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from "../../context/AuthContext"; // Import AuthContext
+import { toast } from "react-toastify";
 
 const LoginPage = () => {
-    const { login } = useContext(AuthContext); // Lấy hàm login từ AuthContext
+    const { login, user } = useContext(AuthContext); // Lấy hàm login từ AuthContext
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [form] = Form.useForm();
     const navigate = useNavigate(); // Hook to navigate between routes
     const [loading, setLoading] = useState(false); // Trạng thái loading khi đăng nhập
+
+    useEffect(() => {
+        // Nếu user đã đăng nhập, điều hướng đến trang chính
+        if (user) {
+            navigate('/');
+        }
+    }, [user, navigate]);
 
     // API URL
     const apiUrl = 'http://localhost:9999/api/auth/login';
@@ -18,7 +26,7 @@ const LoginPage = () => {
     const handleLogin = async (values) => {
         try {
             // Gửi request đăng nhập đến API
-            const response = await axios.post(apiUrl, {
+            const response = await axios.post('http://localhost:9999/api/auth/login', {
                 email: values.email,
                 password: values.password,
             });
@@ -34,20 +42,14 @@ const LoginPage = () => {
 
                 // Gọi hàm login từ AuthContext, local
                 login(user, accessToken, refreshToken);
-
-                // Hiển thị thông báo thành công
-                // notification.success({
-                //     message: 'Đăng nhập thành công!',
-                //     description: 'Bạn đã đăng nhập vào hệ thống thành công.',
-                // });
+              
+                //Thông báo
+                toast.success(`Chào mừng ${user.FullName}!`, { autoClose: 2000 });
 
                 // Chuyển hướng đến trang chính sau khi đăng nhập thành công
                 navigate('/'); // Hoặc bất kỳ trang nào bạn muốn chuyển hướng đến
             } else {
-                notification.error({
-                    message: 'Sai thông tin đăng nhập',
-                    description: 'Vui lòng kiểm tra lại email hoặc mật khẩu.',
-                });
+                toast.error(`Vui lòng kiểm tra lại email hoặc mật khẩu`);
             }
         } catch (error) {
             console.error('Login error:', error);
@@ -55,6 +57,7 @@ const LoginPage = () => {
                 message: 'Đã xảy ra lỗi khi đăng nhập',
                 description: 'Vui lòng thử lại sau.',
             });
+            toast.error(`Vui lòng kiểm tra lại email hoặc mật khẩu`);
         }
     };
 
@@ -84,6 +87,7 @@ const LoginPage = () => {
                 message: 'Đã xảy ra lỗi khi gửi yêu cầu',
                 description: 'Vui lòng thử lại sau.',
             });
+            toast.error("Lỗi hệ thống, vui lòng thử lại!", { autoClose: 3000 });
         }
     };
 

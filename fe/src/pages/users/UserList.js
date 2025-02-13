@@ -23,7 +23,6 @@ import axios from "axios";
 
 //Thông báo
 import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 
 const { confirm } = Modal;
 const { Option } = Select;
@@ -101,11 +100,13 @@ const UserList = () => {
           u.userId === selectedUser.userId ? { ...u, ...values } : u
         )
       );
+      toast.success(`Cập nhật thành công`, { autoClose: 2000 });
 
       message.success("Cập nhật user thành công!");
       setIsEditModalOpen(false);
     } catch (error) {
       message.error("Lỗi khi cập nhật user!");
+      toast.error(`Cập nhật thất bại`);
     }
   };
 
@@ -139,9 +140,11 @@ const UserList = () => {
           u.userId === user.userId ? { ...u, Status: newStatus } : u
         )
       );
+      toast.success(`Cập nhật thành công`, { autoClose: 2000 });
       message.success(`User đã chuyển sang trạng thái ${newStatus}`);
     } catch (error) {
       message.error("Lỗi khi cập nhật trạng thái user!");
+      toast.error(`Cập nhật thất bại`);
     }
   };
 
@@ -174,19 +177,13 @@ const UserList = () => {
       message.success("Thêm user thành công!");
 
       // Hiển thị toast thông báo thành công
-      toast.success("🎉 User đã được thêm thành công!", {
-        position: "top-right",
-        autoClose: 3000, // 3 giây
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
 
+      toast.success(`Thêm mới tài khoản thành công`, { autoClose: 2000 });
       // Đóng popup thêm user
       handleCancel();
     } catch (error) {
       message.error("Lỗi khi thêm user!");
+      toast.error(`Cập nhật thất bại`);
     }
   };
 

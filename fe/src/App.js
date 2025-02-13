@@ -1,9 +1,13 @@
 import React, { useContext } from "react";
 import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css"; // Import CSS
+
 import DefaultLayout from "./layouts/DefaultLayout";
 import UserDetail from "./pages/users/UserDetail";
 import UserList from "./pages/users/UserList";
 import LoginPage from "./pages/login/LoginPage";
+import ChangePassword from "./pages/auth/ChangePassword"; // Thêm trang đổi mật khẩu
 import { AuthProvider, AuthContext } from "./context/AuthContext";
 
 const ProtectedRoute = ({ children }) => {
@@ -31,6 +35,7 @@ const App = () => {
               </ProtectedRoute>
             }
           >
+            <Route path="change-password" element={<ChangePassword />} />
             <Route index element={<UserList />} />
             <Route path="users/:id" element={<UserDetail />} />
             <Route path="admin/users" element={<UserList />} />
@@ -39,6 +44,10 @@ const App = () => {
           <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
       </Router>
+
+      {/* Thông báo */}
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
+      
     </AuthProvider>
   );
 };

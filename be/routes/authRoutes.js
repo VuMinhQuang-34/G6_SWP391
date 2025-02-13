@@ -120,4 +120,6 @@ router.get("/auth/google/callback", authController.googleAuthCallback);
 router.post("/auth/login-success", authController.loginSuccess);
 */
 
+router.post("/auth/change-password", authController.changePassword);
+
 export default router;

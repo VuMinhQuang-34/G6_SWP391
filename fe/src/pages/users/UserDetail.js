@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { Card, Descriptions, Button, Spin, message, Avatar, Tag, Divider, Input } from "antd";
 import { UserOutlined, PhoneOutlined, MailOutlined, EditOutlined, SaveOutlined, CloseOutlined } from "@ant-design/icons";
 import axios from "axios";
+import { toast } from "react-toastify";
 
 const UserDetail = () => {
   const { id } = useParams(); // Lấy ID từ URL
@@ -68,8 +69,12 @@ const UserDetail = () => {
       setUser({ ...user, Email: formData.email, PhoneNumber: formData.phoneNumber });
       setIsEditing(false);
       message.success("Cập nhật thông tin thành công!");
+      toast.success(`Cập nhật thông tin thành công!`);
+      
     } catch (error) {
       message.error("Lỗi khi cập nhật thông tin người dùng!");
+      toast.error(`Cập nhật thất bại`);
+      
     }
   };
 
