@@ -83,7 +83,7 @@ export const insertUser = async (
       INSERT INTO ${process.env.DB_NAME}.user(Email, Password, Status, roleId)
   VALUES(?, ?, ?, 2);
   `;
-    const status = registerWithGoogle ? 1 : 0;
+    const status = registerWithGoogle ? "Active" : "Inactive";
     const password = registerWithGoogle ? "google" : hashedPassword; // Đặt Password là "google" nếu đăng ký với Google
     const [result] = connection
       ? await connection.execute(query, [email, password, status])
@@ -264,7 +264,7 @@ export const updateEmailVerificationStatus = async (
 ) => {
   try {
     // Cập nhật trạng thái isVerified trong MySQL
-    const updateQuery = `UPDATE ${process.env.DB_NAME}.user SET Status = 1 WHERE email = ? `;
+    const updateQuery = `UPDATE ${process.env.DB_NAME}.user SET Status = 'Active' WHERE email = ? `;
     const [result] = connection
       ? await connection.execute(updateQuery, [email])
       : await dbPool.execute(updateQuery, [email]);

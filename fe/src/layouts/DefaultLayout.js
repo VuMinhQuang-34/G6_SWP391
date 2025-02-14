@@ -45,10 +45,16 @@ const DefaultLayout = () => {
                         <Menu.Item key="2" icon={<UserOutlined />}>
                             <Link to="/admin/users">Nhân viên</Link>
                         </Menu.Item>
-                        {/* <Menu.Item key="3" icon={<SettingOutlined />}>
-                            <Link to="/books">Kho sách</Link>
+                        <Menu.Item key="3" icon={<SettingOutlined />}>
+                            <Link to="admin/categories">Loại sách</Link>
                         </Menu.Item>
                         <Menu.Item key="4" icon={<SettingOutlined />}>
+                            <Link to="admin/books">Sách</Link>
+                        </Menu.Item>
+                        {/* <Menu.Item key="3" icon={<SettingOutlined />}>  
+                            <Link to="/books">Kho sách</Link>
+                        </Menu.Item> */}
+                        {/* <Menu.Item key="4" icon={<SettingOutlined />}>
                             <Link to="/inventory">Hàng tồn kho</Link>
                         </Menu.Item>
                         <Menu.Item key="5" icon={<SettingOutlined />}>

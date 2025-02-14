@@ -10,10 +10,14 @@ import logger from "./configs/logger.js";
 import { errorHandler, notFoundHandler } from "./middlewares/index.js";
 import db from "./models/index.js";
 import { Sequelize } from 'sequelize';
+import defaultRoles from './seeders/20240101000000-default-roles.js';
+import defaultUsers from './seeders/20240101000001-default-users.js';
 
 // import routes
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import categoryRoutes from "./routes/categoryRoutes.js";
+import bookRoutes from './routes/bookRoutes.js';
 
 const { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME } = process.env;
 
@@ -38,11 +42,45 @@ app.get("/", (req, res) => {
 });
 app.use("/api", authRoutes);
 app.use("/api", userRoutes);
-
+app.use("/api", categoryRoutes);
+app.use('/api', bookRoutes);
 // Error handling
 app.use(notFoundHandler);
 app.use(expressWinston.errorLogger({ winstonInstance: logger }));
 app.use(errorHandler);
+
+// Khởi tạo database và seeder
+const initializeDatabase = async () => {
+  try {
+    // Sync database
+    await db.sequelize.sync();
+
+    // Kiểm tra và tạo roles mặc định
+    const existingRoles = await db.Role.count();
+    if (existingRoles === 0) {
+      await defaultRoles.up(db.sequelize.getQueryInterface(), db.Sequelize);
+      console.log('Default roles created successfully');
+    } else {
+      console.log('Roles already exist, skipping seeder');
+    }
+
+    // Kiểm tra và tạo users mặc định
+    const existingUsers = await db.User.count();
+    if (existingUsers === 0) {
+      await defaultUsers.up(db.sequelize.getQueryInterface(), db.Sequelize);
+      console.log('Default users created successfully');
+    } else {
+      console.log('Users already exist, skipping seeder');
+    }
+
+    console.log('Database synchronized successfully');
+  } catch (error) {
+    console.error('Error initializing database:', error);
+  }
+};
+
+// Gọi hàm khởi tạo
+initializeDatabase();
 
 // Server startup
 const startServer = async () => {

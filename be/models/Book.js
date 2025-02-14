@@ -26,10 +26,6 @@ export default (sequelize, DataTypes) => {
       foreignKey: 'CategoryId'
     });
 
-    Book.belongsToMany(models.Author, {
-      through: models.BookAuthors,
-      foreignKey: 'BookId'
-    });
 
     Book.hasMany(models.ImportOrderDetails, { foreignKey: 'BookId' });
     Book.hasMany(models.ExportOrderDetails, { foreignKey: 'BookId' });
