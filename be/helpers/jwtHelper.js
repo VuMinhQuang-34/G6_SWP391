@@ -4,23 +4,11 @@ import client from "../configs/int_redis.js";
 import logger from "winston"; // or use your preferred logging library
 
 function signAccessToken(userId) {
-  return new Promise((resolve, reject) => {
-    const payload = {};
-    const secret = process.env.ACCESS_TOKEN_SECRET;
-    console.log(userId);
-    const options = {
-      expiresIn: "3d",
-      audience: userId.toString(),
-    };
-
-    jwt.sign(payload, secret, options, (err, token) => {
-      if (err) {
-        console.log(err.message);
-        return reject(createError.InternalServerError(err.message));
-      }
-      resolve(token);
-    });
-  });
+  return jwt.sign(
+    { userId }, // Đảm bảo payload có dạng { userId: number }
+    process.env.ACCESS_TOKEN_SECRET,
+    { expiresIn: '24h' }
+  );
 }
 
 function verifyAccessToken(token) {
@@ -42,65 +30,13 @@ function verifyAccessToken(token) {
 }
 
 function signRefreshToken(userId) {
-  return new Promise((resolve, reject) => {
-    const payload = {};
-    const secret = process.env.REFRESH_TOKEN_SECRET;
-    const options = {
-      expiresIn: "1y",
-      issuer: "127.0.0.1:9999",
-      audience: userId.toString(),
-    };
-
-    jwt.sign(payload, secret, options, async (err, token) => {
-      if (err) {
-        console.log("JWT Sign Error:", err.message);
-        return reject(createError.InternalServerError(err.message));
-      }
-
-      if (!client.isReady) {
-        console.log("Redis client is not ready.");
-        return reject(
-          createError.InternalServerError("Redis client is not ready.")
-        );
-      }
-
-      try {
-        const redisKey = `refreshToken:${userId}`;
-        await client.SET(redisKey, token, {
-          EX: 365 * 24 * 60 * 60, // Expiration in seconds (1 year)
-        });
-        resolve(token);
-      } catch (redisError) {
-        console.log("Redis SET Error:", redisError.message);
-        return reject(createError.InternalServerError(redisError.message));
-      }
-    });
-  });
+  return jwt.sign(
+    { userId },
+    process.env.REFRESH_TOKEN_SECRET,
+    { expiresIn: '7d' }
+  );
 }
 
-// function verifyRefreshToken(refreshToken) {
-//   return new Promise((resolve, reject) => {
-//     jwt.verify(
-//       refreshToken,
-//       process.env.REFRESH_TOKEN_SECRET,
-//       async (err, payload) => {
-//         if (err) return reject(createError.Unauthorized(err.message));
-
-//         const userId = payload.aud;
-//         const redisKey = `refreshToken:${userId}`;
-
-//         try {
-//           const result = await client.GET(redisKey);
-//           if (refreshToken === result) return resolve(userId);
-//           reject(createError.Unauthorized("Invalid refresh token"));
-//         } catch (redisError) {
-//           console.log(redisError.message);
-//           return reject(createError.InternalServerError(redisError.message));
-//         }
-//       }
-//     );
-//   });
-// }
 function verifyRefreshToken(refreshToken) {
   return new Promise((resolve, reject) => {
     // Kiểm tra JWT Refresh Token và thời gian sống của nó

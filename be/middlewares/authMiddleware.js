@@ -8,36 +8,73 @@ const Role = db.Role;
 export const verifyToken = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+
+        // Log để debug
+        console.log('Auth header:', authHeader);
+        console.log('ACCESS_TOKEN_SECRET exists:', !!process.env.ACCESS_TOKEN_SECRET);
+
+        if (!authHeader) {
             return res.status(401).json({
                 success: false,
                 message: 'No token provided'
             });
         }
 
-        const token = authHeader.split(' ')[1];
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-        const user = await User.findByPk(decoded.userId, {
-            include: [{
-                model: Role,
-                attributes: ['Role_Name']
-            }]
-        });
-
-        if (!user) {
+        if (!authHeader.startsWith('Bearer ')) {
             return res.status(401).json({
                 success: false,
-                message: 'User not found'
+                message: 'Invalid token format'
             });
         }
 
-        req.user = user;
-        next();
+        const token = authHeader.split(' ')[1];
+
+        // Log token để debug
+        console.log('Extracted token:', token);
+
+        if (!process.env.ACCESS_TOKEN_SECRET) {
+            return res.status(500).json({
+                success: false,
+                message: 'ACCESS_TOKEN_SECRET is not configured'
+            });
+        }
+
+        try {
+            const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+            console.log('Decoded token:', decoded);
+
+            const user = await User.findByPk(decoded.userId, {
+                include: [{
+                    model: Role,
+                    attributes: ['Role_Name']
+                }]
+            });
+
+            console.log('Found user:', user); // Log để debug
+
+            if (!user) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'User not found'
+                });
+            }
+
+            req.user = user;
+            next();
+        } catch (jwtError) {
+            console.error('JWT verification error:', jwtError);
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid token',
+                error: jwtError.message
+            });
+        }
     } catch (error) {
-        return res.status(401).json({
+        console.error('Auth middleware error:', error);
+        return res.status(500).json({
             success: false,
-            message: 'Invalid token'
+            message: 'Internal server error',
+            error: error.message
         });
     }
 };

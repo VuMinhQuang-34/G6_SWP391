@@ -12,6 +12,7 @@ import db from "./models/index.js";
 import { Sequelize } from 'sequelize';
 import defaultRoles from './seeders/20240101000000-default-roles.js';
 import defaultUsers from './seeders/20240101000001-default-users.js';
+import dotenv from 'dotenv';
 
 // import routes
 import authRoutes from "./routes/authRoutes.js";
@@ -21,7 +22,14 @@ import bookRoutes from './routes/bookRoutes.js';
 
 const { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME } = process.env;
 
-config();
+// Load environment variables
+dotenv.config();
+
+// Kiểm tra JWT_SECRET
+if (!process.env.JWT_SECRET) {
+  console.error('JWT_SECRET is not defined in environment variables');
+  process.exit(1);
+}
 
 const app = express();
 

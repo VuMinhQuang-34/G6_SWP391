@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     Table, Space, Button, Input, Select, Popconfirm, Card,
     message, Tag, Pagination, Modal
@@ -7,6 +7,7 @@ import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import axios from '../../configs/axios';
 import BookForm from './BookForm';
 import { API_BASE_URL } from '../../configs/api';
+import { EventEmitter } from '../../utils/events';
 
 const { Search } = Input;
 const { Option } = Select;
@@ -23,9 +24,10 @@ const BookList = () => {
     const [categories, setCategories] = useState([]);
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [categoriesLoading, setCategoriesLoading] = useState(false);
+    const [refreshKey, setRefreshKey] = useState(0);
 
     // Fetch books
-    const fetchBooks = async () => {
+    const fetchBooks = useCallback(async () => {
         try {
             setLoading(true);
             const response = await axios.get('/books', {
@@ -36,23 +38,25 @@ const BookList = () => {
                     categoryId: selectedCategory
                 }
             });
-            setBooks(response.data.data);
-            setTotal(response.data.total);
+            console.log('Fetched books:', response.data); // Debug log
+            if (response.data && response.data.data) {
+                setBooks(response.data.data);
+                setTotal(response.data.total);
+            }
         } catch (error) {
             message.error('Failed to fetch books');
+            console.error('Error fetching books:', error);
         } finally {
             setLoading(false);
         }
-    };
+    }, [page, pageSize, searchText, selectedCategory]);
 
     // Fetch categories for filter
     const fetchCategories = async () => {
         try {
             setCategoriesLoading(true);
             const response = await axios.get('/categories');
-            // API trả về trực tiếp mảng nên không cần .data.data
             setCategories(response.data);
-            // console.log('Categories in BookList:', response.data); // Debug log
         } catch (error) {
             message.error('Failed to fetch categories');
             console.error('Error fetching categories:', error);
@@ -61,31 +65,73 @@ const BookList = () => {
         }
     };
 
-    // Tách riêng useEffect cho categories
-    useEffect(() => {
-        fetchCategories();
-        // console.log(categories);
-    }, []); // Chỉ fetch categories một lần khi component mount
-
-    // useEffect riêng cho việc fetch books
+    // Fetch books when page, size, search, or category change
     useEffect(() => {
         fetchBooks();
-    }, [page, pageSize, searchText, selectedCategory]);
+    }, [page, pageSize, searchText, selectedCategory, refreshKey]);
+
+    useEffect(() => {
+        fetchCategories();
+    }, []);
+
+    useEffect(() => {
+        const handleRefresh = () => {
+            fetchBooks();
+        };
+
+        window.addEventListener('REFRESH_BOOKS', handleRefresh);
+
+        return () => {
+            window.removeEventListener('REFRESH_BOOKS', handleRefresh);
+        };
+    }, [fetchBooks]);
 
     // Handle book deletion
     const handleDelete = async (id) => {
         try {
-            await axios.delete(`${API_BASE_URL}/books/${id}`);
-            message.success('Book deleted successfully');
-            fetchBooks();
+            // Kiểm tra token với đúng key
+            const token = localStorage.getItem('accessToken');
+            if (!token) {
+                message.error('Please login to perform this action');
+                window.location.href = '/login';
+                return;
+            }
+
+            const response = await axios.delete(`/books/${id}`);
+            if (response.data.success) {
+                message.success('Book deleted successfully');
+                setRefreshKey(prev => prev + 1); // Force refresh
+            } else {
+                message.error(response.data.message || 'Failed to delete book');
+            }
         } catch (error) {
-            message.error('Failed to delete book');
+            const errorMessage = error.response?.data?.message ||
+                error.message ||
+                'Failed to delete book';
+            message.error(errorMessage);
+            console.error('Error deleting book:', error);
         }
     };
 
     // Handle modal
     const showModal = (book = null) => {
-        setEditingBook(book);
+        console.log('Show modal with book:', book); // Debug log
+        if (book) {
+            // Đảm bảo tất cả các trường cần thiết đều có
+            setEditingBook({
+                BookId: book.BookId,
+                Title: book.Title,
+                Author: book.Author,
+                CategoryId: book.CategoryId,
+                Publisher: book.Publisher,
+                PublishingYear: book.PublishingYear,
+                NumberOfPages: book.NumberOfPages,
+                Language: book.Language,
+                Status: book.Status || 'Active'
+            });
+        } else {
+            setEditingBook(null);
+        }
         setModalVisible(true);
     };
 
@@ -96,17 +142,38 @@ const BookList = () => {
 
     const handleSave = async (values) => {
         try {
-            if (editingBook) {
-                await axios.put(`${API_BASE_URL}/books/${editingBook.BookId}`, values);
-                message.success('Book updated successfully');
-            } else {
-                await axios.post(`${API_BASE_URL}/books`, values);
-                message.success('Book created successfully');
+            const token = localStorage.getItem('accessToken');
+            if (!token) {
+                message.error('Please login to perform this action');
+                window.location.href = '/login';
+                return;
             }
-            handleModalClose();
-            fetchBooks();
+
+            if (editingBook) {
+                const response = await axios.put(`/books/${editingBook.BookId}`, values);
+                if (response.data.success) {
+                    message.success('Book updated successfully');
+                    handleModalClose();
+                    fetchBooks(); // Gọi trực tiếp fetchBooks thay vì dùng refreshKey
+                } else {
+                    message.error(response.data.message || 'Failed to update book');
+                }
+            } else {
+                const response = await axios.post('/books', values);
+                if (response.data.success) {
+                    message.success('Book created successfully');
+                    handleModalClose();
+                    fetchBooks(); // Gọi trực tiếp fetchBooks thay vì dùng refreshKey
+                } else {
+                    message.error(response.data.message || 'Failed to create book');
+                }
+            }
         } catch (error) {
-            message.error('Failed to save book');
+            const errorMessage = error.response?.data?.message ||
+                error.message ||
+                'Failed to save book';
+            message.error(errorMessage);
+            console.error('Error saving book:', error);
         }
     };
 
@@ -243,10 +310,11 @@ const BookList = () => {
                 onCancel={handleModalClose}
                 footer={null}
                 width={800}
+                destroyOnClose={true}
             >
                 <BookForm
+                    key={editingBook?.BookId || 'new'}
                     initialValues={editingBook}
-                    onSave={handleSave}
                     onCancel={handleModalClose}
                 />
             </Modal>

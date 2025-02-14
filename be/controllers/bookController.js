@@ -7,6 +7,35 @@ const Category = db.Category;
 // Create a new book
 const createBook = async (req, res) => {
     try {
+        // Kiểm tra các trường bắt buộc
+        const { Title, Author, Publisher } = req.body;
+
+        if (isEmptyOrWhitespace(Title)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Title cannot be empty or contain only whitespace'
+            });
+        }
+
+        if (isEmptyOrWhitespace(Author)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Author cannot be empty or contain only whitespace'
+            });
+        }
+
+        if (isEmptyOrWhitespace(Publisher)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Publisher cannot be empty or contain only whitespace'
+            });
+        }
+
+        // Trim các giá trị string
+        req.body.Title = Title.trim();
+        req.body.Author = Author.trim();
+        req.body.Publisher = Publisher.trim();
+
         const currentDate = new Date();
         const bookData = {
             ...req.body,
@@ -36,10 +65,7 @@ const getAllBooks = async (req, res) => {
         const { page = 1, limit = 10, search = '', categoryId } = req.query;
         const offset = (page - 1) * limit;
 
-        // Build where condition
         let condition = {};
-
-        // Add search condition
         if (search) {
             condition = {
                 [Op.or]: [
@@ -50,7 +76,6 @@ const getAllBooks = async (req, res) => {
             };
         }
 
-        // Add category filter
         if (categoryId) {
             condition.CategoryId = categoryId;
         }
@@ -66,6 +91,8 @@ const getAllBooks = async (req, res) => {
             order: [['BookId', 'DESC']]
         });
 
+        console.log('Books found:', rows); // Debug log
+
         return res.status(200).json({
             success: true,
             data: rows,
@@ -74,6 +101,7 @@ const getAllBooks = async (req, res) => {
             totalPages: Math.ceil(count / limit)
         });
     } catch (error) {
+        console.error('Error in getAllBooks:', error);
         return res.status(500).json({
             success: false,
             message: 'Error retrieving books',
@@ -179,6 +207,11 @@ const deleteBook = async (req, res) => {
             error: error.message
         });
     }
+};
+
+// Thêm hàm kiểm tra chuỗi rỗng hoặc chỉ chứa khoảng trắng
+const isEmptyOrWhitespace = (str) => {
+    return !str || str.trim().length === 0;
 };
 
 export {

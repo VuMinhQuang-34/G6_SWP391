@@ -274,7 +274,7 @@ export const login = async (req, res) => {
         message: "Unexpected error: No user data found.",
       });
     }    // Add status check before further authentication
-    if (user.Status === 0 || user.Status === "0") {
+    if (user.Status === "Inactive") {
       logger.warn(`Login failed - Unverified email: ${req.body.email}`);
       return res.status(401).json({
         code: 402,
@@ -282,7 +282,7 @@ export const login = async (req, res) => {
       });
     }
 
-    if (user.Status === 2 || user.Status === "2") {
+    if (user.Status === "Inactive") {
       logger.warn(`Login failed - Disabled account: ${req.body.email}`);
       return res.status(401).json({
         code: 403,
@@ -305,13 +305,14 @@ export const login = async (req, res) => {
     );
 
     if (isPasswordValid) {
-      const accessToken = await jwtHelpers.signAccessToken(user.userId);
-      const refreshToken = await jwtHelpers.signRefreshToken(user.userId);
+      // Đảm bảo sử dụng đúng tên trường ID
+      const accessToken = await jwtHelpers.signAccessToken(user.ID);
+      const refreshToken = await jwtHelpers.signRefreshToken(user.ID);
 
-      // Fetch user profile
-      // const profile = await authRepository.getUserProfile(user.userId);
+      // Log để debug
+      console.log('User data:', user);
+      console.log('Generated tokens:', { accessToken, refreshToken });
 
-      logger.info(`User logged in successfully: ${req.body.email}`);
       return res.status(200).json({
         code: 200,
         message: "Login successfully!",
@@ -320,9 +321,9 @@ export const login = async (req, res) => {
           refreshToken,
         },
         data: {
-          // role: profile?.role || "student",
-          // profile,
-          user
+          user: {
+            ...user
+          }
         },
       });
     } else {
