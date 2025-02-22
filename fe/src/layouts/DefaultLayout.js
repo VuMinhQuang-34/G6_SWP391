@@ -39,8 +39,9 @@ const DefaultLayout = () => {
                     style={{ background: "#001529", color: "#fff" }}
                 >
                     <Menu theme="dark" mode="inline" defaultSelectedKeys={["1"]}>
+                    
                         <Menu.Item key="1" icon={<HomeOutlined />}>
-                            <Link to="/">Dashboard</Link>
+                            <Link to="/dashboard">Dashboard</Link>
                         </Menu.Item>
                         <Menu.Item key="2" icon={<UserOutlined />}>
                             <Link to="/admin/users">Nhân viên</Link>
@@ -50,6 +51,12 @@ const DefaultLayout = () => {
                         </Menu.Item>
                         <Menu.Item key="4" icon={<SettingOutlined />}>
                             <Link to="admin/books">Sách</Link>
+                        </Menu.Item>
+                        <Menu.Item key="5" icon={<SettingOutlined />}>
+                            <Link to="orders-import">Import Order</Link>
+                        </Menu.Item>
+                        <Menu.Item key="6" icon={<SettingOutlined />}>
+                            <Link to="orders-export">Sách</Link>
                         </Menu.Item>
                         {/* <Menu.Item key="3" icon={<SettingOutlined />}>  
                             <Link to="/books">Kho sách</Link>
@@ -77,8 +84,9 @@ const DefaultLayout = () => {
 
                 {/* Content Area */}
                 <Layout>
-                    <Content style={{ padding: "50px", background: "#ecf0f1" }}>
+                    <Content style={{ padding: "15px", background: "#ecf0f1" }}>
                         <div
+                            id="content"
                             style={{
                                 minHeight: 380,
                                 background: "#fff",
@@ -91,7 +99,7 @@ const DefaultLayout = () => {
                     </Content>
 
                     {/* Footer */}
-                    <AppFooter />
+                    {/* <AppFooter /> */}
                 </Layout>
             </Layout>
         </Layout>

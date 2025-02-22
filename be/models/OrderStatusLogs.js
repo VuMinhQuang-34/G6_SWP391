@@ -8,7 +8,7 @@ export default (sequelize, DataTypes) => {
     OrderId: DataTypes.INTEGER,
     OrderType: DataTypes.STRING,
     Status: DataTypes.STRING,
-    ChangeBy: DataTypes.INTEGER,
+    CreatedBy: DataTypes.INTEGER,
     Created_Date: DataTypes.DATE,
     Note: DataTypes.STRING
   }, {
@@ -18,7 +18,8 @@ export default (sequelize, DataTypes) => {
 
   OrderStatusLogs.associate = function (models) {
     OrderStatusLogs.belongsTo(models.User, {
-      foreignKey: 'ChangeBy'
+      foreignKey: 'CreatedBy',
+      constraints: false
     });
   };
 

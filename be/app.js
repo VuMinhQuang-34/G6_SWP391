@@ -19,6 +19,8 @@ import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
 import bookRoutes from './routes/bookRoutes.js';
+import importOrderRoutes from './routes/importOrderRoutes.js';
+import orderStatusLogRoutes from './routes/orderStatusLogRoutes.js';
 
 const { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME } = process.env;
 
@@ -36,6 +38,11 @@ const app = express();
 // Middleware
 app.use(helmet());
 app.use(cors());
+// app.use(cors({
+//   origin: 'http://localhost:3000', // Chỉ định nguồn cho phép
+//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], // Các phương thức cho phép
+//   credentials: true // Nếu bạn cần gửi cookie
+// }));
 app.use(morgan("combined", {
   stream: {
     write: (message) => logger.info(message.trim()),
@@ -52,6 +59,9 @@ app.use("/api", authRoutes);
 app.use("/api", userRoutes);
 app.use("/api", categoryRoutes);
 app.use('/api', bookRoutes);
+app.use('/api', importOrderRoutes);
+app.use('/api', orderStatusLogRoutes);
+
 // Error handling
 app.use(notFoundHandler);
 app.use(expressWinston.errorLogger({ winstonInstance: logger }));

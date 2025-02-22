@@ -21,14 +21,17 @@ export default (sequelize, DataTypes) => {
   ExportOrders.associate = function (models) {
     ExportOrders.belongsTo(models.User, {
       foreignKey: 'CreatedBy',
-      as: 'Creator'
+      as: 'Creator',
+      constraints: false
     });
     ExportOrders.belongsTo(models.User, {
       foreignKey: 'ApprovedBy',
-      as: 'Approver'
+      as: 'Approver',
+      constraints: false
     });
     ExportOrders.hasMany(models.ExportOrderDetails, {
-      foreignKey: 'ExportOrderId'
+      foreignKey: 'ExportOrderId',
+      constraints: false
     });
   };
 

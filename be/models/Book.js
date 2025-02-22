@@ -23,14 +23,15 @@ export default (sequelize, DataTypes) => {
 
   Book.associate = function (models) {
     Book.belongsTo(models.Category, {
-      foreignKey: 'CategoryId'
+      foreignKey: 'CategoryId',
+      constraints: false
     });
 
 
-    Book.hasMany(models.ImportOrderDetails, { foreignKey: 'BookId' });
-    Book.hasMany(models.ExportOrderDetails, { foreignKey: 'BookId' });
-    Book.hasMany(models.Stock, { foreignKey: 'BookId' });
-    Book.hasMany(models.Fault, { foreignKey: 'BookId' });
+    Book.hasMany(models.ImportOrderDetails, { foreignKey: 'BookId', constraints: false });
+    Book.hasMany(models.ExportOrderDetails, { foreignKey: 'BookId', constraints: false });
+    Book.hasMany(models.Stock, { foreignKey: 'BookId', constraints: false });
+    Book.hasMany(models.Fault, { foreignKey: 'BookId', constraints: false });
   };
 
   return Book;

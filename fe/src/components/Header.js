@@ -1,8 +1,9 @@
 import React, { useContext } from "react";
-import { Layout, Menu, Button, Space, Dropdown, Avatar } from "antd";
+import { Layout, Menu, Button, Space, Dropdown, Avatar, Input } from "antd";
 import { Link, useNavigate } from "react-router-dom";
-import { UserOutlined, LockOutlined, LogoutOutlined } from "@ant-design/icons";
+import { UserOutlined, LockOutlined, LogoutOutlined, BellOutlined } from "@ant-design/icons";
 import { AuthContext } from "../context/AuthContext";
+//import vietnamFlag from '../assets/vietnam-flag.png'; // Đường dẫn đến hình ảnh lá cờ Việt Nam
 
 const { Header } = Layout;
 
@@ -49,27 +50,45 @@ const AppHeader = () => {
       {/* Logo */}
       <div style={{ fontSize: "36px", fontWeight: "bold", color: "#6c63ff" }}>
         <Link to="/" style={{ color: "#6c63ff", display: "flex", alignItems: "center" }}>
-          Quản lý kho sách
+          Quản lý sản xuất
         </Link>
       </div>
 
-      {/* Nếu chưa đăng nhập: Hiển thị Login */}
-      {!isAuthenticated ? (
-        <Space size="large">
-          <Button type="link" style={{ color: "#6c63ff", fontSize: "20px" }}>
-            <Link to="/login">Đăng nhập</Link>
-          </Button>
-        </Space>
-      ) : (
-        // Nếu đã đăng nhập: Hiển thị Avatar + Menu Dropdown
-        <Dropdown overlay={userMenu} placement="bottomRight" arrow>
-          <Avatar
-            size="large"
-            icon={<UserOutlined />}
-            style={{ backgroundColor: "#6c63ff", cursor: "pointer" }}
+      <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+        {/* Tìm kiếm và các biểu tượng */}
+        <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+          <Input.Search
+            placeholder="Tìm kiếm..."
+            style={{ width: 200 }}
+            onSearch={(value) => console.log(value)}
           />
-        </Dropdown>
-      )}
+          <Button icon={<BellOutlined />} />
+          <Button>
+            <img src="https://e7.pngegg.com/pngimages/739/884/png-clipart-flag-of-vietnam-north-vietnam-south-vietnam-vietnam-war-flag-miscellaneous-angle-thumbnail.png" alt="Vietnam Flag" style={{ width: '20px', height: '20px' }} />
+          </Button>
+        </div>
+
+        {/* Nếu chưa đăng nhập: Hiển thị Login */}
+        {!isAuthenticated ? (
+          <Space size="large">
+            <Button type="link" style={{ color: "#6c63ff", fontSize: "20px" }}>
+              <Link to="/login">Đăng nhập</Link>
+            </Button>
+          </Space>
+        ) : (
+          // Nếu đã đăng nhập: Hiển thị Avatar + Menu Dropdown
+          <Dropdown overlay={userMenu} placement="bottomRight" arrow>
+            <Avatar
+              size="large"
+              icon={<UserOutlined />}
+              style={{ backgroundColor: "#6c63ff", cursor: "pointer" }}
+            />
+          </Dropdown>
+        )}
+      </div>
+
+
+
     </Header>
   );
 };

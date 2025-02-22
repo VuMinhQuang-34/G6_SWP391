@@ -18,8 +18,8 @@ export default (sequelize, DataTypes) => {
   });
 
   Fault.associate = function (models) {
-    Fault.belongsTo(models.Book, { foreignKey: 'BookId' });
-    Fault.belongsTo(models.User, { foreignKey: 'CreatedBy' });
+    Fault.belongsTo(models.Book, { foreignKey: 'BookId', constraints: false });
+    Fault.belongsTo(models.User, { foreignKey: 'CreatedBy', constraints: false });
   };
 
   return Fault;

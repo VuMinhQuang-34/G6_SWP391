@@ -6,7 +6,7 @@ export default (sequelize, DataTypes) => {
       autoIncrement: true
     },
     CreatedBy: DataTypes.INTEGER,
-    SupplierID: DataTypes.INTEGER,
+    SupplierID: DataTypes.STRING,
     Created_Date: DataTypes.DATE,
     ImportDate: DataTypes.DATE,
     Status: DataTypes.STRING,
@@ -17,8 +17,8 @@ export default (sequelize, DataTypes) => {
   });
 
   ImportOrders.associate = function (models) {
-    ImportOrders.belongsTo(models.User, { foreignKey: 'CreatedBy' });
-    ImportOrders.hasMany(models.ImportOrderDetails, { foreignKey: 'ImportOrderId' });
+    ImportOrders.belongsTo(models.User, { foreignKey: 'CreatedBy', constraints: false });
+    ImportOrders.hasMany(models.ImportOrderDetails, { foreignKey: 'ImportOrderId', constraints: false });
   };
 
   return ImportOrders;

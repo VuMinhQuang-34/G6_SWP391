@@ -7,6 +7,7 @@ import { AuthContext } from "../../context/AuthContext"; // Import AuthContext
 import { toast } from "react-toastify";
 
 const LoginPage = () => {
+    
     const { login, user } = useContext(AuthContext); // Lấy hàm login từ AuthContext
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [form] = Form.useForm();

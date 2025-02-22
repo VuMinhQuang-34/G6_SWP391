@@ -1,0 +1,21 @@
+/* fe/src/pages/home/Home.css */
+.fullscreen-image {
+    position: absolute; /* Đặt vị trí tuyệt đối */
+    top: 0; /* Bắt đầu từ trên cùng */
+    left: 0; /* Bắt đầu từ bên trái */
+    right: 0; /* Đến bên phải */
+    bottom: 0; /* Đến dưới cùng */
+    z-index: 100; /* Đặt dưới các phần tử khác */
+    object-fit: cover; /* Đảm bảo ảnh phủ toàn bộ không gian */
+}
+
+.home-container {
+    position: relative; /* Để ảnh có thể được đặt tuyệt đối */
+    height: calc(100vh - 64px); /* Giả sử header có chiều cao 64px, điều chỉnh nếu cần */
+    width: 100%; /* Đảm bảo chiều rộng 100% */
+    overflow: hidden; /* Ẩn phần thừa nếu có */
+}
+
+#content {
+    padding: 0 !important;
+}

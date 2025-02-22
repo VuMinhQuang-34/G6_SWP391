@@ -15,9 +15,9 @@ export default (sequelize, DataTypes) => {
   });
 
   ImportOrderDetails.associate = function (models) {
-    ImportOrderDetails.belongsTo(models.ImportOrders, { foreignKey: 'ImportOrderId' });
-    ImportOrderDetails.belongsTo(models.Book, { foreignKey: 'BookId' });
+    ImportOrderDetails.belongsTo(models.ImportOrders, { foreignKey: 'ImportOrderId', constraints: false });
+    ImportOrderDetails.belongsTo(models.Book, { foreignKey: 'BookId', constraints: false });
   };
 
-  return ImportOrderDetails;
+    return ImportOrderDetails;
 };

@@ -18,7 +18,7 @@ export default (sequelize, DataTypes) => {
   });
 
   Stock.associate = function (models) {
-    Stock.belongsTo(models.Book, { foreignKey: 'BookId' });
+    Stock.belongsTo(models.Book, { foreignKey: 'BookId', constraints: false });
   };
 
   return Stock;
