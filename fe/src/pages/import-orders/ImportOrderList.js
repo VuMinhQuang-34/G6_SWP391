@@ -250,12 +250,12 @@ const ImportOrderList = () => {
     return (
         <div style={{ padding: "20px" }}>
             <h2 style={{ 
-                textAlign: "center", 
+                textAlign: "start", 
                 fontSize: "24px", 
                 color: "#1890ff", // Màu sắc tiêu đề
                 fontWeight: "bold", // Đậm
                 textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)", // Bóng đổ nhẹ
-                marginBottom: "20px" // Khoảng cách dưới tiêu đề
+                marginBottom: "90px" // Khoảng cách dưới tiêu đề
             }}>
                 Quản lý yêu cầu nhập hàng
             </h2>
