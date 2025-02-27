@@ -6,6 +6,8 @@ export default (sequelize, DataTypes) => {
       primaryKey: true,
       autoIncrement: true
     },
+    OrderId: DataTypes.INTEGER,
+    OrderType: DataTypes.STRING,
     BookId: DataTypes.INTEGER,
     FaultDate: DataTypes.DATE,
     Quantity: DataTypes.INTEGER,

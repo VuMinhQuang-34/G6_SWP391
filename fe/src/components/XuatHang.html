@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản lý xuất hàng</title>
+  <style>
+    :root {
+      --primary: #00BFA6;
+      --primary-light: rgba(0, 191, 166, 0.1);
+      --primary-dark: #00a892;
+      --light-gray: #f5f5f5;
+      --border-color: #e0e0e0;
+      --text-dark: #333;
+      --error: #ff4444;
+      --success: #4caf50;
+      --warning: #ff9800;
+    }
+    
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f9f9f9;
+      color: var(--text-dark);
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .header {
+      background-color: white;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      padding: 15px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 3px solid var(--primary);
+    }
+    
+    .header-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--primary);
+      margin: 0;
+    }
+    
+    .header-actions {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .layout {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 20px;
+      margin-top: 20px;
+    }
+    
+    @media (max-width: 992px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .card {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    
+    .card-header {
+      padding: 15px 20px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: var(--primary-light);
+    }
+    
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0;
+      color: var(--primary-dark);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .card-title i {
+      font-size: 18px;
+    }
+    
+    .card-body {
+      padding: 20px;
+    }
+    
+    .form-row {
+      display: flex;
+      flex-wrap: wrap;
+      margin: 0 -10px;
+    }
+    
+    .form-group {
+      flex: 1 0 200px;
+      padding: 0 10px;
+      margin-bottom: 15px;
+      position: relative;
+    }
+    
+    .form-label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+      font-size: 14px;
+    }
+    
+    .required::after {
+      content: "*";
+      color: var(--error);
+      margin-left: 3px;
+    }
+    
+    .form-control {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    
+    .form-control:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(0, 191, 166, 0.2);
+    }
+    
+    .form-control:disabled, .form-control[readonly] {
+      background-color: var(--light-gray);
+      cursor: not-allowed;
+    }
+    
+    .input-with-icon {
+      position: relative;
+    }
+    
+    .input-icon {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #888;
+    }
+    
+    .form-info {
+      font-size: 12px;
+      color: #777;
+      margin-top: 5px;
+    }
+    
+    .btn {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 10px 20px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+    
+    .btn:hover {
+      background-color: var(--primary-dark);
+    }
+    
+    .btn-outline {
+      background-color: transparent;
+      color: var(--primary);
+      border: 1px solid var(--primary);
+    }
+    
+    .btn-outline:hover {
+      background-color: var(--primary-light);
+    }
+    
+    .btn-icon {
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+    }
+    
+    .table-responsive {
+      overflow-x: auto;
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    th, td {
+      padding: 12px 15px;
+      text-align: left;
+      font-size: 14px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    th {
+      background-color: var(--light-gray);
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+    }
+    
+    tbody tr:hover {
+      background-color: rgba(0, 191, 166, 0.05);
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 30px;
+      color: #888;
+      background-color: var(--light-gray);
+      border-radius: 4px;
+    }
+    
+    .empty-state i {
+      font-size: 24px;
+      margin-bottom: 10px;
+      display: block;
+    }
+    
+    .badge {
+      display: inline-block;
+      background-color: var(--primary-light);
+      color: var(--primary-dark);
+      border-radius: 16px;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    .calculation-box {
+      background-color: var(--light-gray);
+      border-radius: 4px;
+      padding: 15px;
+      margin-top: 15px;
+    }
+    
+    .calculation-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+    
+    .calculation-row:last-child {
+      margin-bottom: 0;
+      padding-top: 10px;
+      border-top: 1px dashed var(--border-color);
+      font-weight: 600;
+    }
+    
+    .step-indicator {
+      display: flex;
+      margin-bottom: 20px;
+    }
+    
+    .step {
+      flex: 1;
+      text-align: center;
+      padding: 15px;
+      position: relative;
+    }
+    
+    .step:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      right: 0;
+      width: 100%;
+      height: 2px;
+      background-color: var(--border-color);
+      transform: translateY(-50%);
+      z-index: 1;
+    }
+    
+    .step-number {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background-color: var(--light-gray);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 10px;
+      position: relative;
+      z-index: 2;
+      border: 2px solid var(--border-color);
+    }
+    
+    .step.active .step-number {
+      background-color: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    
+    .step-label {
+      font-size: 12px;
+      font-weight: 500;
+    }
+    
+    .step.active .step-label {
+      color: var(--primary);
+      font-weight: 600;
+    }
+    
+    .distribution-visual {
+      margin: 20px 0;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 15px;
+      background-color: var(--light-gray);
+    }
+    
+    .distribution-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    
+    .boxes-container {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    
+    .box {
+      width: 60px;
+      height: 60px;
+      background-color: white;
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    .box-label {
+      position: absolute;
+      bottom: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 10px;
+      white-space: nowrap;
+    }
+    
+    .box.full {
+      background-color: var(--primary-light);
+      border-color: var(--primary);
+    }
+    
+    .box.partial {
+      background: linear-gradient(135deg, var(--primary-light) 50%, white 50%);
+      border-color: var(--primary);
+    }
+    
+    .footer {
+      display: flex;
+      justify-content: flex-end;
+      padding: 20px 0;
+      gap: 10px;
+    }
+    
+    .summary-container {
+      position: sticky;
+      top: 80px;
+    }
+    
+    /* Tooltip */
+    .tooltip {
+      position: relative;
+      display: inline-block;
+      cursor: help;
+    }
+    
+    .tooltip .tooltip-text {
+      visibility: hidden;
+      width: 200px;
+      background-color: #333;
+      color: white;
+      text-align: center;
+      border-radius: 4px;
+      padding: 5px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: opacity 0.3s;
+      font-size: 12px;
+    }
+    
+    .tooltip:hover .tooltip-text {
+      visibility: visible;
+      opacity: 1;
+    }
+    
+    /* Auto-suggest */
+    .suggestions {
+      position: absolute;
+      width: 100%;
+      background: white;
+      border: 1px solid var(--border-color);
+      border-top: none;
+      border-radius: 0 0 4px 4px;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 10;
+    }
+    
+    .suggestion-item {
+      padding: 10px;
+      cursor: pointer;
+    }
+    
+    .suggestion-item:hover {
+      background-color: var(--primary-light);
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1 class="header-title">Quản lý xuất hàng</h1>
+    <div class="header-actions">
+      <span class="badge">Phiếu mới</span>
+    </div>
+  </div>
+  
+  <div class="container">
+    <div class="step-indicator">
+      <div class="step active">
+        <div class="step-number">1</div>
+        <div class="step-label">Thông tin chung</div>
+      </div>
+      <div class="step">
+        <div class="step-number">2</div>
+        <div class="step-label">Chi tiết đơn hàng</div>
+      </div>
+      <div class="step">
+        <div class="step-number">3</div>
+        <div class="step-label">Pallet & Đóng gói</div>
+      </div>
+      <div class="step">
+        <div class="step-number">4</div>
+        <div class="step-label">Xác nhận</div>
+      </div>
+    </div>
+    
+    <div class="layout">
+      <div class="main-content">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <i>📋</i>Thông tin yêu cầu xuất hàng
+            </h2>
+          </div>
+          <div class="card-body">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label required">Mã yêu cầu xuất hàng</label>
+                <div class="input-with-icon">
+                  <input type="text" class="form-control" placeholder="VD: XH-202502-001" required>
+                  <span class="input-icon">🔍</span>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label required">Nhóm địa chỉ</label>
+                <select class="form-control" required>
+                  <option value="">-- Chọn nhóm địa chỉ --</option>
+                  <option value="hcm">Hồ Chí Minh</option>
+                  <option value="hn">Hà Nội</option>
+                  <option value="dn">Đà Nẵng</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label required">Địa chỉ giao hàng</label>
+                <input type="text" class="form-control" placeholder="Nhập địa chỉ giao hàng" required>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label required">Ngày giao hàng</label>
+                <input type="date" class="form-control" required>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <i>📦</i>Chi tiết đơn hàng
+            </h2>
+            <button class="btn btn-icon">+</button>
+          </div>
+          <div class="card-body">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label required">Mã đơn hàng</label>
+                <div class="input-with-icon">
+                  <input type="text" class="form-control" placeholder="Nhập mã đơn hàng" required>
+                  <span class="input-icon">🔍</span>
+                </div>
+                <div class="form-info">Nhập mã đơn hàng để tự động lấy thông tin</div>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">Mã sản phẩm</label>
+                <input type="text" class="form-control" placeholder="Tự động điền" readonly>
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Sheet còn lại</label>
+                <input type="text" class="form-control" placeholder="Tự động điền" readonly>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label required">Số sheet cần giao</label>
+                <input type="number" class="form-control" placeholder="Nhập số lượng" required>
+                <div class="form-info">Hệ thống sẽ tự động phân bổ vào các thùng</div>
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label required">Đơn giá (Pcs)</label>
+                <div class="input-with-icon">
+                  <input type="number" class="form-control" placeholder="Nhập đơn giá" required>
+                  <span class="input-icon">₫</span>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">Ghi chú</label>
+                <textarea class="form-control" rows="1" placeholder="Thông tin thêm về đơn hàng"></textarea>
+              </div>
+            </div>
+            
+            <div class="distribution-visual">
+              <div class="distribution-title">Phân bổ sheet vào thùng</div>
+              <div class="boxes-container">
+                <div class="box full">10
+                  <span class="box-label">Thùng chẵn 1</span>
+                </div>
+                <div class="box full">10
+                  <span class="box-label">Thùng chẵn 2</span>
+                </div>
+                <div class="box full">10
+                  <span class="box-label">Thùng chẵn 3</span>
+                </div>
+                <div class="box partial">5
+                  <span class="box-label">Thùng lẻ</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">SL thùng chẵn (FCL)</label>
+                <input type="number" class="form-control" placeholder="Tự động điền" readonly value="3">
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">Số sheet/thùng chẵn</label>
+                <input type="number" class="form-control" placeholder="Tự động điền" readonly value="10">
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">SL thùng lẻ (LCL)</label>
+                <input type="number" class="form-control" placeholder="Tự động điền" readonly value="1">
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">Số sheet/thùng lẻ</label>
+                <input type="number" class="form-control" placeholder="Tự động điền" readonly value="5">
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <i>📋</i>Danh sách đơn hàng
+            </h2>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>STT</th>
+                    <th>Mã đơn hàng</th>
+                    <th>Mã sản phẩm</th>
+                    <th>Sheet giao</th>
+                    <th>Đơn giá</th>
+                    <th>SL thùng</th>
+                    <th>Thành tiền</th>
+                    <th>Tác vụ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>1</td>
+                    <td>DH-001</td>
+                    <td>SP-A102</td>
+                    <td>35</td>
+                    <td>250,000 ₫</td>
+                    <td>4</td>
+                    <td>8,750,000 ₫</td>
+                    <td>
+                      <button class="btn btn-icon btn-outline">✏️</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <i>📦</i>Thông tin pallet
+            </h2>
+            <div class="tooltip">
+              <button class="btn btn-icon">+</button>
+              <span class="tooltip-text">Số lượng pallet không thể vượt quá số thùng</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Loại pallet</label>
+                <select class="form-control">
+                  <option value="">-- Chọn loại pallet --</option>
+                  <option value="p1">Pallet gỗ tiêu chuẩn</option>
+                  <option value="p2">Pallet nhựa</option>
+                  <option value="p3">Pallet kim loại</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">SL pallet</label>
+                <input type="number" class="form-control" placeholder="Nhập số lượng (tối đa: 4)">
+                <div class="form-info">Tối đa: 4 pallet (theo số thùng)</div>
+              </div>
+            </div>
+            
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>STT</th>
+                    <th>Mã pallet</th>
+                    <th>Tên pallet</th>
+                    <th>Kích thước</th>
+                    <th>Khối lượng</th>
+                    <th>SL pallet</th>
+                    <th>Tác vụ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="empty-state">
+                    <td colspan="7">
+                      <i>↻</i>
+                      <div>Chưa có dữ liệu pallet</div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="summary-container">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <i>📊</i>Tổng kết
+            </h2>
+          </div>
+          <div class="card-body">
+            <div class="calculation-box">
+              <div class="calculation-row">
+                <span>Tổng số sheet:</span>
+                <span>35 sheet</span>
+              </div>
+              <div class="calculation-row">
+                <span>Tổng số thùng:</span>
+                <span>4 thùng</span>
+              </div>
+              <div class="calculation-row">
+                <span>Khối lượng tịnh (NW):</span>
+                <span>250 Kg</span>
+              </div>
+              <div class="calculation-row">
+                <span>Khối lượng tổng (GW):</span>
+                <span>275 Kg</span>
+              </div>
+              <div class="calculation-row">
+                <span>Tổng giá trị:</span>
+                <span>8,750,000 ₫</span>
+              </div>
+            </div>
+            
+            <div style="margin-top: 20px;">
+              <label class="form-label">Chi phí khác</label>
+              <div class="input-with-icon">
+                <input type="number" class="form-control" placeholder="Nhập chi phí phát sinh">
+                <span class="input-icon">₫</span>
+              </div>
+            </div>
+            
+            <div style="margin-top: 10px;">
+              <label class="form-label">Ghi chú chung</label>
+              <textarea class="form-control" rows="2" placeholder="Ghi chú thêm về lô hàng"></textarea>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <i>📝</i>Trạng thái phiếu
+            </h2>
+          </div>
+          <div class="card-body">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+              <span class="badge">Mới tạo</span>
+              <span style="font-size: 14px;">25/02/2025 14:30</span>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+              <label class="form-label">Người phụ trách</label>
+              <select class="form-control">
+                <option value="">-- Chọn người phụ trách --</option>
+                <option value="user1">Nguyễn Văn A</option>
+                <option value="user2">Trần Thị B</option>
+              </select>
+            </div>
+            
+            <div style="margin-top: 20px;">
+              <button class="btn" style="width: 100%;">Lưu phiếu</button>
+              <button class="btn btn-outline" style="width: 100%; margin-top: 10px;">Kiểm tra & gửi duyệt</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

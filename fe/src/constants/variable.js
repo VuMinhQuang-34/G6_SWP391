@@ -2,12 +2,13 @@ export const orderStatuses = [
     { key: 'New', label: 'Mới', step: 1 },
     { key: 'Approve', label: 'Đã phê duyệt', step: 2 },
     { key: 'Receive', label: 'Đã nhận hàng', step: 3 },
-    { key: 'Approve Import', label: 'Đã phê duyệt nhập', step: 4 },
-    { key: 'Close', label: 'Đã đóng', step: 5 },
+    { key: 'ApproveImport', label: 'Đã phê duyệt nhập', step: 4 },
+    // { key: 'Close', label: 'Đã đóng', step: 5 },
 ];
 
 
-const suppliersList = [
+
+export const suppliersList = [
     "Trí Tuệ - Công Ty Cổ Phần Sách & Thiết Bị Giáo Dục Trí Tuệ",
     "Công Ty Cổ Phần Sách Mcbooks",
     "Công Ty Cổ Phần Sách Giáo Dục Tại Thành Phố Hà Nội",

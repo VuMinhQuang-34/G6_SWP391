@@ -1,7 +1,6 @@
 // fe/src/pages/import-orders/ImportOrderList.js
 import React, { useContext, useEffect, useState } from "react";
 import { Link } from 'react-router-dom';
-import { toast } from "react-toastify";
 import {
     Table,
     Button,
@@ -17,17 +16,19 @@ import {
     DatePicker
 } from "antd";
 import axios from "axios";
-import { orderStatuses, suppliersList } from "../../constants/variable";
 import { AuthContext } from "../../context/AuthContext";
+import { orderStatuses, suppliersList } from "../../constants/variable";
+
 import AddImportOrderModal from "./AddImportOrderModal";
-import EditImportOrderModal from "./EditImportOrderModal";
+import CheckImportOrderModal from "./CheckImportOrderModal";
 import HorizontalTimeline from "../../components/HorizontalTimeline";
-
 import moment from "moment";
+import { toast } from "react-toastify";
 
+// import ImportOrderForm from './ImportOrderForm';
 const { Option } = Select;
 
-const ImportOrderList = () => {
+const ImportOrderListCheck = () => {
     const { user } = useContext(AuthContext); // Lấy user từ AuthContext
     console.log(user);
 
@@ -42,6 +43,9 @@ const ImportOrderList = () => {
     const [books, setBooks] = useState([]);
     const [orderDetails, setOrderDetails] = useState([]);
     const [suppliers, setSuppliers] = useState([]);
+
+    //danh sách book theo 1 đơn order
+    const [importBooks, setImportBooks] = useState([]);
 
     // State cho tìm kiếm
     const [searchId, setSearchId] = useState('');
@@ -62,7 +66,13 @@ const ImportOrderList = () => {
     const fetchOrders = async () => {
         setLoading(true);
         try {
-            const response = await axios.get("http://localhost:9999/api/import-orders");
+            const params = {
+                Status: ["Approve"], // Thêm tiêu chí Status
+                ...(searchId && { ImportOrderId: searchId }), // Thêm tiêu chí ID nếu có
+                ...(searchSupplier && { SupplierID: searchSupplier }), // Thêm tiêu chí nhà cung cấp nếu có
+                ...(searchDate && { ImportDate: searchDate }), // Thêm tiêu chí ngày nhập nếu có
+            };
+            const response = await axios.get("http://localhost:9999/api/import-orders", { params });
             setOrders(response.data.orders); // Đảm bảo sử dụng biến response ở đây
         } catch (error) {
             message.error("Lỗi khi tải danh sách đơn nhập!");
@@ -91,44 +101,40 @@ const ImportOrderList = () => {
         try {
             const response = await axios.get(`http://localhost:9999/api/import-orders/${orderId}`);
             setSelectedOrder(response.data); // Set selected order from API response
+            
+            const bookList = await axios.get(`http://localhost:9999/api/import-orders/${orderId}/books`);
+            setImportBooks(bookList.data);
+
             setIsEditModalOpen(true); // Open edit modal
         } catch (error) {
             message.error("Lỗi khi tải thông tin đơn nhập!");
         }
     };
 
-    // Hàm mở modal xác nhận xóa
-    const showDeleteOrderModal = (order) => {
-        setSelectedOrder(order);
-        setIsDeleteModalOpen(true);
-    };
+   
 
-    // Hàm xử lý thêm đơn nhập
-    const handleAddOrder = async (values) => {
-        try {
-            const newOrder = { ...values, Status: "New" };
-            await axios.post("http://localhost:9999/api/import-orders", newOrder);
-            message.success("Tạo đơn nhập thành công!");
-            fetchOrders();
-            setIsAddModalOpen(false);
-        } catch (error) {
-            message.error("Lỗi khi tạo đơn nhập!");
-        }
-    };
 
-    // Hàm xử lý chỉnh sửa đơn nhập
-    const handleEditOrder = async (updatedOrder, orderId) => {
+    // Hàm xử lý kiểm tra hàng
+    const handleCheckOrder = async (body, orderId) => {
         try {
-            await axios.put(`http://localhost:9999/api/import-orders/${orderId}`, updatedOrder);
-            message.success("Chỉnh sửa đơn nhập thành công!");
+            console.log("body",body);
+            console.log("body",orderId);
+            
+            const payload = {
+                Status: body.Status,
+                LogStatus: body.Status,
+                CreatedBy: user.userId,
+                FaultBooks: body.FaultBooks,
+                LogNote: body.LogNote
+            }
+            await axios.post(`http://localhost:9999/api/import-orders/${orderId}/check`, payload);
+            message.success("Gửi yêu cầu phê duyệt thành công!");
             fetchOrders(); // Refresh orders
             setIsEditModalOpen(false); // Close modal
-            toast.success(`Cập nhật thành công`, { autoClose: 2000 });
+
+            toast.success(`Gửi yêu cầu phê duyệt thành công!`, { autoClose: 2000 });
         } catch (error) {
-            toast.error(error?.response?.data?.message);
-            
-        } finally {
-            setIsEditModalOpen(false); // Close modal
+            message.error("Lỗi khi chỉnh sửa đơn nhập!");
         }
     };
 
@@ -140,7 +146,7 @@ const ImportOrderList = () => {
             fetchOrders();
             setIsDeleteModalOpen(false);
         } catch (error) {
-            toast.error(error?.response?.data?.message);
+            message.error("Lỗi khi xóa đơn nhập!");
         }
     };
 
@@ -220,8 +226,7 @@ const ImportOrderList = () => {
             render: (_, record) => (
                 <Space size="middle">
                     <Link to={`/orders-import/${record.ImportOrderId}`}>Xem</Link>
-                    <Button onClick={() => showEditOrderModal(record.ImportOrderId)}>Chỉnh Sửa</Button>
-                    <Button onClick={() => showDeleteOrderModal(record)} danger>Xóa</Button>
+                    <Button onClick={() => showEditOrderModal(record.ImportOrderId)}>Kiểm tra hàng</Button>
                 </Space>
             ),
         },
@@ -240,7 +245,7 @@ const ImportOrderList = () => {
                 textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)", // Bóng đổ nhẹ
                 marginBottom: "90px" // Khoảng cách dưới tiêu đề
             }}>
-                Yêu cầu nhập hàng
+                Kiểm tra hàng
             </h2>
             <Space style={{ marginBottom: 20 }}>
                 <Input 
@@ -275,7 +280,7 @@ const ImportOrderList = () => {
                 />
                 <Button type="primary" onClick={handleSearch}>Tìm Kiếm</Button>
                 <Button type="default" onClick={handleClearSearch}>Clear</Button>
-                <Button type="primary" onClick={showAddOrderModal}>Thêm đơn nhập</Button>
+                {/* <Button type="primary" onClick={showAddOrderModal}>Thêm đơn nhập</Button> */}
             </Space>
 
             <Table
@@ -295,22 +300,15 @@ const ImportOrderList = () => {
                 columns={columns}
             />
 
-            {/* Modal Thêm Đơn Nhập */}
-            <AddImportOrderModal
-                visible={isAddModalOpen}
-                onCancel={() => setIsAddModalOpen(false)}
-                onAdd={handleAddOrder}
-                suppliers={suppliersList}
-                books={books}
-            />
+        
 
             {/* Modal Chỉnh Sửa Đơn Nhập */}
-            <EditImportOrderModal
+            <CheckImportOrderModal
                 visible={isEditModalOpen}
                 onCancel={() => setIsEditModalOpen(false)}
-                onEdit={handleEditOrder}
+                onEdit={handleCheckOrder}
                 suppliers={suppliersList}
-                books={books}
+                books={importBooks}
                 order={selectedOrder}
             />
 
@@ -387,4 +385,4 @@ const ImportOrderList = () => {
     );
 };
 
-export default ImportOrderList;
+export default ImportOrderListCheck;

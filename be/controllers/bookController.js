@@ -3,6 +3,7 @@ import { Op } from 'sequelize';
 
 const Book = db.Book;
 const Category = db.Category;
+const Stock = db.Stock;
 
 // Create a new book
 const createBook = async (req, res) => {
@@ -35,16 +36,23 @@ const createBook = async (req, res) => {
         req.body.Title = Title.trim();
         req.body.Author = Author.trim();
         req.body.Publisher = Publisher.trim();
-
-        const currentDate = new Date();
-        const bookData = {
+       
+        const book = await Book.create({
             ...req.body,
-            Created_Date: currentDate,
-            Edit_Date: currentDate,
+            Created_Date: new Date(),
+            Edit_Date: new Date(),
             Status: req.body.Status || 'Active' // Mặc định là Active nếu không được cung cấp
-        };
+        });
 
-        const book = await Book.create(bookData);
+        const stock = await Stock.create({
+            BookId: book.BookId,
+            Quantity: 0,
+            MaxStockQuantity: 0,
+            MinStockQuantity: 0,
+            Note: '',
+            Status: ''
+        });
+
         return res.status(201).json({
             success: true,
             message: 'Book created successfully',

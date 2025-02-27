@@ -6,10 +6,14 @@ import "react-toastify/dist/ReactToastify.css"; // Import CSS
 import DefaultLayout from "./layouts/DefaultLayout";
 import UserDetail from "./pages/users/UserDetail";
 import UserList from "./pages/users/UserList";
+import StockList from "./pages/stock/StockList";
 import LoginPage from "./pages/login/LoginPage";
 import HomePage from "./pages/home/HomePage";
 import Dashboard from "./pages/dashboard/Dashboard";
 import ImportOrderList from "./pages/import-orders/ImportOrderList";
+import ImportOrderListApprove from "./pages/import-orders/ImportOrderListApprove";
+import ImportOrderListWMS from "./pages/import-orders/ImportOrderListWMS";
+import ImportOrderListCheck from "./pages/import-orders/ImportOrderListCheck";
 import ViewImportOrder from "./pages/import-orders/ViewImportOrder";
 import ChangePassword from "./pages/auth/ChangePassword"; // Thêm trang đổi mật khẩu
 import { AuthProvider, AuthContext } from "./context/AuthContext";
@@ -52,7 +56,14 @@ const App = () => {
 
             <Route path="orders-import" exact element={<ImportOrderList />} />
             <Route path="orders-import/:id" element={<ViewImportOrder />} />
+            {/* <Route path="orders-import" element={<ImportOrderList />} /> */}
+            <Route path="orders-import/approve/wms" element={<ImportOrderListWMS />} />
+            <Route path="orders-import/approve" element={<ImportOrderListApprove />} />
+            <Route path="orders-import/check" element={<ImportOrderListCheck />} />
             <Route path="orders-export" element={<ImportOrderList />} />
+
+            {/* stock */}
+            <Route path="stock" element={<StockList />} />
 
             {/* admin */}
             <Route path="dashboard" element={<Dashboard />} />

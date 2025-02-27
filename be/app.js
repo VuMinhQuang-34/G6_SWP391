@@ -17,6 +17,8 @@ import dotenv from 'dotenv';
 // import routes
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import testRoutes from "./routes/testRoutes.js";
+import stockRoutes from "./routes/stockRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
 import bookRoutes from './routes/bookRoutes.js';
 import importOrderRoutes from './routes/importOrderRoutes.js';
@@ -61,6 +63,8 @@ app.use("/api", categoryRoutes);
 app.use('/api', bookRoutes);
 app.use('/api', importOrderRoutes);
 app.use('/api', orderStatusLogRoutes);
+app.use('/api', testRoutes);
+app.use('/api', stockRoutes);
 
 // Error handling
 app.use(notFoundHandler);

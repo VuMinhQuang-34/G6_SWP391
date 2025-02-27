@@ -4,8 +4,8 @@ import { toast } from "react-toastify";
 import { AuthContext } from "../../context/AuthContext";
 const { Option } = Select;
 
-const EditImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, order }) => {
-    console.log(" EditImportOrderModal => ", { visible, onCancel, onEdit, suppliers, books, order })
+const ApproveImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, order }) => {
+    console.log(" ApproveImportOrderModal => ", { visible, onCancel, onEdit, suppliers, books, order })
     const { isAuthenticated, user, logout } = useContext(AuthContext);
     const [form] = Form.useForm();
     const [selectedBooks, setSelectedBooks] = useState([]);
@@ -20,34 +20,6 @@ const EditImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, ord
             setSelectedBooks(order.details || []);
         }
     }, [order, form, visible]);
-
-    //#region EDIT
-    const handleEditOrder = async (values) => {
-        try {
-            const updatedOrder = {
-                SupplierID: values.SupplierID,
-                ImportDate: values.ImportDate,
-                Note: values.Note,
-                Status: "New", // Giữ nguyên trạng thái là "New"
-                CreatedBy: user.userId, // Hoặc lấy từ thông tin người dùng hiện tại
-                orderDetails: selectedBooks.map(book => ({
-                    BookId: book.BookId,
-                    Quantity: book.Quantity,
-                    Price: book.Price,
-                    // Thêm các thông tin khác nếu cần
-                })),
-            };
-
-            console.log("Payload gửi đi:", updatedOrder); // Kiểm tra payload trước khi gửi
-
-            await onEdit(updatedOrder, order.ImportOrderId); // Truyền ID vào hàm onEdit
-            form.resetFields(); // Reset form sau khi sửa
-            setSelectedBooks([]); // Reset danh sách sách đã chọn
-            //toast.success(`Cập nhật thành công`, { autoClose: 2000 });
-        } catch (error) {
-            message.error("Lỗi khi sửa đơn nhập!");
-        }
-    };
 
     const handleBookSelect = (bookIds) => {
         const selected = books.filter(book => bookIds.includes(book.BookId));
@@ -82,15 +54,32 @@ const EditImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, ord
         setSelectedBooks(updatedDetails); // Cập nhật lại selectedBooks
     };
 
+    //#region Approve
+    const handleApprove = async () => {
+        // Logic for approving the order
+        const formData = await form.getFieldsValue();
+        await onEdit({...order, Status: "Approve", LogNote: formData.LogNote}, order.ImportOrderId);
+    };
+
+    const handleReject = async () => {
+        // Logic for rejecting the order
+        const formData = await form.getFieldsValue();
+        await onEdit({...order, Status: "New", LogStatus: "Reject", LogNote: formData.LogNote}, order.ImportOrderId);
+    };
+
+    const handleClose = () => {
+        onCancel(); // Close the modal
+    };
+
     return (
         <Modal
-            title="Chỉnh Sửa Đơn Nhập"
+            title="Phê Duyệt Đơn Nhập"
             open={visible}
             onCancel={onCancel}
             footer={null}
             width={800} // Mở rộng chiều rộng của modal
         >
-            <Form form={form} layout="vertical" onFinish={handleEditOrder}>
+            <Form form={form} layout="vertical">
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Form.Item
                         name="SupplierID"
@@ -98,7 +87,7 @@ const EditImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, ord
                         style={{ flex: 1, marginRight: '10px' }}
                         rules={[{ required: true, message: "Vui lòng chọn nhà cung cấp!" }]}
                     >
-                        <Select placeholder="Chọn nhà cung cấp">
+                        <Select placeholder="Chọn nhà cung cấp" disabled>
                             {suppliers.map((supplier, index) => (
                                 <Option key={index} value={supplier}>
                                     {supplier}
@@ -113,7 +102,7 @@ const EditImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, ord
                         style={{ flex: 1, marginLeft: '10px' }}
                         rules={[{ required: true, message: "Vui lòng nhập ngày nhập!" }]}
                     >
-                        <Input type="date" />
+                        <Input type="date" disabled />
                     </Form.Item>
                 </div>
 
@@ -121,7 +110,7 @@ const EditImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, ord
                     name="Note"
                     label="Ghi chú"
                 >
-                    <Input.TextArea rows={2} placeholder="Nhập ghi chú nếu có" style={{ resize: 'none' }} />
+                    <Input.TextArea rows={2} placeholder="Nhập ghi chú nếu có" style={{ resize: 'none' }} disabled />
                 </Form.Item>
 
                 {/* Bảng chi tiết đơn nhập */}
@@ -149,6 +138,7 @@ const EditImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, ord
                                     value={record.Quantity || 0} // Sử dụng value
                                     onChange={(e) => handleQuantityChange(record.BookId, e.target.value)}
                                     required
+                                    disabled
                                 />
                             ),
                         },
@@ -161,6 +151,7 @@ const EditImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, ord
                                     value={record.Price || 0} // Sử dụng value
                                     onChange={(e) => handlePriceChange(record.BookId, e.target.value)}
                                     required
+                                    disabled
                                 />
                             ),
                         },
@@ -188,6 +179,7 @@ const EditImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, ord
                         placeholder="Chọn sách"
                         onChange={handleBookSelect}
                         style={{ width: '100%' }}
+                        disabled
                     >
                         {books.map((book) => (
                             <Option key={book.BookId} value={book.BookId}>
@@ -197,12 +189,27 @@ const EditImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, ord
                     </Select>
                 </Form.Item>
 
-                <Button type="primary" htmlType="submit" style={{ width: '100%' }}>
-                    Lưu
-                </Button>
+                <Form.Item
+                    name="LogNote"
+                    label="Ghi chú phê duyệt"
+                >
+                    <Input.TextArea rows={2} placeholder="Nhập ghi phê duyệt" style={{ resize: 'none' }} />
+                </Form.Item>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '5px' }}>
+                    <Button type="default" onClick={handleClose}>
+                        Đóng
+                    </Button>
+                    <Button type="default" onClick={handleReject} danger>
+                        Từ chối
+                    </Button>
+                    <Button type="primary" onClick={handleApprove} style={{ marginRight: '10px' }}>
+                        Phê duyệt
+                    </Button>
+                </div>
             </Form>
         </Modal>
     );
 };
 
-export default EditImportOrderModal; 
+export default ApproveImportOrderModal; 

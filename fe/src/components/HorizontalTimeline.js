@@ -5,7 +5,7 @@ import React from "react";
 //     { key: 'New', label: 'Mới' },
 //     { key: 'Approve', label: 'Đã phê duyệt' },
 //     { key: 'Receive', label: 'Đã nhận hàng' },
-//     { key: 'Approve Import', label: 'Đã phê duyệt nhập' },
+//     { key: 'ApproveImport', label: 'Đã phê duyệt nhập' },
 //     { key: 'Close', label: 'Đã đóng' },
 // ];
 
@@ -65,20 +65,20 @@ const HorizontalTimeline = ({ statusKey, orderStatuses }) => {
                             width: 20,
                             height: 20,
                             borderRadius: "50%",
-                            backgroundColor: isActive ? "green" : "#ccc",
+                            backgroundColor: isActive ? "#52c41a" : "#ccc",
                             border: "3px solid white",
                             zIndex: 2,
                         }}></div>
 
                         {/* Đường nối riêng giữa các trạng thái */}
-                        {index < orderStatuses.length - 1 && (
+                        {index < orderStatuses.length  && (
                             <div style={{
                                 position: "absolute",
                                 top: "50%",
                                 left: "50%",
                                 width: "100%",
                                 height: "4px",
-                                backgroundColor: isActive ? "green" : "#ddd",
+                                backgroundColor: isActive ? "#52c41a" : "#ddd",
                                 transform: "translateX(-50%) translateY(-50%)",
                                 zIndex: 1,
                             }}></div>

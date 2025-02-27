@@ -52,11 +52,28 @@ const DefaultLayout = () => {
                         <Menu.Item key="4" icon={<SettingOutlined />}>
                             <Link to="admin/books">Sách</Link>
                         </Menu.Item>
-                        <Menu.Item key="5" icon={<SettingOutlined />}>
+                        {/* <Menu.Item key="5" icon={<SettingOutlined />}>
                             <Link to="orders-import">Import Order</Link>
-                        </Menu.Item>
+                        </Menu.Item> */}
+                        <Menu.SubMenu key="5" icon={<SettingOutlined />} title="Import Orders">
+                            <Menu.Item key="5.1">
+                                <Link to="/orders-import">Tạo đơn nhập</Link>
+                            </Menu.Item>
+                            <Menu.Item key="5.2">
+                                <Link to="/orders-import/approve">Phê duyệt</Link>
+                            </Menu.Item>
+                            <Menu.Item key="5.3">
+                                <Link to="/orders-import/check">Kiểm hàng</Link>
+                            </Menu.Item>
+                            <Menu.Item key="5.4">
+                                <Link to="/orders-import/approve/wms">Phê duyệt nhập kho</Link>
+                            </Menu.Item>
+                        </Menu.SubMenu>
                         <Menu.Item key="6" icon={<SettingOutlined />}>
                             <Link to="orders-export">Sách</Link>
+                        </Menu.Item>
+                        <Menu.Item key="7" icon={<SettingOutlined />}>
+                            <Link to="stock">Kho hàng</Link>
                         </Menu.Item>
                         {/* <Menu.Item key="3" icon={<SettingOutlined />}>  
                             <Link to="/books">Kho sách</Link>

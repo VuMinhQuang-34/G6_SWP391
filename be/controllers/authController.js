@@ -274,7 +274,7 @@ export const login = async (req, res) => {
         message: "Unexpected error: No user data found.",
       });
     }    // Add status check before further authentication
-    if (user.Status === "Inactive") {
+    if (user.Status == "Inactive" || user.Status == 0) {
       logger.warn(`Login failed - Unverified email: ${req.body.email}`);
       return res.status(401).json({
         code: 402,

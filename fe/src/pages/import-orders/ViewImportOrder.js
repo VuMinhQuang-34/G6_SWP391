@@ -4,7 +4,8 @@ import axios from 'axios';
 import { Card, Descriptions, Spin, Button, Table, Typography, Row, Col } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import VerticalTimeline from '../../components/VerticalTimeline'; // Import component VerticalTimeline
-import { orderStatuses } from '../../constants/variable';
+import OrderHistoryLog from '../../components/OrderHistoryLog'; // Import component VerticalTimeline
+import { orderStatuses, suppliersList } from "../../constants/variable";
 
 const { Title } = Typography;
 
@@ -70,18 +71,12 @@ const ViewImportOrder = () => {
         },
     ];
 
-    // Dữ liệu cho timeline (có thể thay đổi theo yêu cầu)
-    const timelineEvents = [
-        { date: '2025-02-22', description: 'Đơn hàng được tạo' },
-        { date: '2025-02-23', description: 'Đơn hàng đã được phê duyệt' },
-        { date: '2025-02-24', description: 'Đơn hàng đã được giao' },
-        { date: '2025-02-25', description: 'Đơn hàng đã được nhận' },
-    ];
+ 
 
     return (
         <div style={{ width: '100%', margin: '20px', padding: "20px" }}>
             <Button 
-                type="primary" 
+                type="primary"
                 style={{ marginBottom: '20px', backgroundColor: '#52c41a', borderColor: '#52c41a' }} 
                 icon={<ArrowLeftOutlined />} 
                 onClick={() => window.history.back()}
@@ -137,18 +132,14 @@ const ViewImportOrder = () => {
                 </Col>
 
                 {/* Card 3: Timeline lưu trình của đơn hàng */}
-                <Col span={12}>
-                    <Card title="Timeline Lưu Trình Đơn Hàng" style={{ borderRadius: '10px', boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)' }}>
-                        <VerticalTimeline orderId={id} orderStatuses={orderStatuses} orderType="Import"/> {/* Truyền orderStatuses vào component VerticalTimeline */}
-                    </Card>
+                <Col span={6}>
+                    <VerticalTimeline orderId={id} orderStatuses={orderStatuses} orderType="Import"/> {/* Truyền orderStatuses vào component VerticalTimeline */}
                 </Col>
 
                 {/* Card 4: Lịch sử status log của đơn hàng */}
-                {/* <Col span={6} style={{ marginTop: '20px' }}>
-                    <Card title="Lịch Sử Status Log" style={{ borderRadius: '10px', boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)' }}>
-                        <p>Thông tin lịch sử status log sẽ được hiển thị ở đây.</p>
-                    </Card>
-                </Col> */}
+                <Col span={6} style={{ marginTop: '0' }}>
+                    <OrderHistoryLog orderId={id} orderType="Import"/>
+                </Col>
             </Row>
         </div>
     );

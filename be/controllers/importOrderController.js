@@ -1,6 +1,7 @@
 import db from "../models/index.js"; // Import db từ models
+import util from "./common.js"; // Import db từ models
 import { Op } from 'sequelize'; // Import Op từ sequelize để sử dụng trong tìm kiếm
-const { ImportOrders, ImportOrderDetails, Book, OrderStatusLogs } = db; // Destructure các model cần thiết
+const { ImportOrders, ImportOrderDetails, Book, OrderStatusLogs, Fault, Stock } = db; // Destructure các model cần thiết
 
 //#region ADD
 export const createImportOrder = async (req, res) => {
@@ -37,6 +38,7 @@ export const createImportOrder = async (req, res) => {
             OrderId: newOrder.ImportOrderId,
             OrderType: 'Import', // Đặt OrderType là 'Import'
             Status: 'New', // Trạng thái hiện tại
+            Note: Note,
             CreatedBy,
             Created_Date: new Date(),
         });
@@ -81,7 +83,7 @@ export const updateImportOrder = async (req, res) => {
         
         // Kiểm tra trạng thái của đơn nhập
         if (order.Status !== 'New') { // Truy cập trực tiếp vào thuộc tính
-            return res.status(403).json({ message: 'Chỉ cho phép cập nhật đơn nhập có trạng thái New!' });
+            return res.status(400).json({ message: 'Chỉ cho phép cập nhật đơn nhập có trạng thái New!' });
         }
 
         // Cập nhật thông tin đơn nhập
@@ -145,9 +147,9 @@ export const updateImportOrder = async (req, res) => {
     }
 };
 
-//#region GET ALL
+//#region GET-ALL
 export const getImportOrders = async (req, res) => {
-    const { page = 1, limit = 10, searchId = '', searchSupplier = '', searchDate = '' } = req.query; // Lấy các tham số từ query
+    const { page = 1, limit = 10, searchId = '', searchSupplier = '', searchDate = '', Status } = req.query; // Lấy các tham số từ query
 
     try {
         const offset = (page - 1) * limit; // Tính toán offset cho phân trang
@@ -158,6 +160,7 @@ export const getImportOrders = async (req, res) => {
                 searchId ? { ImportOrderId: { [Op.eq]: searchId } } : {},
                 searchSupplier ? { SupplierID: { [Op.like]: `%${searchSupplier}%` } } : {},
                 searchDate ? { ImportDate: { [Op.eq]: new Date(searchDate).toISOString() } } : {},
+                ...(Status ? [{ Status: { [Op.in]: Array.isArray(Status) ? Status : [Status] } }] : []),
             ],
         };
 
@@ -184,7 +187,7 @@ export const getImportOrders = async (req, res) => {
     }
 };
 
-//#region GET ONE
+//#region GET-ONE
 export const getImportOrderDetails = async (req, res) => {
     const { id } = req.params; // Lấy ID đơn nhập từ params
 
@@ -212,13 +215,40 @@ export const getImportOrderDetails = async (req, res) => {
         const detailsWithBooks = await Promise.all(orderDetails.map(async (detail) => {
             const book = await Book.findOne({
                 where: { BookId: detail.BookId },
-                attributes: ['Title', 'Author', 'Publisher'], // Lấy các thuộc tính cần thiết từ model Books
+                attributes: ['BookId', 'Title', 'Author', 'Publisher', 'CategoryId', 'PublishingYear', 'NumberOfPages', 'Language', 'Status', 'Created_Date', 'Edit_Date'], // Lấy các thuộc tính cần thiết từ model Books
             });
             return {
                 BookId: detail.BookId,
                 Quantity: detail.Quantity,
                 Price: detail.Price,
                 BookInfo: book // Thêm thông tin sách vào phản hồi
+            };
+        }));
+
+
+        const faultBooksFromDB = await Fault.findAll({
+            where: {OrderId: id, OrderType: "Import"},
+        });
+
+        // Map qua từng fault book để lấy thông tin sách
+        const faultBooks = await Promise.all(faultBooksFromDB.map(async (fault) => {
+            const book = await Book.findOne({
+                where: { BookId: fault.BookId }
+            });
+
+            return {
+                FaultId: fault.FaultId,
+                OrderId: fault.OrderId,
+                OrderType: fault.OrderType,
+                BookId: fault.BookId,
+                Quantity: fault.Quantity,
+                Note: fault.Note,
+                CreatedBy: fault.CreatedBy,
+                Created_Date: fault.Created_Date,
+
+                Title: book?.Title,
+                Author: book?.Author,
+                Publisher: book?.Publisher
             };
         }));
 
@@ -235,6 +265,7 @@ export const getImportOrderDetails = async (req, res) => {
             details: detailsWithBooks,
             totalQuantity, // Tổng số sách
             totalPrice, // Tổng giá
+            faultBooks: faultBooks || []
         };
 
         res.status(200).json(response);
@@ -294,4 +325,209 @@ export const deleteImportOrder = async (req, res) => {
     }
 };
 
-// Các hàm CRUD khác (update, delete, etc.) sẽ được thêm vào đây
+//#region APPROVE
+export const approveImportOrder = async (req, res) => {
+    const { id } = req.params; // Lấy ID đơn nhập từ params
+    const { Status, LogStatus, CreatedBy, LogNote } = req.body; // Lấy Status và UpdatedBy từ body
+
+    try {
+        // Kiểm tra xem đơn nhập có tồn tại không
+        const order = await ImportOrders.findOne({
+            where: { ImportOrderId: id },
+        });
+
+        if (!order) {
+            return res.status(404).json({ message: 'Đơn nhập không tồn tại!' });
+        }
+
+        // Cập nhật trạng thái đơn nhập
+        await ImportOrders.update(
+            { Status },
+            { where: { ImportOrderId: id } }
+        );
+
+        // Ghi lại trạng thái đơn hàng vào bảng OrderStatusLogs
+        await OrderStatusLogs.create({
+            OrderId: id,
+            OrderType: 'Import', // Đặt OrderType là 'Import'
+            Status: LogStatus,
+            CreatedBy,
+            Note: LogNote,
+            Created_Date: new Date(),
+        });
+
+        // Trả về phản hồi thành công
+        res.status(200).json({
+            message: 'Đơn nhập hàng đã được phê duyệt thành công!',
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            message: 'Đã xảy ra lỗi khi phê duyệt đơn nhập hàng!',
+            error: error.message,
+        });
+    }
+};
+
+//#region CHECK
+export const checkImportOrder = async (req, res) => {
+    const { id } = req.params; // Lấy ID đơn nhập từ params
+    const { Status, LogStatus, CreatedBy, LogNote, FaultBooks } = req.body; // Lấy Status và UpdatedBy từ body
+
+    try {
+        // Kiểm tra xem đơn nhập có tồn tại không
+        const order = await ImportOrders.findOne({
+            where: { ImportOrderId: id },
+        });
+
+        if (!order) {
+            return res.status(404).json({ message: 'Đơn nhập không tồn tại!' });
+        }
+
+        //Cập nhật trạng thái đơn nhập
+        await ImportOrders.update(
+            { Status },
+            { where: { ImportOrderId: id } }
+        );
+
+        // Ghi lại trạng thái đơn hàng vào bảng OrderStatusLogs
+        await OrderStatusLogs.create({
+            OrderId: id,
+            OrderType: 'Import', // Đặt OrderType là 'Import'
+            Status: Status,
+            CreatedBy: CreatedBy,
+            Note: LogNote,
+            Created_Date: new Date(),
+        });
+
+        //Thêm bảng sách lỗi
+        if (FaultBooks && FaultBooks.length > 0) {
+            await Promise.all(FaultBooks.map(async (b) => {
+                await Fault.create({
+                    OrderId: id,
+                    OrderType: 'Import',
+                    BookId: b.BookId,
+                    FaultDate: new Date(),
+                    Quantity: b.Quantity,
+                    Note: b.Note,
+                    CreatedBy: CreatedBy,
+                    Created_date: new Date(),
+                });
+            }));
+        }
+
+        // Trả về phản hồi thành công
+        res.status(200).json({
+            message: 'Gửi yêu phê duyệt nhập hàng thành công!',
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            message: 'Gửi yêu phê duyệt nhập hàng thành công!',
+            error: error.message,
+        });
+    }
+};
+
+//#region APPROVE-WMS
+export const approveWMS = async (req, res) => {
+    const { id } = req.params; // Lấy ID đơn nhập từ params
+    const { Status, LogStatus, CreatedBy, LogNote } = req.body; // Lấy Status và UpdatedBy từ body
+
+    try {
+        // Kiểm tra xem đơn nhập có tồn tại không
+        const order = await ImportOrders.findOne({
+            where: { ImportOrderId: id },
+        });
+
+        if (!order) {
+            return res.status(404).json({ message: 'Đơn nhập không tồn tại!' });
+        }
+
+        //Cập nhật kho
+        if(LogNote == "Approve") {
+            const books = await util.getAllBookByIO(id); //Số lượng sách thêm vào kho
+            for (const book of books) {
+                if (book) {
+                    const stock = await util.getOneStock(book.BookId);
+
+                    await Stock.update(
+                        { Quantity: stock.Quantity + book.Quantity },
+                        { where: { BookId: book.BookId } }
+                    );
+                }
+            }
+          
+        }
+
+        // Cập nhật trạng thái đơn nhập
+        await ImportOrders.update(
+            { Status },
+            { where: { ImportOrderId: id } }
+        );
+
+        // Ghi lại trạng thái đơn hàng vào bảng OrderStatusLogs
+        await OrderStatusLogs.create({
+            OrderId: id,
+            OrderType: 'Import', // Đặt OrderType là 'Import'
+            Status: LogStatus,
+            CreatedBy,
+            Note: LogNote,
+            Created_Date: new Date(),
+        });
+
+        // Trả về phản hồi thành công
+        res.status(200).json({
+            message: 'Đơn nhập hàng đã được phê duyệt thành công!',
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            message: 'Đã xảy ra lỗi khi phê duyệt đơn nhập hàng!',
+            error: error.message,
+        });
+    }
+};
+
+//#region GET-BookS
+export const getBooksByImportOrderId = async (req, res) => {
+    const { id } = req.params; // Lấy ID đơn nhập từ params
+
+    try {
+        // Lấy thông tin đơn nhập
+        const order = await ImportOrders.findOne({
+            where: { ImportOrderId: id },
+        });
+
+        if (!order) {
+            return res.status(404).json({ message: 'Đơn nhập không tồn tại!' });
+        }
+
+        // Lấy danh sách chi tiết đơn nhập dựa trên ImportOrderId
+        const orderDetails = await ImportOrderDetails.findAll({
+            where: { ImportOrderId: id },
+            attributes: ['BookId', 'Quantity', 'Price'], // Chỉ lấy các thuộc tính cần thiết
+        });
+
+        // Tính toán tổng số sách và tổng giá
+        const totalQuantity = orderDetails.reduce((sum, detail) => sum + detail.Quantity, 0);
+        const totalPrice = orderDetails.reduce((sum, detail) => sum + parseFloat(detail.Price), 0);
+
+        // Lấy thông tin sách cho từng BookId
+        const response = await Promise.all(orderDetails.map(async (detail) => {
+            const book = await Book.findOne({
+                where: { BookId: detail.BookId },
+                attributes: ['BookId', 'Title', 'Author', 'Publisher', 'CategoryId', 'PublishingYear', 'NumberOfPages', 'Language', 'Status', 'Created_Date', 'Edit_Date'], // Lấy các thuộc tính cần thiết từ model Books
+            });
+            return book;
+        }));
+
+        res.status(200).json(response);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            message: 'Đã xảy ra lỗi khi lấy thông tin chi tiết đơn nhập!',
+            error: error.message,
+        });
+    }
+};
