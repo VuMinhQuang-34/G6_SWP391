@@ -68,7 +68,7 @@ app.use('/api', orderStatusLogRoutes);
 app.use('/api', testRoutes);
 app.use('/api', stockRoutes);
 app.use('/api', dashboardRoutes);
-app.use('/api/export-orders', exportOrderRoutes);
+app.use('/api', exportOrderRoutes);
 
 // Error handling
 app.use(notFoundHandler);
