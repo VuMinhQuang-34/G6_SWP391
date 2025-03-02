@@ -11,4 +11,4 @@ export const genericHandler = (error, req, res, next) => {
     data: [],
     message: error.message,
   });
-};
+}; 
