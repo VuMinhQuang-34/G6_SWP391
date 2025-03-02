@@ -9,7 +9,7 @@ const Stock = db.Stock;
 const createBook = async (req, res) => {
     try {
         // Kiểm tra các trường bắt buộc
-        const { Title, Author, Publisher } = req.body;
+        const { Title, Author, Publisher, Image } = req.body;
 
         if (isEmptyOrWhitespace(Title)) {
             return res.status(400).json({
@@ -36,9 +36,10 @@ const createBook = async (req, res) => {
         req.body.Title = Title.trim();
         req.body.Author = Author.trim();
         req.body.Publisher = Publisher.trim();
-       
+
         const book = await Book.create({
             ...req.body,
+            Image: Image || null,
             Created_Date: new Date(),
             Edit_Date: new Date(),
             Status: req.body.Status || 'Active' // Mặc định là Active nếu không được cung cấp
@@ -160,6 +161,7 @@ const updateBook = async (req, res) => {
 
         const updateData = {
             ...req.body,
+            Image: req.body.Image || book.Image,
             Edit_Date: new Date()
         };
 

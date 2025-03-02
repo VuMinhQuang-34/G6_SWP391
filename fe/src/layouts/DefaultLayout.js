@@ -39,7 +39,7 @@ const DefaultLayout = () => {
                     style={{ background: "#001529", color: "#fff" }}
                 >
                     <Menu theme="dark" mode="inline" defaultSelectedKeys={["1"]}>
-                    
+
                         <Menu.Item key="1" icon={<HomeOutlined />}>
                             <Link to="/dashboard">Dashboard</Link>
                         </Menu.Item>
@@ -69,9 +69,20 @@ const DefaultLayout = () => {
                                 <Link to="/orders-import/approve/wms">Phê duyệt nhập kho</Link>
                             </Menu.Item>
                         </Menu.SubMenu>
-                        <Menu.Item key="6" icon={<SettingOutlined />}>
-                            <Link to="orders-export">Sách</Link>
-                        </Menu.Item>
+                        <Menu.SubMenu key="6" icon={<SettingOutlined />} title="Export Orders">
+                            <Menu.Item key="6.1">
+                                <Link to="/orders-export">Tạo đơn xuất</Link>
+                            </Menu.Item>
+                            <Menu.Item key="6.2">
+                                <Link to="/orders-export/approve">Phê duyệt</Link>
+                            </Menu.Item>
+                            <Menu.Item key="6.3">
+                                <Link to="/orders-export/packing">Đóng gói</Link>
+                            </Menu.Item>
+                            <Menu.Item key="6.4">
+                                <Link to="/orders-export/approve/wms">Phê duyệt xuất kho</Link>
+                            </Menu.Item>
+                        </Menu.SubMenu>
                         <Menu.Item key="7" icon={<SettingOutlined />}>
                             <Link to="stock">Kho hàng</Link>
                         </Menu.Item>
@@ -116,7 +127,7 @@ const DefaultLayout = () => {
                     </Content>
 
                     {/* Footer */}
-                    {/* <AppFooter /> */}
+                    <AppFooter />
                 </Layout>
             </Layout>
         </Layout>

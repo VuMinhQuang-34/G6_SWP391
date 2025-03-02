@@ -186,6 +186,37 @@ const BookList = () => {
     // Table columns
     const columns = [
         {
+            title: 'Image',
+            dataIndex: 'Image',
+            key: 'Image',
+            render: (image) => (
+                image ? (
+                    <img
+                        src={image}
+                        alt="Book cover"
+                        style={{
+                            width: '50px',
+                            height: '70px',
+                            objectFit: 'cover'
+                        }}
+                    />
+                ) : (
+                    <div
+                        style={{
+                            width: '50px',
+                            height: '70px',
+                            background: '#eee',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}
+                    >
+                        No image
+                    </div>
+                )
+            )
+        },
+        {
             title: 'Title',
             dataIndex: 'Title',
             key: 'Title',

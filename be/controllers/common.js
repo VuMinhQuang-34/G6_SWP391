@@ -1,6 +1,6 @@
 import db from "../models/index.js"; // Import db từ models
 import { Op, where } from 'sequelize'; // Import Op từ sequelize để sử dụng trong tìm kiếm
-const { ImportOrders, ImportOrderDetails, Book, OrderStatusLogs, Fault, Stock, User } = db;
+const { ImportOrders, ImportOrderDetails, Book, OrderStatusLogs, Fault, Stock, User, Category } = db;
 
 //#region ==IO==
 const getOneIO = async (req, res) => {
@@ -22,40 +22,31 @@ const getCountBooksIO = async (id) => {
 }
 
 //#region get-books-by-IO
-const getAllBookByIO = async (orderId) => {
-    // Lấy danh sách chi tiết đơn nhập dựa trên orderId
-    const orderDetails = await ImportOrderDetails.findAll({
-        where: { ImportOrderId: orderId },
-        attributes: ['BookId', 'Quantity', 'Price'], // Chỉ lấy các thuộc tính cần thiết
-        raw: true
-    });
-
-    // Lấy thông tin sách cho từng BookId
-    const books = await Promise.all(orderDetails.map(async (detail) => {
-        const book = await Book.findOne({
-            where: { BookId: detail.BookId },
-            attributes: ['BookId', 'Title', 'Author', 'Publisher', 'CategoryId', 'PublishingYear', 'NumberOfPages', 'Language', 'Status', 'Created_Date', 'Edit_Date'], // Lấy các thuộc tính cần thiết từ model Books
-            raw: true
+const getAllBookByIO = async (importOrderId) => {
+    try {
+        const books = await ImportOrderDetails.findAll({
+            where: { ImportOrderId: importOrderId }
         });
-        return {...book, ...detail};
-    }));
-
-    return books || [];
+        return books;
+    } catch (error) {
+        console.error('Error in getAllBookByIO:', error);
+        throw error;
+    }
 }
 
 // #region count-IO 
 const getCountIOByStatus = async (status) => {
     if (status == 'New') {
-        return await ImportOrders.count({where: {Status: 'New'}});
-    }else if (status == 'Approve') {
-        return await ImportOrders.count({where: {Status: 'Approve'}});
-    }else if (status == 'Receive') {
-        return await ImportOrders.count({where: {Status: 'Receive'}});
-    }else if (status == 'ApproveImport') {
-        return await ImportOrders.count({where: {Status: 'ApproveImport'}});
+        return await ImportOrders.count({ where: { Status: 'New' } });
+    } else if (status == 'Approve') {
+        return await ImportOrders.count({ where: { Status: 'Approve' } });
+    } else if (status == 'Receive') {
+        return await ImportOrders.count({ where: { Status: 'Receive' } });
+    } else if (status == 'ApproveImport') {
+        return await ImportOrders.count({ where: { Status: 'ApproveImport' } });
     }
     return await ImportOrders.count();
-} 
+}
 
 
 
@@ -69,7 +60,7 @@ const getCountIOByStatus = async (status) => {
 //#region get-one
 const getOneStockByBookId = async (bookId) => {
     return await Stock.findOne({
-        where: {BookId: bookId},
+        where: { BookId: bookId },
         raw: true
     })
 }
@@ -82,35 +73,67 @@ const getAllStock = async () => {
 }
 
 //#region count-total-book
-const geTotalQuantityStock = async () => {
-    return await Stock.sum('Quantity'); 
+const getTotalQuantityStock = async () => {
+    return await Stock.sum('Quantity');
 }
 
 //#region ==USER==
 const getAllUsers = async () => {
-    return await User.findAll({raw: true});
+    return await User.findAll({ raw: true });
 }
 
 const getCountUserByStatus = async (status) => {
 
     if (status == 'Active') {
-        return await User.count({where: {Status: 'Active'}});
-    }else if (status == 'Inactive') {
-        return await User.count({where: {Status: 'Inactive'}});
+        return await User.count({ where: { Status: 'Active' } });
+    } else if (status == 'Inactive') {
+        return await User.count({ where: { Status: 'Inactive' } });
     }
     return await User.count();
 }
 const getCountUserByRole = async (role) => {
     if (role == 'Admin') {
-        return await User.count({where: {roleId: 1}});
-    }else if (role == 'Manager') {
-        return await User.count({where: {Status: 2}});
-    }else if (role == 'Staff') {
-        return await User.count({where: {Status: 3}});
+        return await User.count({ where: { roleId: 1 } });
+    } else if (role == 'Manager') {
+        return await User.count({ where: { Status: 2 } });
+    } else if (role == 'Staff') {
+        return await User.count({ where: { Status: 3 } });
     }
 }
 
+//#region ==book==
 
+
+
+
+
+
+//#region count-books
+const getTotalBook = async (role) => {
+    return await Book.count();
+}
+
+
+//#region ==Category==
+
+
+//#region count-books
+const getAllCategories = async (role) => {
+    return await Category.findAll();
+}
+
+// Lấy thông tin stock của một sách
+const getOneStock = async (bookId) => {
+    try {
+        const stock = await Stock.findOne({
+            where: { BookId: bookId }
+        });
+        return stock || { Quantity: 0 }; // Trả về object với Quantity = 0 nếu không tìm thấy
+    } catch (error) {
+        console.error('Error in getOneStock:', error);
+        throw error;
+    }
+};
 
 export default {
     getOneIO,
@@ -122,5 +145,8 @@ export default {
     getCountUserByRole,
     getCountIOByStatus,
     getAllStock,
-    geTotalQuantityStock
+    getTotalQuantityStock,
+    getTotalBook,
+    getAllCategories,
+    getOneStock
 }

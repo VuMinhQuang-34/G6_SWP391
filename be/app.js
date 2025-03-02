@@ -17,12 +17,14 @@ import dotenv from 'dotenv';
 // import routes
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import dashboardRoutes from "./routes/dashboardRoutes.js";
 import testRoutes from "./routes/testRoutes.js";
 import stockRoutes from "./routes/stockRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
 import bookRoutes from './routes/bookRoutes.js';
 import importOrderRoutes from './routes/importOrderRoutes.js';
 import orderStatusLogRoutes from './routes/orderStatusLogRoutes.js';
+import exportOrderRoutes from './routes/exportOrderRoutes.js';
 
 const { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME } = process.env;
 
@@ -65,6 +67,8 @@ app.use('/api', importOrderRoutes);
 app.use('/api', orderStatusLogRoutes);
 app.use('/api', testRoutes);
 app.use('/api', stockRoutes);
+app.use('/api', dashboardRoutes);
+app.use('/api/export-orders', exportOrderRoutes);
 
 // Error handling
 app.use(notFoundHandler);

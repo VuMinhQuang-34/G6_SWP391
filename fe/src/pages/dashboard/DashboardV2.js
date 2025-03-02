@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   Layout,
   Card,
@@ -9,10 +9,8 @@ import {
   Progress,
   Tabs,
   List,
-  Spin,
   Tag,
 } from "antd";
-import axios from "axios";
 import {
   ArrowUpOutlined,
   ArrowDownOutlined,
@@ -20,9 +18,6 @@ import {
   UserOutlined,
   DollarOutlined,
   ShoppingCartOutlined,
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-  MedicineBoxOutlined
 } from "@ant-design/icons";
 import {
   LineChart,
@@ -80,91 +75,47 @@ const recentTransactions = [
 ];
 
 const Dashboard = () => {
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState(null);
-  useEffect(() => {
-    console.log("Fetching data..."); // 
-    axios.get("http://localhost:9999/api/dashboard")
-      .then((response) => {
-        console.log("API Response:", response.data); // 
-        // setData({...response.data.data});
-        setData(response.data.data);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error("Lỗi khi lấy dữ liệu dashboard:", error.response || error);
-        setLoading(false);
-      });
-  }, []);
-  console.log(data);
-
-  if (loading) {
-    return (
-      <Layout style={{ padding: 20, background: "#f0f2f5", minHeight: "100vh" }}>
-        <Content>
-          <Spin size="large" />
-        </Content>
-      </Layout>
-    );
-  }
-
-  if (!data) {
-    return null; // Không render gì cả nếu không có dữ liệu
-  }
-
-
   return (
     <Layout style={{ padding: 20, background: "#f0f2f5" }}>
       <Content>
         <Row gutter={16}>
           {[
             {
-              title: "Nhân viên",
-              value: data.totalUsers,
+              title: "Total Users",
+              value: dashboardData.users,
               icon: <UserOutlined />,
               color: "#1890ff",
-              extra: (
-                <div style={{ marginTop: 10, display: "flex", justifyContent: "center", gap: "" }}>
-                  <Tag color="green">
-                    <CheckCircleOutlined /> {data.totalUsersActive} Active
-                  </Tag>
-                  <Tag color="red">
-                    <CloseCircleOutlined /> {data.totalUsersInactive} Inactive
-                  </Tag>
-              </div>
-              ),
             },
             {
-              title: "Số lượng sách",
-              value: data.totalBook,
-              icon: <ShoppingCartOutlined />,
-              color: "#13c2c2",
-            },
-            {
-              title: "Tổng hàng tồn kho",
-              value: data.totalStockQuantity,
-              icon: <MedicineBoxOutlined />,
+              title: "Total Books",
+              value: dashboardData.books,
+              icon: <BookOutlined />,
               color: "#52c41a",
             },
             {
-              title: "Tổng đơn nhập sách",
-              value: data.totalIO,
+              title: "Book Imports",
+              value: dashboardData.bookImports,
               icon: <ArrowUpOutlined />,
               color: "#ff4d4f",
             },
             {
-              title: "Tổng đơn",
-              value: 'Chưa cập nhật',
+              title: "Book Exports",
+              value: dashboardData.bookExports,
               icon: <ArrowDownOutlined />,
               color: "#722ed1",
             },
-            // {
-            //   title: "Total Revenue",
-            //   value: `$${dashboardData.revenue}`,
-            //   icon: <DollarOutlined />,
-            //   color: "#faad14",
-            // },
-           
+            {
+              title: "Total Revenue",
+              value: `$${dashboardData.revenue}`,
+              icon: <DollarOutlined />,
+              color: "#faad14",
+            },
+            {
+              title: "Pending Orders",
+              value: dashboardData.pendingOrders,
+              icon: <ShoppingCartOutlined />,
+              color: "#13c2c2",
+            },
           ].map((stat, index) => (
             <Col span={4} key={index}>
               <Card style={{ background: stat.color, color: "white" }}>
@@ -174,7 +125,6 @@ const Dashboard = () => {
                   prefix={stat.icon}
                   valueStyle={{ color: "white" }}
                 />
-                {stat.extra && <div style={{ marginTop: 10 }}>{stat.extra}</div>}
               </Card>
             </Col>
           ))}

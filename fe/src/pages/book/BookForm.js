@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Form, Input, Select, Button, InputNumber, message, Space } from 'antd';
+import { Form, Input, Select, Button, InputNumber, message, Space, Upload } from 'antd';
 import axios from '../../configs/axios';
 import { getCurrentYear } from '../../utils/dateUtils';
-import { EditOutlined } from '@ant-design/icons';
+import { EditOutlined, PlusOutlined } from '@ant-design/icons';
 
 const { Option } = Select;
 
@@ -102,6 +102,7 @@ const BookForm = ({ initialValues, onCancel }) => {
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [imageUrl, setImageUrl] = useState(initialValues?.Image || null);
 
     useEffect(() => {
         const fetchCategories = async () => {
@@ -144,12 +145,33 @@ const BookForm = ({ initialValues, onCancel }) => {
         }
     }, [initialValues, form]);
 
+    // Thêm hàm xử lý upload ảnh
+    const handleImageChange = (info) => {
+        if (info.file.status === 'uploading') {
+            return;
+        }
+        if (info.file.status === 'done') {
+            // Get this url from response in real world.
+            const reader = new FileReader();
+            reader.addEventListener('load', () => {
+                setImageUrl(reader.result);
+                form.setFieldsValue({ Image: reader.result });
+            });
+            reader.readAsDataURL(info.file.originFileObj);
+        }
+    };
+
     // Sửa lại hàm handleSubmit để thêm kiểm tra trước khi gửi
     const handleSubmit = async (e) => {
         e?.preventDefault();
         try {
             setSubmitting(true);
             const values = await form.validateFields();
+
+            // Thêm ảnh vào values nếu có
+            if (imageUrl) {
+                values.Image = imageUrl;
+            }
 
             // Kiểm tra thêm một lần nữa trước khi gửi
             const stringFields = ['Title', 'Author', 'Publisher'];
@@ -204,6 +226,46 @@ const BookForm = ({ initialValues, onCancel }) => {
         const currentYear = getCurrentYear();
 
         return [
+            {
+                name: "Image",
+                label: "Book Cover",
+                component: (
+                    <Upload
+                        listType="picture-card"
+                        showUploadList={false}
+                        beforeUpload={(file) => {
+                            const isImage = file.type.startsWith('image/');
+                            if (!isImage) {
+                                message.error('You can only upload image files!');
+                            }
+                            const isLt2M = file.size / 1024 / 1024 < 2;
+                            if (!isLt2M) {
+                                message.error('Image must smaller than 2MB!');
+                            }
+                            return isImage && isLt2M;
+                        }}
+                        customRequest={({ file, onSuccess }) => {
+                            setTimeout(() => {
+                                onSuccess("ok");
+                            }, 0);
+                        }}
+                        onChange={handleImageChange}
+                    >
+                        {imageUrl ? (
+                            <img
+                                src={imageUrl}
+                                alt="Book cover"
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                        ) : (
+                            <div>
+                                <PlusOutlined />
+                                <div style={{ marginTop: 8 }}>Upload</div>
+                            </div>
+                        )}
+                    </Upload>
+                )
+            },
             {
                 name: "Title",
                 label: "Title",
@@ -283,7 +345,7 @@ const BookForm = ({ initialValues, onCancel }) => {
                 )
             }
         ];
-    }, [categories, loading]);
+    }, [categories, loading, imageUrl]);
 
     if (loading) {
         return <div>Loading categories...</div>;
