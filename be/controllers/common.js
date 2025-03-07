@@ -77,6 +77,21 @@ const getTotalQuantityStock = async () => {
     return await Stock.sum('Quantity');
 }
 
+//#region update stock
+const updateStock = async (stock) => {
+    try {
+        await Stock.update({
+            MaxStockQuantity: stock.MaxStockQuantity,
+            MinStockQuantity: stock.MinStockQuantity
+        }, {
+            where: { BookId: stock.BookId }
+        })
+    } catch (error) {
+        
+    }
+ 
+}
+
 //#region ==USER==
 const getAllUsers = async () => {
     return await User.findAll({ raw: true });
@@ -117,6 +132,11 @@ const getTotalBook = async (role) => {
 //#region ==Category==
 
 
+
+
+
+
+
 //#region count-books
 const getAllCategories = async (role) => {
     return await Category.findAll();
@@ -143,9 +163,12 @@ export default {
     getAllUsers,
     getCountUserByStatus,
     getCountUserByRole,
+
     getCountIOByStatus,
     getAllStock,
     getTotalQuantityStock,
+    updateStock,
+
     getTotalBook,
     getAllCategories,
     getOneStock
