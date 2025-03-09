@@ -9,10 +9,12 @@ import expressWinston from "express-winston";
 import logger from "./configs/logger.js";
 import { errorHandler, notFoundHandler } from "./middlewares/index.js";
 import db from "./models/index.js";
-import { Sequelize } from 'sequelize';
-import defaultRoles from './seeders/20240101000000-default-roles.js';
-import defaultUsers from './seeders/20240101000001-default-users.js';
-import dotenv from 'dotenv';
+import { Sequelize } from "sequelize";
+import defaultRoles from "./seeders/20240101000000-default-roles.js";
+import defaultUsers from "./seeders/20240101000001-default-users.js";
+import defaultWarehouses from "./seeders/20240101000001-default-warehouses.js";
+import defaultShelfs from "./seeders/20240101000003-default-shelfs.js";
+import dotenv from "dotenv";
 
 // import routes
 import authRoutes from "./routes/authRoutes.js";
@@ -21,10 +23,10 @@ import dashboardRoutes from "./routes/dashboardRoutes.js";
 import testRoutes from "./routes/testRoutes.js";
 import stockRoutes from "./routes/stockRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
-import bookRoutes from './routes/bookRoutes.js';
-import importOrderRoutes from './routes/importOrderRoutes.js';
-import orderStatusLogRoutes from './routes/orderStatusLogRoutes.js';
-import exportOrderRoutes from './routes/exportOrderRoutes.js';
+import bookRoutes from "./routes/bookRoutes.js";
+import importOrderRoutes from "./routes/importOrderRoutes.js";
+import orderStatusLogRoutes from "./routes/orderStatusLogRoutes.js";
+import exportOrderRoutes from "./routes/exportOrderRoutes.js";
 
 const { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME } = process.env;
 
@@ -33,7 +35,7 @@ dotenv.config();
 
 // Kiểm tra JWT_SECRET
 if (!process.env.JWT_SECRET) {
-  console.error('JWT_SECRET is not defined in environment variables');
+  console.error("JWT_SECRET is not defined in environment variables");
   process.exit(1);
 }
 
@@ -47,11 +49,13 @@ app.use(cors());
 //   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], // Các phương thức cho phép
 //   credentials: true // Nếu bạn cần gửi cookie
 // }));
-app.use(morgan("combined", {
-  stream: {
-    write: (message) => logger.info(message.trim()),
-  },
-}));
+app.use(
+  morgan("combined", {
+    stream: {
+      write: (message) => logger.info(message.trim()),
+    },
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -62,13 +66,13 @@ app.get("/", (req, res) => {
 app.use("/api", authRoutes);
 app.use("/api", userRoutes);
 app.use("/api", categoryRoutes);
-app.use('/api', bookRoutes);
-app.use('/api', importOrderRoutes);
-app.use('/api', orderStatusLogRoutes);
-app.use('/api', testRoutes);
-app.use('/api', stockRoutes);
-app.use('/api', dashboardRoutes);
-app.use('/api', exportOrderRoutes);
+app.use("/api", bookRoutes);
+app.use("/api", importOrderRoutes);
+app.use("/api", orderStatusLogRoutes);
+app.use("/api", testRoutes);
+app.use("/api", stockRoutes);
+app.use("/api", dashboardRoutes);
+app.use("/api", exportOrderRoutes);
 
 // Error handling
 app.use(notFoundHandler);
@@ -85,23 +89,44 @@ const initializeDatabase = async () => {
     const existingRoles = await db.Role.count();
     if (existingRoles === 0) {
       await defaultRoles.up(db.sequelize.getQueryInterface(), db.Sequelize);
-      console.log('Default roles created successfully');
+      console.log("Default roles created successfully");
     } else {
-      console.log('Roles already exist, skipping seeder');
+      console.log("Roles already exist, skipping seeder");
     }
 
     // Kiểm tra và tạo users mặc định
     const existingUsers = await db.User.count();
     if (existingUsers === 0) {
       await defaultUsers.up(db.sequelize.getQueryInterface(), db.Sequelize);
-      console.log('Default users created successfully');
+      console.log("Default users created successfully");
     } else {
-      console.log('Users already exist, skipping seeder');
+      console.log("Users already exist, skipping seeder");
     }
 
-    console.log('Database synchronized successfully');
+    // Kiểm tra và tạo kho hàng
+    const existingWarehouses = await db.Warehouse.count();
+    if (existingWarehouses == 0) {
+      await defaultWarehouses.up(
+        db.sequelize.getQueryInterface(),
+        db.Sequelize
+      );
+      console.log("Default warehouses created successfully");
+    } else {
+      console.log("Warehouses already exist, skipping seeder");
+    }
+
+    // Kiểm tra và tạo kho hàng
+    const existingShelfs = await db.Shelf.count();
+    if (existingShelfs == 0) {
+      await defaultShelfs.up(db.sequelize.getQueryInterface(), db.Sequelize);
+      console.log("Default Shelfs created successfully");
+    } else {
+      console.log("Shelfs already exist, skipping seeder");
+    }
+
+    console.log("Database synchronized successfully");
   } catch (error) {
-    console.error('Error initializing database:', error);
+    console.error("Error initializing database:", error);
   }
 };
 
@@ -112,9 +137,9 @@ initializeDatabase();
 const startServer = async () => {
   try {
     // Tạo kết nối không cần database
-    const tempSequelize = new Sequelize('', DB_USER, DB_PASSWORD, {
+    const tempSequelize = new Sequelize("", DB_USER, DB_PASSWORD, {
       host: DB_HOST,
-      dialect: 'mysql'
+      dialect: "mysql",
     });
 
     // Tạo database nếu chưa có
@@ -135,4 +160,3 @@ const startServer = async () => {
   }
 };
 startServer();
-
