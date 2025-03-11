@@ -19,11 +19,15 @@ import ChangePassword from "./pages/auth/ChangePassword"; // Thêm trang đổi 
 import { AuthProvider, AuthContext } from "./context/AuthContext";
 import CategoryList from "./pages/category/CategoryList";
 import BookList from './pages/book/BookList';
-import ExportOrderList from "./pages/export-orders/ExportOrderList";
-import ViewExportOrder from "./pages/export-orders/ViewExportOrder";
-import ExportOrderApprove from "./pages/export-orders/ExportOrderApprove";
-import ExportOrderPacking from "./pages/export-orders/ExportOrderPacking";
-import ExportOrderWMS from "./pages/export-orders/ExportOrderWMS";
+import ExportOrderListAdvanced from "./pages/export-orders/ExportOrderListAdvanced";
+import ExportOrderCreateAdvanced from "./pages/export-orders/ExportOrderCreateAdvanced";
+import ExportOrderDetailAdvanced from "./pages/export-orders/ExportOrderDetailAdvanced";
+import ConfirmExportOrder from "./pages/export-orders/ConfirmExportOrder";
+import InventoryCheckExportOrder from "./pages/export-orders/InventoryCheckExportOrder";
+import ApproveExportOrder from "./pages/export-orders/ApproveExportOrder";
+import PackingExportOrder from "./pages/export-orders/PackingExportOrder";
+import ShippingExportOrder from "./pages/export-orders/ShippingExportOrder";
+import CompleteExportOrder from "./pages/export-orders/CompleteExportOrder";
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useContext(AuthContext);
@@ -65,11 +69,16 @@ const App = () => {
             <Route path="orders-import/approve/wms" element={<ImportOrderListWMS />} />
             <Route path="orders-import/approve" element={<ImportOrderListApprove />} />
             <Route path="orders-import/check" element={<ImportOrderListCheck />} />
-            <Route path="orders-export" element={<ExportOrderList />} />
-            <Route path="/orders-export/:id" element={<ViewExportOrder />} />
-            <Route path="/orders-export/approve" element={<ExportOrderApprove />} />
-            <Route path="/orders-export/packing" element={<ExportOrderPacking />} />
-            <Route path="/orders-export/approve/wms" element={<ExportOrderWMS />} />
+            {/* export order */}
+            <Route path="/export-orders" element={<ExportOrderListAdvanced />} />
+            <Route path="/export-orders/create" element={<ExportOrderCreateAdvanced />} />
+            <Route path="/export-orders/:id" element={<ExportOrderDetailAdvanced />} />
+            <Route path="/export-orders/confirm" element={<ConfirmExportOrder />} />
+            <Route path="/export-orders/inventory-check" element={<InventoryCheckExportOrder />} />
+            <Route path="/export-orders/approve" element={<ApproveExportOrder />} />
+            <Route path="/export-orders/packing" element={<PackingExportOrder />} />
+            <Route path="/export-orders/shipping" element={<ShippingExportOrder />} />
+            <Route path="/export-orders/complete" element={<CompleteExportOrder />} />
 
             {/* stock */}
             <Route path="stock" element={<StockList />} />
