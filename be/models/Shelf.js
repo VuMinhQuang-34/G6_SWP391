@@ -1,7 +1,7 @@
-// models/User.js
+// models/Shelf.js
 export default (sequelize, DataTypes) => {
     const Shelf = sequelize.define('Shelf', {
-        ShelfID: {
+        ShelfId: {
             type: DataTypes.STRING,
             primaryKey: true
         },

@@ -1,6 +1,6 @@
 import db from "../models/index.js"; // Import db từ models
 import { Op, where } from 'sequelize'; // Import Op từ sequelize để sử dụng trong tìm kiếm
-const { ImportOrders, ImportOrderDetails, Book, OrderStatusLogs, Fault, Stock, User, Category } = db;
+const { ImportOrders, ImportOrderDetails, Book, OrderStatusLogs, Fault, Stock, User, Category, Bin, Shelf, Warehouse } = db;
 
 //#region ==IO==
 const getOneIO = async (req, res) => {
@@ -87,9 +87,9 @@ const updateStock = async (stock) => {
             where: { BookId: stock.BookId }
         })
     } catch (error) {
-        
+
     }
- 
+
 }
 
 //#region ==USER==
@@ -155,6 +155,124 @@ const getOneStock = async (bookId) => {
     }
 };
 
+
+
+
+
+
+//#region ===Bin===
+
+
+
+
+
+
+
+const getAllBin = async () => {
+    try {
+        return await Bin.findAll();
+    } catch (error) {
+
+    }
+}
+
+const getOneBinById = async (id) => {
+    try {
+        return await await Bin.findOne({ BinId: id });
+    } catch (error) {
+
+    }
+}
+
+const createBin = async (req, res) => {
+    try {
+        const { BinId, ShelfId, Name, Quantity_Max_Limit, Quantity_Current, Description } = req.body;
+
+        if (!BinId || !ShelfId || !Name || !Quantity_Max_Limit) {
+            return res.status(400).json({ error: 'Vui lòng cung cấp đầy đủ thông tin Bin' });
+        }
+
+        const newBin = await Bin.create({
+            BinId,
+            ShelfId,
+            Name,
+            Quantity_Max_Limit,
+            Quantity_Current: Quantity_Current || 0, // Nếu không có thì mặc định là 0
+            Description
+        });
+
+        return newBin;
+    } catch (error) {
+        return null;
+    }
+}
+
+
+const updateBin = async (req, res) => {
+    try {
+        const { BinId, ShelfId, Name, Quantity_Max_Limit, Quantity_Current, Description } = req.body;
+
+        if (!BinId || !ShelfId || !Name || !Quantity_Max_Limit) {
+            return res.status(400).json({ error: 'Vui lòng cung cấp đầy đủ thông tin Bin' });
+        }
+
+        const newBin = await Bin.create({
+            BinId,
+            ShelfId,
+            Name,
+            Quantity_Max_Limit,
+            Quantity_Current: Quantity_Current || 0, // Nếu không có thì mặc định là 0
+            Description
+        });
+
+        return newBin;
+    } catch (error) {
+        return null;
+    }
+}
+
+
+
+
+export const deleteBin = async (req, res) => {
+    try {
+        const { BinId } = req.params;
+
+        const bin = await Bin.findOne({ BinId });
+        if (!bin) {
+            return res.status(404).json({ error: 'Bin không tồn tại' });
+        }
+        await bin.destroy();
+        return bin;
+
+    } catch (error) {
+        res.status(500).json({ error: 'Lỗi khi xóa Bin', details: error.message });
+    }
+};
+
+const getTotalBooksInBin = async (req, res) => {
+    try {
+        const { BinId } = req.params;
+
+        // Kiểm tra bin có tồn tại không
+        const bin = await Bin.findOne({ BinId });
+        if (!bin) {
+            return res.status(404).json({ error: 'Bin không tồn tại' });
+        }
+
+        // Tính tổng số lượng sách trong bin
+        const totalQuantity = await BookBin.sum('Quantity', { where: { BinId } });
+
+        res.status(200).json({ BinId, TotalQuantity: totalQuantity || 0 });
+    } catch (error) {
+        res.status(500).json({ error: 'Lỗi khi lấy tổng số lượng sách trong Bin', details: error.message });
+    }
+};
+
+
+
+
+
 export default {
     getOneIO,
     getCountBooksIO,
@@ -171,5 +289,11 @@ export default {
 
     getTotalBook,
     getAllCategories,
-    getOneStock
+    getOneStock,
+
+    getAllBin,
+    getOneBinById,
+    createBin,
+    updateBin,
+    getTotalBooksInBin
 }

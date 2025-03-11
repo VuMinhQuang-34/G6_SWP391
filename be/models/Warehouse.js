@@ -1,7 +1,7 @@
 export default (sequelize, DataTypes) => {
     const Warehouse = sequelize.define('Warehouse', {
         WarehouseId: {
-            type: DataTypes.STRING ,
+            type: DataTypes.STRING,
             primaryKey: true,
             defaultValue: "WHL"
         },

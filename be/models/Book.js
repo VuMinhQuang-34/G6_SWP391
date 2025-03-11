@@ -22,6 +22,8 @@ export default (sequelize, DataTypes) => {
     timestamps: false
   });
 
+
+
   Book.associate = function (models) {
     Book.belongsTo(models.Category, {
       foreignKey: 'CategoryId',
