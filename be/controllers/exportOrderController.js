@@ -14,14 +14,14 @@ const { Op } = db.Sequelize;
  */
 export const createExportOrder = async (req, res, next) => {
     try {
-        const { 
-            items, 
-            note, 
+        const {
+            items,
+            note,
             exportDate,
             recipientName,
             recipientPhone,
             shippingAddress,
-            createdBy 
+            createdBy
         } = req.body;
 
         // Validate input data
@@ -105,6 +105,7 @@ export const createExportOrder = async (req, res, next) => {
  */
 export const getExportOrders = async (req, res, next) => {
     try {
+        // Lấy các tham số phân trang và lọc từ query
         const { page = 1, limit = 10, status, fromDate, toDate, searchId } = req.query;
         const offset = (page - 1) * limit;
 
@@ -155,6 +156,7 @@ export const getExportOrders = async (req, res, next) => {
             shippingAddress: order.ShippingAddress
         }));
 
+        // Trả về kết quả với thông tin phân trang
         res.json({
             success: true,
             message: 'Export orders retrieved successfully',
@@ -179,12 +181,13 @@ export const getExportOrders = async (req, res, next) => {
  */
 export const getExportOrderById = async (req, res, next) => {
     try {
+        // Tìm đơn hàng theo ID kèm theo các quan hệ
         const exportOrder = await ExportOrders.findOne({
             where: { ExportOrderId: req.params.id },
             include: [
                 {
                     model: ExportOrderDetails,
-                    include: [{ 
+                    include: [{
                         model: Book,
                         attributes: ['BookId', 'Title']
                     }]
@@ -303,7 +306,7 @@ export const updateExportOrder = async (req, res, next) => {
             include: [
                 {
                     model: ExportOrderDetails,
-                    include: [{ 
+                    include: [{
                         model: Book,
                         attributes: ['BookId', 'Title']
                     }]
@@ -418,7 +421,7 @@ export const updateExportOrderStatus = async (req, res, next) => {
         const currentStatus = exportOrder.Status;
         if (!validTransitions[currentStatus]?.includes(status)) {
             throw new ApiError(
-                httpStatus.BAD_REQUEST, 
+                httpStatus.BAD_REQUEST,
                 `Invalid status transition from ${currentStatus} to ${status}`
             );
         }
@@ -429,6 +432,7 @@ export const updateExportOrderStatus = async (req, res, next) => {
             Reason: reason || null
         };
 
+        // Nếu trạng thái là Approved, cập nhật thông tin phê duyệt
         if (status === 'Approved') {
             updateData.ApprovedBy = updatedBy;
             updateData.ApprovedDate = new Date();

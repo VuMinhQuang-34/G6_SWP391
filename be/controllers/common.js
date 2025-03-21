@@ -1,6 +1,6 @@
 import db from "../models/index.js"; // Import db từ models
 import { Op, where } from 'sequelize'; // Import Op từ sequelize để sử dụng trong tìm kiếm
-const { ImportOrders, ImportOrderDetails, Book, OrderStatusLogs, Fault, Stock, User, Category, Bin, Shelf, Warehouse } = db;
+const { ImportOrders, ImportOrderDetails, Book, OrderStatusLogs, Fault, Stock, User, Category, Bin, Shelf, Warehouse, BookBin } = db;
 
 //#region ==IO==
 const getOneIO = async (req, res) => {
@@ -231,22 +231,51 @@ const updateBin = async (req, res) => {
     }
 }
 
-
-
-
-export const deleteBin = async (req, res) => {
+// Xóa bin chỉ khi không chứa sách nào
+const deleteBin = async (binId) => {
     try {
-        const { BinId } = req.params;
-
-        const bin = await Bin.findOne({ BinId });
+        // Kiểm tra bin có tồn tại không
+        const bin = await Bin.findOne({ 
+            where: { BinId: binId } 
+        });
+        
         if (!bin) {
-            return res.status(404).json({ error: 'Bin không tồn tại' });
+            return {
+                success: false,
+                message: 'Bin không tồn tại',
+                status: 404
+            };
         }
+        
+        // Kiểm tra bin có chứa sách nào không
+        const bookCount = await BookBin.count({ 
+            where: { BinId: binId } 
+        });
+        
+        if (bookCount > 0) {
+            return {
+                success: false,
+                message: 'Không thể xóa bin vì đang chứa sách',
+                status: 400
+            };
+        }
+        
+        // Nếu bin không chứa sách, thực hiện xóa
         await bin.destroy();
-        return bin;
-
+        
+        return {
+            success: true,
+            message: 'Xóa bin thành công',
+            status: 200
+        };
     } catch (error) {
-        res.status(500).json({ error: 'Lỗi khi xóa Bin', details: error.message });
+        console.error('Error in deleteBin:', error);
+        return {
+            success: false,
+            message: 'Lỗi khi xóa bin',
+            error: error.message,
+            status: 500
+        };
     }
 };
 
@@ -269,9 +298,19 @@ const getTotalBooksInBin = async (req, res) => {
     }
 };
 
+//#region ===Shelf===
 
-
-
+const getAllShelf = async () => {
+    try {
+        return await Shelf.findAll({
+            raw: true,
+            order: [['ShelfId', 'ASC']]
+        });
+    } catch (error) {
+        console.error('Error in getAllShelf:', error);
+        throw error;
+    }
+}
 
 export default {
     getOneIO,
@@ -281,19 +320,18 @@ export default {
     getAllUsers,
     getCountUserByStatus,
     getCountUserByRole,
-
     getCountIOByStatus,
     getAllStock,
     getTotalQuantityStock,
     updateStock,
-
     getTotalBook,
     getAllCategories,
     getOneStock,
-
     getAllBin,
     getOneBinById,
     createBin,
     updateBin,
-    getTotalBooksInBin
+    getTotalBooksInBin,
+    getAllShelf,
+    deleteBin
 }

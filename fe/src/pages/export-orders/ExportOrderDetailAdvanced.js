@@ -14,9 +14,9 @@ const { confirm } = Modal;
 
 // Memoized Header Component
 const Header = memo(({ ExportOrderId, Status, statusColors, navigate }) => (
-    <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
+    <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 24,
         backgroundColor: 'white',
@@ -25,7 +25,7 @@ const Header = memo(({ ExportOrderId, Status, statusColors, navigate }) => (
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
     }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <Button 
+            <Button
                 onClick={() => navigate(-1)}
                 icon={<ArrowLeftOutlined />}
             >
@@ -35,8 +35,8 @@ const Header = memo(({ ExportOrderId, Status, statusColors, navigate }) => (
                 Export Order #{ExportOrderId}
             </span>
         </div>
-        <Tag style={{ 
-            fontSize: '16px', 
+        <Tag style={{
+            fontSize: '16px',
             padding: '8px 16px',
             borderRadius: '6px'
         }} color={statusColors[Status]}>
@@ -47,7 +47,7 @@ const Header = memo(({ ExportOrderId, Status, statusColors, navigate }) => (
 
 // Memoized Order Information Component
 const OrderInfo = memo(({ CreatedBy, Created_Date, exportDate, Note }) => (
-    <Card 
+    <Card
         title={<span style={{ fontSize: '16px' }}>Order Information</span>}
         style={{ height: '100%' }}
         bordered={false}
@@ -67,7 +67,7 @@ const OrderInfo = memo(({ CreatedBy, Created_Date, exportDate, Note }) => (
 
 // Memoized Recipient Information Component
 const RecipientInfo = memo(({ recipientName, recipientPhone, shippingAddress }) => (
-    <Card 
+    <Card
         title={<span style={{ fontSize: '16px' }}>Recipient Information</span>}
         style={{ height: '100%' }}
         bordered={false}
@@ -83,7 +83,7 @@ const RecipientInfo = memo(({ recipientName, recipientPhone, shippingAddress }) 
 // Memoized Action Buttons Component
 const ActionButtons = memo(({ Status, handleDelete, handleUpdateStatus, setStatusModalVisible, onUpdate, hasChanges }) => (
     <Card bordered={false}>
-        <div style={{ 
+        <div style={{
             display: 'flex',
             justifyContent: 'flex-end',
             gap: '12px'
@@ -106,10 +106,10 @@ const ActionButtons = memo(({ Status, handleDelete, handleUpdateStatus, setStatu
 
 // Memoized Status History Component
 const StatusHistory = memo(({ logs, statusColors }) => (
-    <Card 
+    <Card
         title={<span style={{ fontSize: '16px' }}>Status History</span>}
         bordered={false}
-        bodyStyle={{ 
+        bodyStyle={{
             padding: '0 24px',
             maxHeight: 'calc(100vh - 200px)',
             overflowY: 'auto'
@@ -117,7 +117,7 @@ const StatusHistory = memo(({ logs, statusColors }) => (
     >
         <Timeline style={{ padding: '24px 0' }}>
             {logs.map((log) => (
-                <Timeline.Item 
+                <Timeline.Item
                     key={log.logId}
                     color={statusColors[log.status]}
                     dot={
@@ -126,25 +126,25 @@ const StatusHistory = memo(({ logs, statusColors }) => (
                             borderRadius: '50%',
                             width: '10px',
                             height: '10px'
-                        }}/>
+                        }} />
                     }
                 >
                     <Card
                         size="small"
-                        style={{ 
+                        style={{
                             marginBottom: 16,
                             borderRadius: '8px',
                             backgroundColor: '#fafafa'
                         }}
                     >
                         <div style={{ fontSize: '14px' }}>
-                            <div style={{ 
+                            <div style={{
                                 fontWeight: 'bold',
                                 color: statusColors[log.status]
                             }}>
                                 {log.status}
                             </div>
-                            <div style={{ 
+                            <div style={{
                                 color: '#666',
                                 fontSize: '12px',
                                 margin: '4px 0'
@@ -153,7 +153,7 @@ const StatusHistory = memo(({ logs, statusColors }) => (
                             </div>
                             <div>Updated by: {log.createdBy}</div>
                             {log.note && (
-                                <div style={{ 
+                                <div style={{
                                     marginTop: 8,
                                     padding: '8px',
                                     backgroundColor: '#f0f0f0',
@@ -262,7 +262,7 @@ function ExportOrderDetailAdvanced() {
                     toast.success('🗑️ Order deleted successfully');
                     navigate('/export-orders');
                 } catch (error) {
-                    toast.error(error.response?.status === 400 
+                    toast.error(error.response?.status === 400
                         ? 'Cannot delete order that is not in New status'
                         : 'Failed to delete order'
                     );
@@ -352,14 +352,14 @@ function ExportOrderDetailAdvanced() {
             dataIndex: 'quantity',
             width: 120,
             align: 'right',
-            render: (value, record, index) => 
+            render: (value, record, index) =>
                 Status === 'New' ? (
                     <Input
                         type="number"
                         min={1}
                         value={value}
                         onChange={(e) => handleDetailChange(index, 'quantity', parseInt(e.target.value) || 0)}
-                        style={{ 
+                        style={{
                             width: '100px',
                             textAlign: 'right',
                             border: 'none',
@@ -376,7 +376,7 @@ function ExportOrderDetailAdvanced() {
             dataIndex: 'unitPrice',
             width: 140,
             align: 'right',
-            render: (value, record, index) => 
+            render: (value, record, index) =>
                 Status === 'New' && isEditMode ? (
                     <Input
                         type="number"
@@ -384,7 +384,7 @@ function ExportOrderDetailAdvanced() {
                         step={0.01}
                         value={value}
                         onChange={(e) => handleDetailChange(index, 'unitPrice', parseFloat(e.target.value) || 0)}
-                        style={{ 
+                        style={{
                             width: '120px',
                             textAlign: 'right',
                             border: 'none',
@@ -415,7 +415,7 @@ function ExportOrderDetailAdvanced() {
                     <Input
                         value={value}
                         onChange={(e) => handleDetailChange(index, 'note', e.target.value)}
-                        style={{ 
+                        style={{
                             border: 'none',
                             borderBottom: '1px solid #d9d9d9',
                             borderRadius: 0,
@@ -427,11 +427,36 @@ function ExportOrderDetailAdvanced() {
         }
     ], [Status, handleDetailChange]);
 
-    const totalAmount = useMemo(() => 
-        ExportOrderDetails?.reduce((sum, item) => 
+    const totalAmount = useMemo(() =>
+        ExportOrderDetails?.reduce((sum, item) =>
             sum + (item.quantity * Number(item.unitPrice)), 0) || 0,
         [ExportOrderDetails]
     );
+
+    // Handle delete order
+    const handleDelete = async () => {
+        confirm({
+            title: 'Delete Order',
+            icon: <ExclamationCircleOutlined />,
+            content: 'Are you sure you want to delete this order?',
+            okText: 'Yes',
+            okType: 'danger',
+            cancelText: 'No',
+            onOk: async () => {
+                try {
+                    await axios.delete(`http://localhost:9999/api/export-orders/${id}`);
+                    message.success('Order deleted successfully');
+                    window.location.href = '/export-orders';
+                } catch (error) {
+                    if (error.response?.status === 400) {
+                        message.error('Cannot delete order that is not in New status');
+                    } else {
+                        message.error('Failed to delete order');
+                    }
+                }
+            }
+        });
+    };
 
     if (loading) {
         return (
@@ -452,7 +477,7 @@ function ExportOrderDetailAdvanced() {
 
     return (
         <div style={{ padding: '24px', width: '100%', backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
-            <Header 
+            <Header
                 ExportOrderId={ExportOrderId}
                 Status={Status}
                 statusColors={statusColors}
@@ -480,7 +505,7 @@ function ExportOrderDetailAdvanced() {
                             </Col>
                         </Row>
 
-                        <Card 
+                        <Card
                             title={<span style={{ fontSize: '16px' }}>Product List</span>}
                             bordered={false}
                             extra={

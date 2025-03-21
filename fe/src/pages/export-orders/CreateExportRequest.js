@@ -60,7 +60,7 @@ const CreateExportRequest = () => {
 
             const response = await axios.get('http://localhost:9999/api/export-orders', { params });
             console.log('Export orders response:', response.data);
-            
+
             if (response.data.success) {
                 setOrders(response.data.data.orders);
                 setPagination({
@@ -135,20 +135,20 @@ const CreateExportRequest = () => {
         try {
             setLoading(true);
             const selected = products.filter(book => bookIds.includes(book.BookId));
-            
+
             // Fetch stock quantities for selected books
-            const stockPromises = selected.map(book => 
+            const stockPromises = selected.map(book =>
                 axios.get(`http://localhost:9999/api/stocks/${book.BookId}`)
             );
-            
+
             const stockResponses = await Promise.all(stockPromises);
-            
+
             const updatedBooks = selected.map((book, index) => {
                 const stockResponse = stockResponses[index].data;
                 // Kiểm tra response thành công và lấy số lượng từ data
                 const stockQuantity = stockResponse.code === 200 ? stockResponse.data[0].quantity : 0;
                 const existingBook = selectedItems.find(b => b.BookId === book.BookId);
-                
+
                 return {
                     ...book,
                     StockQuantity: stockQuantity, // Lấy số lượng tồn kho từ API
@@ -156,7 +156,7 @@ const CreateExportRequest = () => {
                     Note: existingBook ? existingBook.Note : ''
                 };
             });
-            
+
             setSelectedItems(updatedBooks);
         } catch (error) {
             message.error('Failed to fetch stock information');
@@ -205,9 +205,9 @@ const CreateExportRequest = () => {
             }
 
             // Validate quantities
-            const invalidItems = selectedItems.filter(item => 
-                !item.Quantity || 
-                item.Quantity <= 0 || 
+            const invalidItems = selectedItems.filter(item =>
+                !item.Quantity ||
+                item.Quantity <= 0 ||
                 item.Quantity > item.StockQuantity ||
                 item.StockQuantity <= 0
             );
@@ -240,7 +240,7 @@ const CreateExportRequest = () => {
 
             setLoading(true);
             const response = await axios.post('http://localhost:9999/api/export-orders', orderData);
-            
+
             if (response.data.success) {
                 toast.success(response.data.message || 'Export request created successfully');
                 form.resetFields();
@@ -483,8 +483,8 @@ const CreateExportRequest = () => {
                             showSearch
                         >
                             {products.map((book) => (
-                                <Option 
-                                    key={book.BookId} 
+                                <Option
+                                    key={book.BookId}
                                     value={book.BookId}
                                     disabled={book.Status !== 'Active'}
                                 >

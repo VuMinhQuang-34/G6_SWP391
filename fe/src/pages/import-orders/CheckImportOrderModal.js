@@ -32,8 +32,13 @@ const CheckImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, or
             const existingBook = selectedFaultBooks.find(b => b.BookId === book.BookId);
             return {
                 ...book,
-                Quantity: existingBook ? existingBook.Quantity : 0, // Giữ nguyên số lượng nếu đã có
-                Price: existingBook ? existingBook.Price : 0, // Giữ nguyên giá nếu đã có
+                BookInfo: {
+                    Title: book.Title || '',  // Đảm bảo có BookInfo.Title
+                    Author: book.Author || '',
+                    Publisher: book.Publisher || ''
+                },
+                Quantity: existingBook ? existingBook.Quantity : 0,
+                Price: existingBook ? existingBook.Price : 0,
                 Note: existingBook ? existingBook.Note : ""
             };
         });
