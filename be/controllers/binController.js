@@ -5,13 +5,36 @@ import util from "./common.js";
 
 export const getAllBin = async (req, res) => {
     try {
-        const bins = await util.getAllBin();
-        return res.status(200).json(bins);
+        const { page = 1, limit = 10, shelfId } = req.query;
+        const offset = (page - 1) * limit;
+        
+        // Xây dựng điều kiện tìm kiếm
+        const whereCondition = {};
+        if (shelfId) {
+            whereCondition.ShelfId = shelfId;
+        }
+        
+        // Thực hiện truy vấn với phân trang
+        const { count, rows } = await Bin.findAndCountAll({
+            where: whereCondition,
+            limit: parseInt(limit),
+            offset: parseInt(offset),
+            order: [['BinId', 'ASC']]
+        });
+        
+        return res.status(200).json({
+            data: rows,
+            total: count,
+            page: parseInt(page),
+            limit: parseInt(limit),
+            totalPages: Math.ceil(count / limit)
+        });
     } catch (error) {
         console.error("Lỗi khi lấy danh sách bins:", error);
         return res.status(500).json({ message: "Lỗi server" });
     }
 };
+
 export const getOneBinById = async (req, res) => {
     try {
         const { id } = req.params;
@@ -61,11 +84,17 @@ export const getOneBinById = async (req, res) => {
 
 export const createBin = async (req, res) => {
     try {
-        const { BinId, ShelfId, Name, Quantity_Max_Limit, Quantity_Current, Description } = req.body;
+        const { BinId, ShelfId, Name, Quantity_Max_Limit, Description } = req.body;
 
         // Kiểm tra xem các trường bắt buộc có được gửi không
-        if (!BinId || !ShelfId || !Name || !Quantity_Max_Limit) {
+        if (!BinId || !ShelfId || !Name || Quantity_Max_Limit === undefined || Quantity_Max_Limit === null) {
             return res.status(400).json({ error: 'Vui lòng cung cấp đầy đủ thông tin Bin' });
+        }
+
+        // Xác thực dữ liệu số lượng tối đa
+        const maxLimit = parseInt(Quantity_Max_Limit, 10);
+        if (isNaN(maxLimit) || !Number.isInteger(maxLimit) || maxLimit <= 0) {
+            return res.status(400).json({ error: 'Số lượng sách tối đa phải là số nguyên dương' });
         }
 
         // Kiểm tra xem BinId đã tồn tại chưa
@@ -74,14 +103,20 @@ export const createBin = async (req, res) => {
             return res.status(409).json({ error: `Bin với ID ${BinId} đã tồn tại` });
         }
 
+        // Kiểm tra xem ShelfId có tồn tại không
+        const existingShelf = await Shelf.findOne({ where: { ShelfId } });
+        if (!existingShelf) {
+            return res.status(404).json({ error: `Không tìm thấy Shelf với ID ${ShelfId}` });
+        }
+
         // Chèn dữ liệu Bin mới vào database
         const newBin = await Bin.create({
             BinId,
             ShelfId,
             Name,
-            Quantity_Max_Limit,
-            Quantity_Current: Quantity_Current || 0, // Nếu không có thì mặc định là 0
-            Description
+            Quantity_Max_Limit: maxLimit,
+            Quantity_Current: 0, // Mặc định là 0 khi tạo mới
+            Description: Description || '' // Nếu không có thì mặc định là chuỗi rỗng
         });
 
         return res.status(201).json({
@@ -130,10 +165,38 @@ export const updateBin = async (req, res) => {
 
 export const deleteBin = async (req, res) => {
     try {
-        const bin = await util.deleteBin(req.body);
-        return res.status(200).json(bin);
+        const { id } = req.params;
+        
+        if (!id) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Thiếu mã bin" 
+            });
+        }
+        
+        const result = await util.deleteBin(id);
+        
+        return res.status(result.status).json({
+            success: result.success,
+            message: result.message
+        });
     } catch (error) {
-        console.error("Lỗi khi xóa bin", error);
+        console.error("Lỗi khi xóa bin:", error);
+        return res.status(500).json({ 
+            success: false, 
+            message: "Lỗi server", 
+            error: error.message 
+        });
+    }
+};
+
+
+export const getAllShelf = async (req, res) => {
+    try {
+        const shelfs = await util.getAllShelf();
+        return res.status(200).json(shelfs);
+    } catch (error) {
+        console.error("Lỗi khi lấy danh sách kệ:", error);
         return res.status(500).json({ message: "Lỗi server" });
     }
 };

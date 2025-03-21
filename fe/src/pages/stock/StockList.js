@@ -75,7 +75,7 @@ const StockManagement = () => {
         return;
       }
 
-      if (values.MinStockQuantity < values.MaxStockQuantity) {
+      if (values.MinStockQuantity >= values.MaxStockQuantity) {
         toast.error(`Số lượng tồn kho tối đa phải lớn hơn số lượng tồn kho tối thiểu`, { autoClose: 2000 });
         return;
       }

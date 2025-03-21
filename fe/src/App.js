@@ -20,14 +20,12 @@ import { AuthProvider, AuthContext } from "./context/AuthContext";
 import CategoryList from "./pages/category/CategoryList";
 import BookList from './pages/book/BookList';
 import ExportOrderListAdvanced from "./pages/export-orders/ExportOrderListAdvanced";
-import ExportOrderCreateAdvanced from "./pages/export-orders/ExportOrderCreateAdvanced";
 import ExportOrderDetailAdvanced from "./pages/export-orders/ExportOrderDetailAdvanced";
-import ConfirmExportOrder from "./pages/export-orders/ConfirmExportOrder";
-import InventoryCheckExportOrder from "./pages/export-orders/InventoryCheckExportOrder";
+import CreateExportRequest from "./pages/export-orders/CreateExportRequest";
 import ApproveExportOrder from "./pages/export-orders/ApproveExportOrder";
 import PackingExportOrder from "./pages/export-orders/PackingExportOrder";
 import ShippingExportOrder from "./pages/export-orders/ShippingExportOrder";
-import CompleteExportOrder from "./pages/export-orders/CompleteExportOrder";
+import Location from "./pages/location/Location";
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useContext(AuthContext);
@@ -70,18 +68,15 @@ const App = () => {
             <Route path="orders-import/approve" element={<ImportOrderListApprove />} />
             <Route path="orders-import/check" element={<ImportOrderListCheck />} />
             {/* export order */}
-            <Route path="/export-orders" element={<ExportOrderListAdvanced />} />
-            <Route path="/export-orders/create" element={<ExportOrderCreateAdvanced />} />
+            <Route path="/export-orders" element={<CreateExportRequest />} />
             <Route path="/export-orders/:id" element={<ExportOrderDetailAdvanced />} />
-            <Route path="/export-orders/confirm" element={<ConfirmExportOrder />} />
-            <Route path="/export-orders/inventory-check" element={<InventoryCheckExportOrder />} />
-            <Route path="/export-orders/approve" element={<ApproveExportOrder />} />
-            <Route path="/export-orders/packing" element={<PackingExportOrder />} />
-            <Route path="/export-orders/shipping" element={<ShippingExportOrder />} />
-            <Route path="/export-orders/complete" element={<CompleteExportOrder />} />
+            <Route path="/export-orders/status/approve" element={<ApproveExportOrder />} />
+            <Route path="/export-orders/status/packing" element={<PackingExportOrder />} />
+            <Route path="/export-orders/status/shipping" element={<ShippingExportOrder />} />
 
             {/* stock */}
             <Route path="stock" element={<StockList />} />
+            <Route path="location" element={<Location />} />
 
             {/* admin */}
             <Route path="dashboard" element={<Dashboard />} />

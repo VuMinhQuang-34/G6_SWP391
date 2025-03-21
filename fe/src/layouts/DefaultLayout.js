@@ -71,16 +71,16 @@ const DefaultLayout = () => {
                         </Menu.SubMenu>
                         <Menu.SubMenu key="6" icon={<SettingOutlined />} title="Export Orders">
                             <Menu.Item key="6.1">
-                                <Link to="/orders-export">Tạo đơn xuất</Link>
+                                <Link to="/export-orders">Quản lý đơn xuất</Link>
                             </Menu.Item>
                             <Menu.Item key="6.2">
-                                <Link to="/orders-export/approve">Phê duyệt</Link>
+                                <Link to="/export-orders/status/approve">Phê duyệt</Link>
                             </Menu.Item>
                             <Menu.Item key="6.3">
-                                <Link to="/orders-export/packing">Đóng gói</Link>
+                                <Link to="/export-orders/status/packing">Đóng gói</Link>
                             </Menu.Item>
                             <Menu.Item key="6.4">
-                                <Link to="/orders-export/approve/wms">Phê duyệt xuất kho</Link>
+                                <Link to="/export-orders/status/shipping">Vận chuyển & Hoàn thành</Link>
                             </Menu.Item>
                         </Menu.SubMenu>
                         <Menu.Item key="7" icon={<SettingOutlined />}>
@@ -104,7 +104,10 @@ const DefaultLayout = () => {
                         <Menu.Item key="8" icon={<SettingOutlined />}>
                             <Link to="/approval-management">Quản lý phê duyệt</Link>
                         </Menu.Item> */}
-                        <Menu.Item key="9" icon={<LogoutOutlined />} danger onClick={handleLogout}>
+                        <Menu.Item key="9" icon={<SettingOutlined />}>
+                            <Link to="location">Location</Link>
+                        </Menu.Item>
+                        <Menu.Item key="10" icon={<LogoutOutlined />} danger onClick={handleLogout}>
                             Logout
                         </Menu.Item>
                     </Menu>

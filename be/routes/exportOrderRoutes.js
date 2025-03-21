@@ -6,7 +6,7 @@ import {
     updateExportOrder,
     deleteExportOrder,
     updateExportOrderStatus,
-    getOrderStatusLogs
+    // getOrderStatusLogs
 } from "../controllers/exportOrderController.js";
 
 const exportOrderRoutes = express.Router();
@@ -30,7 +30,7 @@ exportOrderRoutes.delete("/export-orders/:id", deleteExportOrder);
 exportOrderRoutes.patch("/export-orders/:id/status", updateExportOrderStatus);
 
 // Lấy lịch sử trạng thái đơn hàng xuất
-exportOrderRoutes.get("/export-orders/:id/status-logs", getOrderStatusLogs);
+// exportOrderRoutes.get("/export-orders/:id/status-logs", getOrderStatusLogs);
 
 export default exportOrderRoutes;
 
