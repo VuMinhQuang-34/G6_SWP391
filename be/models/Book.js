@@ -9,7 +9,7 @@ export default (sequelize, DataTypes) => {
     Title: DataTypes.STRING,
     Author: DataTypes.STRING,
     Publisher: DataTypes.STRING,
-    Image: DataTypes.TEXT,
+    Image: DataTypes.BLOB,
     CategoryId: DataTypes.INTEGER,
     PublishingYear: DataTypes.INTEGER,
     NumberOfPages: DataTypes.INTEGER,

@@ -27,6 +27,17 @@ const getCategoryById = async (req, res) => {
 // Create new category
 const createCategory = async (req, res) => {
     try {
+        // Check if category name already exists
+        const existingCategory = await Category.findOne({
+            where: { CategoryName: req.body.CategoryName }
+        });
+
+        if (existingCategory) {
+            return res.status(400).json({ 
+                message: 'Category name already exists' 
+            });
+        }
+
         const newCategory = await Category.create({
             CategoryName: req.body.CategoryName
         });
@@ -39,12 +50,34 @@ const createCategory = async (req, res) => {
 // Update category
 const updateCategory = async (req, res) => {
     try {
+        // Check if category exists
+        const category = await Category.findByPk(req.params.id);
+        if (!category) {
+            return res.status(404).json({ message: 'Category not found' });
+        }
+
+        // Check if new name already exists (excluding current category)
+        const existingCategory = await Category.findOne({
+            where: { 
+                CategoryName: req.body.CategoryName,
+                categoryId: { [db.Sequelize.Op.ne]: req.params.id }
+            }
+        });
+
+        if (existingCategory) {
+            return res.status(400).json({ 
+                message: 'Category name already exists' 
+            });
+        }
+
+        // Update category
         const [updated] = await Category.update(
             { CategoryName: req.body.CategoryName },
             {
                 where: { categoryId: req.params.id }
             }
         );
+
         if (updated) {
             const updatedCategory = await Category.findByPk(req.params.id);
             return res.status(200).json(updatedCategory);

@@ -6,7 +6,14 @@ export const orderStatuses = [
     // { key: 'Close', label: 'Đã đóng', step: 5 },
 ];
 
-
+export const exportOrderStatuses = [
+    { key: 'New', label: 'Mới tạo', color: 'blue' },
+    { key: 'Pending', label: 'Chờ duyệt', color: 'orange' },
+    { key: 'Approved', label: 'Đã duyệt', color: 'green' },
+    { key: 'Rejected', label: 'Từ chối', color: 'red' },
+    { key: 'Cancelled', label: 'Đã hủy', color: 'gray' },
+    { key: 'Completed', label: 'Hoàn thành', color: 'purple' }
+];
 
 export const suppliersList = [
     "Trí Tuệ - Công Ty Cổ Phần Sách & Thiết Bị Giáo Dục Trí Tuệ",

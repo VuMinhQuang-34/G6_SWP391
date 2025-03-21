@@ -6,6 +6,7 @@ const Category = db.Category;
 const Stock = db.Stock;
 
 // Create a new book
+
 const createBook = async (req, res) => {
     try {
         // Kiểm tra các trường bắt buộc
@@ -30,6 +31,26 @@ const createBook = async (req, res) => {
                 success: false,
                 message: 'Publisher cannot be empty or contain only whitespace'
             });
+        }
+
+        // Validate Image if provided
+        if (Image) {
+            // Check if Image is a base64 string
+            if (!Image.startsWith('data:image/')) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Image must be a valid base64 image string'
+                });
+            }
+            
+            // Check image size (limit to 5MB)
+            const base64Size = Math.ceil((Image.length - 22) * 3 / 4);
+            if (base64Size > 5 * 1024 * 1024) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Image size must be less than 5MB'
+                });
+            }
         }
 
         // Trim các giá trị string
@@ -60,6 +81,7 @@ const createBook = async (req, res) => {
             data: book
         });
     } catch (error) {
+        console.error('Error creating book:', error);
         return res.status(500).json({
             success: false,
             message: 'Error creating book',

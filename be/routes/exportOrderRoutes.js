@@ -6,33 +6,35 @@ import {
     updateExportOrder,
     deleteExportOrder,
     updateExportOrderStatus,
-    getOrderStatusLogs
+    getExportOrderStatusLogs
 } from "../controllers/exportOrderController.js";
+// import { authenticateToken } from "../middleware/auth.js";
+// import { validateExportOrder } from "../validations/exportOrderValidation.js";
 
 const exportOrderRoutes = express.Router();
 
-// Tạo đơn hàng xuất
-exportOrderRoutes.post("/export-orders/", createExportOrder);
+// Apply authentication middleware to all routes
+// exportOrderRoutes.use(authenticateToken);
 
-// Lấy danh sách đơn hàng xuất
-exportOrderRoutes.get("/export-orders/", getExportOrders);
+// Create new export order
+exportOrderRoutes.post("/export-orders", createExportOrder);
 
-// Lấy chi tiết một đơn hàng xuất theo ID
+// Get list of export orders with pagination and filters
+exportOrderRoutes.get("/export-orders", getExportOrders);
+
+// Get export order details by ID
 exportOrderRoutes.get("/export-orders/:id", getExportOrderById);
 
-// Cập nhật thông tin đơn hàng xuất
+// Update export order details (only for orders in 'New' status)
 exportOrderRoutes.put("/export-orders/:id", updateExportOrder);
 
-// Xóa đơn hàng xuất
+// Delete export order (only for orders in 'New' status)
 exportOrderRoutes.delete("/export-orders/:id", deleteExportOrder);
 
-// Cập nhật trạng thái đơn hàng xuất
+// Update export order status
 exportOrderRoutes.patch("/export-orders/:id/status", updateExportOrderStatus);
 
-// Lấy lịch sử trạng thái đơn hàng xuất
-exportOrderRoutes.get("/export-orders/:id/status-logs", getOrderStatusLogs);
+// Get export order status history
+exportOrderRoutes.get("/export-orders/:id/status-logs", getExportOrderStatusLogs);
 
 export default exportOrderRoutes;
-
-
-

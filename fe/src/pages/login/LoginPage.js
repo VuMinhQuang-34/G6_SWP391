@@ -45,20 +45,20 @@ const LoginPage = () => {
                 login(user, accessToken, refreshToken);
               
                 //Thông báo
-                toast.success(`Chào mừng ${user.FullName}!`, { autoClose: 2000 });
+                toast.success(`Welcome ${user.FullName}!`, { autoClose: 2000 });
 
                 // Chuyển hướng đến trang chính sau khi đăng nhập thành công
                 navigate('/'); // Hoặc bất kỳ trang nào bạn muốn chuyển hướng đến
             } else {
-                toast.error(`Vui lòng kiểm tra lại email hoặc mật khẩu`);
+                toast.error(`Please check your email or password`);
             }
         } catch (error) {
             console.error('Login error:', error);
             notification.error({
-                message: 'Đã xảy ra lỗi khi đăng nhập',
-                description: 'Vui lòng thử lại sau.',
+                message: 'Login Error',
+                description: 'Please try again later.',
             });
-            toast.error(`Vui lòng kiểm tra lại email hoặc mật khẩu`);
+            toast.error(`Please check your email or password`);
         }
     };
 
@@ -72,23 +72,23 @@ const LoginPage = () => {
             // Kiểm tra kết quả trả về từ API
             if (response.data.success) {
                 notification.success({
-                    message: 'Mật khẩu đã được gửi lại qua email',
-                    description: 'Kiểm tra email của bạn để lấy lại mật khẩu.',
+                    message: 'Password Reset Email Sent',
+                    description: 'Please check your email to reset your password.',
                 });
                 setIsModalVisible(false);
             } else {
                 notification.error({
-                    message: 'Email không tồn tại hoặc có lỗi xảy ra',
-                    description: 'Vui lòng kiểm tra lại email đã nhập.',
+                    message: 'Invalid Email',
+                    description: 'Please check the email address you entered.',
                 });
             }
         } catch (error) {
             console.error('Forgot password error:', error);
             notification.error({
-                message: 'Đã xảy ra lỗi khi gửi yêu cầu',
-                description: 'Vui lòng thử lại sau.',
+                message: 'System Error',
+                description: 'Please try again later.',
             });
-            toast.error("Lỗi hệ thống, vui lòng thử lại!", { autoClose: 3000 });
+            toast.error("System error, please try again!", { autoClose: 3000 });
         }
     };
 
@@ -102,95 +102,52 @@ const LoginPage = () => {
 
     return (
         <div style={{
-            maxWidth: 400,
-            margin: '50px auto',
-            padding: '20px',
-            borderRadius: '10px',
-            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-            backgroundColor: '#fff',
+            minHeight: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
         }}>
-            <h2 style={{
-                textAlign: 'center',
-                color: '#1890ff',
-                marginBottom: '30px',
-                fontFamily: 'Arial, sans-serif',
+            <div style={{
+                maxWidth: 400,
+                width: '90%',
+                padding: '40px',
+                borderRadius: '15px',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(10px)',
             }}>
-                Đăng nhập
-            </h2>
-            <Form form={form} onFinish={handleLogin}>
-                <Form.Item
-                    name="email"
-                    rules={[{ required: true, message: 'Vui lòng nhập email!' }, { type: 'email', message: 'Email không hợp lệ!' }]}
-                >
-                    <Input
-                        prefix={<MailOutlined />}
-                        placeholder="Email"
-                        style={{ borderRadius: '5px', padding: '10px' }}
-                    />
-                </Form.Item>
-                <Form.Item
-                    name="password"
-                    rules={[{ required: true, message: 'Vui lòng nhập mật khẩu!' }, { min: 6, message: 'Mật khẩu phải có ít nhất 6 ký tự!' }]}
-                >
-                    <Input.Password
-                        prefix={<LockOutlined />}
-                        placeholder="Mật khẩu"
-                        style={{ borderRadius: '5px', padding: '10px' }}
-                    />
-                </Form.Item>
-                <Form.Item>
-                    <Button
-                        type="primary"
-                        block
-                        htmlType="submit"
-                        style={{
-                            borderRadius: '5px',
-                            backgroundColor: '#1890ff',
-                            borderColor: '#1890ff',
-                            fontWeight: 'bold',
-                            padding: '12px',
-                            transition: 'all 0.3s ease',
-                        }}
-                        onMouseEnter={(e) => e.target.style.backgroundColor = '#40a9ff'}
-                        onMouseLeave={(e) => e.target.style.backgroundColor = '#1890ff'}
-                    >
-                        Đăng nhập
-                    </Button>
-                </Form.Item>
-                <Form.Item>
-                    <Tooltip title="Nhấp để lấy lại mật khẩu của bạn">
-                        <Button
-                            type="link"
-                            onClick={showForgotPasswordModal}
-                            block
-                            style={{ fontWeight: 'bold' }}
-                        >
-                            Quên mật khẩu?
-                        </Button>
-                    </Tooltip>
-                </Form.Item>
-            </Form>
-
-            <Modal
-                title="Quên mật khẩu"
-                visible={isModalVisible}
-                onCancel={handleCancel}
-                footer={null}
-                centered
-                destroyOnClose
-                style={{
-                    borderRadius: '10px',
-                }}
-            >
-                <Form onFinish={handleForgotPassword}>
+                <h2 style={{
+                    textAlign: 'center',
+                    color: '#1a237e',
+                    marginBottom: '30px',
+                    fontFamily: 'Arial, sans-serif',
+                    fontSize: '28px',
+                    fontWeight: 'bold',
+                }}>
+                    System Login
+                </h2>
+                <Form form={form} onFinish={handleLogin}>
                     <Form.Item
                         name="email"
-                        rules={[{ required: true, message: 'Vui lòng nhập email!' }, { type: 'email', message: 'Email không hợp lệ!' }]}
+                        rules={[{ required: true, message: 'Please enter your email!' }, { type: 'email', message: 'Invalid email format!' }]}
                     >
                         <Input
-                            prefix={<MailOutlined />}
-                            placeholder="Nhập email của bạn"
-                            style={{ borderRadius: '5px', padding: '10px' }}
+                            prefix={<MailOutlined style={{ color: '#1a237e' }} />}
+                            placeholder="Email"
+                            style={{ borderRadius: '8px', padding: '12px', height: '45px' }}
+                        />
+                    </Form.Item>
+                    <Form.Item
+                        name="password"
+                        rules={[{ required: true, message: 'Please enter your password!' }, { min: 6, message: 'Password must be at least 6 characters!' }]}
+                    >
+                        <Input.Password
+                            prefix={<LockOutlined style={{ color: '#1a237e' }} />}
+                            placeholder="Password"
+                            style={{ borderRadius: '8px', padding: '12px', height: '45px' }}
                         />
                     </Form.Item>
                     <Form.Item>
@@ -199,19 +156,81 @@ const LoginPage = () => {
                             block
                             htmlType="submit"
                             style={{
-                                borderRadius: '5px',
-                                backgroundColor: '#1890ff',
-                                borderColor: '#1890ff',
+                                borderRadius: '8px',
+                                backgroundColor: '#1a237e',
+                                borderColor: '#1a237e',
                                 fontWeight: 'bold',
                                 padding: '12px',
+                                height: '45px',
                                 transition: 'all 0.3s ease',
                             }}
+                            onMouseEnter={(e) => e.target.style.backgroundColor = '#283593'}
+                            onMouseLeave={(e) => e.target.style.backgroundColor = '#1a237e'}
                         >
-                            Gửi mật khẩu
+                            Login
                         </Button>
                     </Form.Item>
+                    <Form.Item>
+                        <Tooltip title="Click to reset your password">
+                            <Button
+                                type="link"
+                                onClick={showForgotPasswordModal}
+                                block
+                                style={{ 
+                                    fontWeight: 'bold',
+                                    color: '#1a237e',
+                                    height: '40px',
+                                }}
+                            >
+                                Forgot Password?
+                            </Button>
+                        </Tooltip>
+                    </Form.Item>
                 </Form>
-            </Modal>
+
+                <Modal
+                    title="Reset Password"
+                    visible={isModalVisible}
+                    onCancel={handleCancel}
+                    footer={null}
+                    centered
+                    destroyOnClose
+                    style={{
+                        borderRadius: '15px',
+                    }}
+                >
+                    <Form onFinish={handleForgotPassword}>
+                        <Form.Item
+                            name="email"
+                            rules={[{ required: true, message: 'Please enter your email!' }, { type: 'email', message: 'Invalid email format!' }]}
+                        >
+                            <Input
+                                prefix={<MailOutlined style={{ color: '#1a237e' }} />}
+                                placeholder="Enter your email"
+                                style={{ borderRadius: '8px', padding: '12px', height: '45px' }}
+                            />
+                        </Form.Item>
+                        <Form.Item>
+                            <Button
+                                type="primary"
+                                block
+                                htmlType="submit"
+                                style={{
+                                    borderRadius: '8px',
+                                    backgroundColor: '#1a237e',
+                                    borderColor: '#1a237e',
+                                    fontWeight: 'bold',
+                                    padding: '12px',
+                                    height: '45px',
+                                    transition: 'all 0.3s ease',
+                                }}
+                            >
+                                Send Reset Link
+                            </Button>
+                        </Form.Item>
+                    </Form>
+                </Modal>
+            </div>
         </div>
     );
 };
