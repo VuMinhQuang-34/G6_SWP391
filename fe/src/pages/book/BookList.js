@@ -189,10 +189,40 @@ const BookList = () => {
             title: 'Image',
             dataIndex: 'Image',
             key: 'Image',
-            render: (image) => (
-                image ? (
+            render: (image) => {
+                if (!image) {
+                    return (
+                        <div
+                            style={{
+                                width: '50px',
+                                height: '70px',
+                                background: '#eee',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}
+                        >
+                            No image
+                        </div>
+                    );
+                }
+
+                // Handle image data from server
+                let imageUrl;
+                if (typeof image === 'string') {
+                    imageUrl = image;
+                } else if (image.type === 'Buffer' && Array.isArray(image.data)) {
+                    // Convert Buffer data to base64
+                    const bytes = new Uint8Array(image.data);
+                    const binary = bytes.reduce((acc, byte) => acc + String.fromCharCode(byte), '');
+                    imageUrl = `data:image/jpeg;base64,${btoa(binary)}`;
+                } else {
+                    return <div>Invalid image format</div>;
+                }
+
+                return (
                     <img
-                        src={image}
+                        src={imageUrl}
                         alt="Book cover"
                         style={{
                             width: '50px',
@@ -200,21 +230,8 @@ const BookList = () => {
                             objectFit: 'cover'
                         }}
                     />
-                ) : (
-                    <div
-                        style={{
-                            width: '50px',
-                            height: '70px',
-                            background: '#eee',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                        }}
-                    >
-                        No image
-                    </div>
-                )
-            )
+                );
+            }
         },
         {
             title: 'Title',

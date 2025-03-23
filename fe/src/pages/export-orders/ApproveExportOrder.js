@@ -15,7 +15,7 @@ const { TabPane } = Tabs;
 
 const ActionButtons = memo(({ Status, onApprove, onReject }) => (
     <Card bordered={false}>
-        <div style={{ 
+        <div style={{
             display: 'flex',
             justifyContent: 'flex-end',
             gap: '12px'
@@ -100,14 +100,20 @@ function ApproveExportOrder() {
     // Approve order
     const handleApprove = async () => {
         try {
+            if (selectedOrder.status !== 'New') {
+                toast.error('Only orders in New status can be approved');
+                return;
+            }
+
             const currentUser = JSON.parse(localStorage.getItem('user'));
             await axios.patch(`http://localhost:9999/api/export-orders/${selectedOrder.id}/status`, {
-                status: selectedOrder.status === 'New' ? 'Pending' : 'Approved',
+                status: 'Pending',
                 updatedBy: currentUser.userId,
                 reason: reason
             });
-            toast.success('Order approved successfully');
-            setDetailModalVisible(false);
+            toast.success('Order submitted for approval successfully');
+            setApprovalModalVisible(false);
+            setReason('');
             fetchApprovalList();
         } catch (error) {
             console.error('Error approving order:', error);
@@ -118,10 +124,16 @@ function ApproveExportOrder() {
     // Reject order
     const handleReject = async () => {
         try {
+            if (selectedOrder.status !== 'New') {
+                toast.error('Only orders in New status can be rejected');
+                return;
+            }
+
             if (!reason.trim()) {
                 toast.error('Please provide a reason for rejection');
                 return;
             }
+
             const currentUser = JSON.parse(localStorage.getItem('user'));
             await axios.patch(`http://localhost:9999/api/export-orders/${selectedOrder.id}/status`, {
                 status: 'Rejected',
@@ -129,8 +141,8 @@ function ApproveExportOrder() {
                 reason: reason
             });
             toast.success('Order rejected successfully');
-            setDetailModalVisible(false);
             setRejectModalVisible(false);
+            setReason('');
             fetchApprovalList();
         } catch (error) {
             console.error('Error rejecting order:', error);
@@ -190,19 +202,19 @@ function ApproveExportOrder() {
                     >
                         View Details
                     </Button>
-                    {(record.status === 'New' || record.status === 'Pending') && (
+                    {record.status === 'New' && (
                         <>
-                            <Button 
+                            <Button
                                 type="primary"
                                 onClick={() => {
                                     setSelectedOrder(record);
                                     setApprovalModalVisible(true);
                                 }}
                             >
-                                {record.status === 'New' ? 'Submit for Approval' : 'Approve'}
+                                Submit for Approval
                             </Button>
-                            <Button 
-                                danger 
+                            <Button
+                                danger
                                 onClick={() => {
                                     setSelectedOrder(record);
                                     setRejectModalVisible(true);
@@ -230,18 +242,18 @@ function ApproveExportOrder() {
                     <Button onClick={() => setDetailModalVisible(false)}>
                         Close
                     </Button>
-                    {(selectedOrder?.status === 'New' || selectedOrder?.status === 'Pending') && (
+                    {selectedOrder?.status === 'New' && (
                         <>
-                            <Button 
+                            <Button
                                 type="primary"
                                 onClick={() => {
                                     setDetailModalVisible(false);
                                     setApprovalModalVisible(true);
                                 }}
                             >
-                                {selectedOrder?.status === 'New' ? 'Submit for Approval' : 'Approve'}
+                                Submit for Approval
                             </Button>
-                            <Button 
+                            <Button
                                 danger
                                 onClick={() => {
                                     setDetailModalVisible(false);
@@ -316,7 +328,7 @@ function ApproveExportOrder() {
                                 }
                             ]}
                             summary={(data) => {
-                                const total = data.reduce((sum, item) => 
+                                const total = data.reduce((sum, item) =>
                                     sum + (Number(item.quantity) * Number(item.unitPrice)), 0
                                 );
                                 return (
@@ -333,33 +345,33 @@ function ApproveExportOrder() {
                         />
                     </TabPane>
                     <TabPane tab="Status History" key="history">
-                        <div style={{ 
-                            maxHeight: '400px', 
+                        <div style={{
+                            maxHeight: '400px',
                             overflowY: 'auto',
                             padding: '0 16px'
                         }}>
                             <Timeline style={{ padding: '24px 0' }}>
                                 {selectedOrderLogs.map((log) => (
-                                    <Timeline.Item 
+                                    <Timeline.Item
                                         key={log.logId}
                                         color={statusColors[log.status]}
                                     >
                                         <Card
                                             size="small"
-                                            style={{ 
+                                            style={{
                                                 marginBottom: 16,
                                                 borderRadius: '8px',
                                                 backgroundColor: '#fafafa'
                                             }}
                                         >
                                             <div style={{ fontSize: '14px' }}>
-                                                <div style={{ 
+                                                <div style={{
                                                     fontWeight: 'bold',
                                                     color: statusColors[log.status]
                                                 }}>
                                                     {log.status}
                                                 </div>
-                                                <div style={{ 
+                                                <div style={{
                                                     color: '#666',
                                                     fontSize: '12px',
                                                     margin: '4px 0'
@@ -368,7 +380,7 @@ function ApproveExportOrder() {
                                                 </div>
                                                 <div>Updated by: {log.createdBy}</div>
                                                 {log.note && (
-                                                    <div style={{ 
+                                                    <div style={{
                                                         marginTop: 8,
                                                         padding: '8px',
                                                         backgroundColor: '#f0f0f0',
@@ -453,7 +465,7 @@ function ApproveExportOrder() {
                 cancelText="Cancel"
             >
                 <p>
-                    {selectedOrder?.status === 'New' 
+                    {selectedOrder?.status === 'New'
                         ? 'Are you sure you want to submit this export order for approval?'
                         : 'Are you sure you want to approve this export order?'
                     }

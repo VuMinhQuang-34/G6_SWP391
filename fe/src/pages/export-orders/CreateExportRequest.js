@@ -225,9 +225,9 @@ const CreateExportRequest = () => {
 
             const orderData = {
                 items: selectedItems.map(item => ({
-                    bookId: item.BookId,
-                    quantity: item.Quantity,
-                    price: item.Price,
+                    productId: item.BookId,
+                    quantity: parseInt(item.Quantity),
+                    price: parseFloat(item.Price),
                     note: item.Note || ''
                 })),
                 note: values.Note || '',

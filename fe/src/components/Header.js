@@ -66,7 +66,6 @@ const AppHeader = () => {
         {/* Search and Icons */}
         <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
           <Input.Search
-            placeholder="Search inventory..."
             style={{ 
               width: 250,
               borderRadius: "6px",

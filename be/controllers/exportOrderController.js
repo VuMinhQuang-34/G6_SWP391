@@ -414,7 +414,8 @@ export const updateExportOrderStatus = async (req, res, next) => {
         const validTransitions = {
             'New': ['Pending'],
             'Pending': ['Approved', 'Rejected'],
-            'Approved': ['Completed'],
+            'Approved': ['Shipping'],
+            'Shipping': ['Completed'],
             'Rejected': ['Cancelled']
         };
 

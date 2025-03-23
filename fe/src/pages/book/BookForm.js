@@ -151,14 +151,30 @@ const BookForm = ({ initialValues, onCancel }) => {
             return;
         }
         if (info.file.status === 'done') {
-            // Get this url from response in real world.
             const reader = new FileReader();
             reader.addEventListener('load', () => {
-                setImageUrl(reader.result);
-                form.setFieldsValue({ Image: reader.result });
+                const base64String = reader.result;
+                setImageUrl(base64String);
+                form.setFieldsValue({ Image: base64String });
             });
             reader.readAsDataURL(info.file.originFileObj);
         }
+    };
+
+    // Hiển thị ảnh trong form
+    const renderImage = () => {
+        if (!imageUrl && initialValues?.Image) {
+            const image = initialValues.Image;
+            if (typeof image === 'string') {
+                return image;
+            } else if (image.type === 'Buffer' && Array.isArray(image.data)) {
+                // Convert Buffer data to base64
+                const bytes = new Uint8Array(image.data);
+                const binary = bytes.reduce((acc, byte) => acc + String.fromCharCode(byte), '');
+                return `data:image/jpeg;base64,${btoa(binary)}`;
+            }
+        }
+        return imageUrl;
     };
 
     // Sửa lại hàm handleSubmit để thêm kiểm tra trước khi gửi
@@ -251,9 +267,9 @@ const BookForm = ({ initialValues, onCancel }) => {
                         }}
                         onChange={handleImageChange}
                     >
-                        {imageUrl ? (
+                        {renderImage() ? (
                             <img
-                                src={imageUrl}
+                                src={renderImage()}
                                 alt="Book cover"
                                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                             />

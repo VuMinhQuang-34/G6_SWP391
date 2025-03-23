@@ -248,29 +248,41 @@ function ExportOrderDetailAdvanced() {
         }
     }, [id, reason, fetchOrderDetail]);
 
-    const handleDelete = useCallback(() => {
-        confirm({
-            title: 'Delete Order',
-            icon: <ExclamationCircleOutlined />,
-            content: 'Are you sure you want to delete this order?',
-            okText: 'Yes',
-            okType: 'danger',
-            cancelText: 'No',
-            onOk: async () => {
-                try {
-                    await axios.delete(`http://localhost:9999/api/export-orders/${id}`);
-                    toast.success('🗑️ Order deleted successfully');
-                    navigate('/export-orders');
-                } catch (error) {
-                    toast.error(error.response?.status === 400
-                        ? 'Cannot delete order that is not in New status'
-                        : 'Failed to delete order'
-                    );
-                }
-            }
-        });
-    }, [id, navigate]);
-
+    // const handleDelete = useCallback(() => {
+    //     confirm({
+    //         title: 'Delete Order',
+    //         icon: <ExclamationCircleOutlined />,
+    //         content: 'Are you sure you want to delete this order?',
+    //         okText: 'Yes',
+    //         okType: 'danger',
+    //         cancelText: 'No',
+    //         onOk: async () => {
+    //             try {
+    //                 await axios.delete(`http://localhost:9999/api/export-orders/${id}`);
+    //                 toast.success('🗑️ Order deleted successfully');
+    //                 navigate('/export-orders');
+    //             } catch (error) {
+    //                 toast.error(error.response?.status === 400
+    //                     ? 'Cannot delete order that is not in New status'
+    //                     : 'Failed to delete order'
+    //                 );
+    //             }
+    //         }
+    //     });
+    // }, [id, navigate]);
+    // const handleDelete = async () => {
+    //     try {
+    //         await axios.delete(`http://localhost:9999/api/export-orders/${id}`);
+    //         message.success('Order deleted successfully');
+    //         window.location.href = '/export-orders';
+    //     } catch (error) {
+    //         if (error.response?.status === 400) {
+    //             message.error('Cannot delete order that is not in New status');
+    //         } else {
+    //             message.error('Failed to delete order');
+    //         }
+    //     }
+    // };
     const handleUpdate = async () => {
         try {
             // Validate items before sending

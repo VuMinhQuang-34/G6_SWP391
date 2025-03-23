@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Table, Input, Badge, Card, Spin, Alert, Tag, Button, Modal, Form } from "antd";
-import { SearchOutlined, EditOutlined } from "@ant-design/icons";
+import { Table, Input, Badge, Card, Spin, Alert, Tag, Button, Modal, Form, Typography, Space, Divider } from "antd";
+import { SearchOutlined, EditOutlined, BookOutlined, DatabaseOutlined, WarningOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import { toast } from "react-toastify";
 const { Search } = Input;
+const { Title, Text } = Typography;
 
 const StockManagement = () => {
   const [stocks, setStocks] = useState([]);
@@ -25,6 +26,7 @@ const StockManagement = () => {
   const fetchStocks = async () => {
     try {
       const response = await axios.get("http://localhost:9999/api/stocks");
+      console.log("API Response:", response.data); // Log dữ liệu từ API để debug
       setStocks(response.data);
       setFilteredStocks(response.data);
     } catch (error) {
@@ -107,7 +109,6 @@ const StockManagement = () => {
     } catch (error) {
       console.error("Lỗi khi cập nhật dữ liệu:", error);
       toast.error(`Cập nhật thất bại`, { autoClose: 2000 });
-
     }
   };
 
@@ -123,28 +124,68 @@ const StockManagement = () => {
       title: "Số Lượng",
       dataIndex: "Quantity",
       key: "Quantity",
-      render: (text) => <Badge
-        count={text}
-        style={{ backgroundColor: "#52c41a", color: "white" }} // Màu xanh
-      />,
+      render: (value) => {
+        // Đảm bảo hiển thị đúng cả khi giá trị là 0
+        const quantity = Number(value);
+        return (
+          <Badge
+            count={quantity}
+            showZero={true}
+            overflowCount={10000}
+            style={{ 
+              backgroundColor: quantity > 0 ? "#52c41a" : "#d9d9d9", 
+              color: "white",
+              fontSize: '14px',
+              padding: '0 8px'
+            }}
+          />
+        );
+      }
     },
     {
       title: "Số Lượng Tồn Kho Tối Đa",
       dataIndex: "MaxStockQuantity",
       key: "MaxStockQuantity",
-      render: (value) => (value > 0 ? value : <Tag color="default">0</Tag>),
+      render: (value) => {
+        const maxValue = Number(value);
+        return (
+          maxValue > 0 ? 
+          <Tag color="blue" style={{ fontSize: '14px', padding: '2px 10px' }}>
+            <DatabaseOutlined /> {maxValue}
+          </Tag> : 
+          <Tag color="default" style={{ fontSize: '14px', padding: '2px 10px' }}>
+            <InfoCircleOutlined /> 0
+          </Tag>
+        );
+      }
     },
     {
       title: "Số Lượng Tồn Kho Tối Thiểu",
       dataIndex: "MinStockQuantity",
       key: "MinStockQuantity",
-      render: (value) => (value > 0 ? value : <Tag color="default">0</Tag>),
+      render: (value) => {
+        const minValue = Number(value);
+        return (
+          minValue > 0 ? 
+          <Tag color="orange" style={{ fontSize: '14px', padding: '2px 10px' }}>
+            <WarningOutlined /> {minValue}
+          </Tag> : 
+          <Tag color="default" style={{ fontSize: '14px', padding: '2px 10px' }}>
+            <InfoCircleOutlined /> 0
+          </Tag>
+        );
+      }
     },
     {
       title: "Thao Tác",
       key: "actions",
       render: (_, record) => (
-        <Button icon={<EditOutlined />} onClick={() => showEditModal(record)}>
+        <Button 
+          type="primary"
+          icon={<EditOutlined />} 
+          onClick={() => showEditModal(record)}
+          style={{ borderRadius: '6px' }}
+        >
           Sửa
         </Button>
       ),
@@ -152,91 +193,172 @@ const StockManagement = () => {
   ];
 
   return (
-    // <Card
-    //   title="📚 Quản lý tồn kho"
-    //   bordered={false}
-    //   style={{
-    //     margin: "20px",
-    //     padding: "20px",
-    //     boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
-    //     borderRadius: "10px",
-    //   }}
-    // >
-      <div style={{ padding: "20px" }}>
-      {/* Thanh tìm kiếm */}
-      <Search
-        placeholder="🔍 Nhập mã sách để tìm..."
-        onSearch={handleSearch}
-        style={{ width: "100%", maxWidth: "400px", marginBottom: 20 }}
-        enterButton={<SearchOutlined />}
-        size="large"
-      />
-
-      {/* Loading */}
-      {loading ? (
-        <Spin tip="Đang tải dữ liệu..." size="large" style={{ display: "block", textAlign: "center", marginTop: 20 }} />
-      ) : filteredStocks.length === 0 ? (
-        <Alert message="Không tìm thấy dữ liệu!" type="warning" showIcon />
-      ) : (
-        <Table
-          dataSource={filteredStocks}
-          columns={columns}
-          rowKey="StockId"
-          pagination={{
-            current: currentPage,
-            pageSize: pageSize,
-            onChange: (page) => setCurrentPage(page),
+    <Card
+      title={
+        <Space align="center">
+          <BookOutlined style={{ fontSize: '24px', color: '#1890ff' }} />
+          <Title level={4} style={{ margin: 0 }}>Quản lý tồn kho</Title>
+        </Space>
+      }
+      bordered={false}
+      style={{
+        margin: "20px",
+        padding: "20px",
+        boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
+        borderRadius: "10px",
+      }}
+    >
+      <div className="stock-management-container">
+        {/* Thanh tìm kiếm */}
+        <Search
+          placeholder="🔍 Nhập mã sách để tìm..."
+          onSearch={handleSearch}
+          style={{ 
+            width: "100%", 
+            maxWidth: "400px", 
+            marginBottom: 20,
+            borderRadius: '8px',
+            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1)'
           }}
-          rowClassName={(record) => {
-            if (record.Quantity < record.MinStockQuantity) return "low-stock";
-            if (record.Quantity > record.MaxStockQuantity && record.MaxStockQuantity > 0)
-              return "over-stock";
-            return "";
-          }}
+          enterButton={
+            <Button type="primary" icon={<SearchOutlined />} style={{ borderRadius: '0 8px 8px 0', height: '40px' }}>
+              Tìm
+            </Button>
+          }
+          size="large"
         />
-      )}
 
-      {/* Modal chỉnh sửa tồn kho */}
-      <Modal
-        title="Chỉnh sửa tồn kho"
-        open={isModalOpen}
-        onCancel={() => setIsModalOpen(false)}
-        onOk={handleUpdateStock}
-      >
-        <Form form={form} layout="vertical">
-          <Form.Item label="Mã Sách" name="BookId">
-            <Input disabled />
-          </Form.Item>
-          <Form.Item label="Số Lượng" name="Quantity">
-            <Input type="number" disabled />
-          </Form.Item>
-          <Form.Item label="Tồn Kho Tối Đa" name="MaxStockQuantity">
-            <Input type="number" />
-          </Form.Item>
-          <Form.Item label="Tồn Kho Tối Thiểu" name="MinStockQuantity">
-            <Input type="number" />
-          </Form.Item>
-        </Form>
-      </Modal>
+        <Divider style={{ margin: '15px 0' }} />
 
-      {/* CSS tô màu hàng */}
-      <style>{`
-        .low-stock {
-          background-color:rgb(238, 67, 93) !important; /* Đỏ nhạt */
-          color:rgb(0, 0, 0);
-          font-weight: bold;
-        }
-        .over-stock {
-          background-color:rgb(229, 241, 61) !important; /* Xanh nhạt */
-          color:rgb(0, 0, 0);
-          font-weight: bold;
-        }
-        .ant-table-row:hover {
-          background-color: #f0f0f0 !important;
-        }
-      `}</style>
-    {/* </Card> */}
-    </div>
+        {/* Loading */}
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '40px 0' }}>
+            <Spin tip="Đang tải dữ liệu..." size="large" />
+          </div>
+        ) : filteredStocks.length === 0 ? (
+          <Alert 
+            message="Không tìm thấy dữ liệu!" 
+            type="warning" 
+            showIcon 
+            style={{ marginBottom: '20px', borderRadius: '8px' }}
+          />
+        ) : (
+          <Table
+            dataSource={filteredStocks}
+            columns={columns}
+            rowKey="StockId" // Sử dụng StockId làm khóa chính
+            pagination={{
+              current: currentPage,
+              pageSize: pageSize,
+              onChange: (page) => setCurrentPage(page),
+              showSizeChanger: false,
+              showTotal: (total) => `Tổng số ${total} sản phẩm`,
+              style: { marginTop: '20px' }
+            }}
+            rowClassName={(record) => {
+              // Kiểm tra MinStockQuantity và MaxStockQuantity khác 0 để tránh đánh dấu sai
+              if (record.MinStockQuantity > 0 && record.Quantity < record.MinStockQuantity) 
+                return "low-stock";
+              if (record.MaxStockQuantity > 0 && record.Quantity > record.MaxStockQuantity)
+                return "over-stock";
+              return "";
+            }}
+            style={{ 
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+              borderRadius: '8px',
+              overflow: 'hidden'
+            }}
+          />
+        )}
+
+        {/* Modal chỉnh sửa tồn kho */}
+        <Modal
+          title={
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <EditOutlined style={{ color: '#1890ff', fontSize: '20px' }} />
+              <span>Chỉnh sửa tồn kho</span>
+            </div>
+          }
+          open={isModalOpen}
+          onCancel={() => setIsModalOpen(false)}
+          onOk={handleUpdateStock}
+          okText="Cập nhật"
+          cancelText="Hủy"
+          okButtonProps={{ style: { borderRadius: '6px' } }}
+          cancelButtonProps={{ style: { borderRadius: '6px' } }}
+          style={{ top: 20 }}
+          maskStyle={{ backdropFilter: 'blur(2px)' }}
+        >
+          <Form form={form} layout="vertical">
+            <Form.Item label="Mã Sách" name="BookId">
+              <Input disabled style={{ borderRadius: '6px' }} />
+            </Form.Item>
+            <Form.Item label="Số Lượng Hiện Tại" name="Quantity">
+              <Input type="number" disabled style={{ borderRadius: '6px' }} />
+            </Form.Item>
+            <Form.Item 
+              label="Tồn Kho Tối Đa" 
+              name="MaxStockQuantity"
+              extra="Số lượng tồn kho tối đa phải lớn hơn tồn kho tối thiểu"
+            >
+              <Input type="number" style={{ borderRadius: '6px' }} />
+            </Form.Item>
+            <Form.Item 
+              label="Tồn Kho Tối Thiểu" 
+              name="MinStockQuantity"
+              extra="Số lượng tồn kho tối thiểu phải lớn hơn hoặc bằng 0"
+            >
+              <Input type="number" style={{ borderRadius: '6px' }} />
+            </Form.Item>
+          </Form>
+        </Modal>
+
+        {/* CSS tô màu hàng */}
+        <style>{`
+          .low-stock {
+            background-color: rgba(238, 67, 93, 0.15) !important;
+            color: rgb(0, 0, 0);
+            font-weight: bold;
+          }
+          .low-stock:hover {
+            background-color: rgba(238, 67, 93, 0.2) !important;
+          }
+          .over-stock {
+            background-color: rgba(229, 241, 61, 0.15) !important;
+            color: rgb(0, 0, 0);
+            font-weight: bold;
+          }
+          .over-stock:hover {
+            background-color: rgba(229, 241, 61, 0.2) !important;
+          }
+          .ant-table-row:hover {
+            background-color: #f0f0f0 !important;
+          }
+          .ant-table-thead > tr > th {
+            background-color: #f0f7ff;
+            font-weight: bold;
+            color: #333;
+          }
+          .stock-management-container .ant-table-pagination {
+            margin: 16px 0;
+          }
+          .ant-input-search .ant-input {
+            height: 40px;
+            border-radius: 8px 0 0 8px;
+          }
+          .ant-input-group-addon {
+            background: transparent;
+          }
+          .ant-badge-count {
+            border-radius: 20px;
+            min-width: 30px;
+            height: 24px;
+            line-height: 24px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+          }
+        `}</style>
+      </div>
+    </Card>
   );
 };
 

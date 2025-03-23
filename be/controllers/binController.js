@@ -201,3 +201,70 @@ export const getAllShelf = async (req, res) => {
     }
 };
 
+// Controller để lấy thông tin sách trong bin (không sử dụng include)
+export const getBooksInBin = async (req, res) => {
+  try {
+    const { binId } = req.params;
+    
+    // Kiểm tra bin có tồn tại không
+    const bin = await db.Bin.findByPk(binId);
+    if (!bin) {
+      return res.status(404).json({ message: 'Không tìm thấy bin này' });
+    }
+    
+    // Lấy thông tin sách trong bin
+    const bookBins = await db.BookBin.findAll({
+      where: { BinId: binId }
+    });
+    
+    // Lấy danh sách BookId
+    const bookIds = bookBins.map(bookBin => bookBin.BookId);
+    
+    // Truy vấn thông tin sách riêng biệt
+    const books = await db.Book.findAll({
+      where: { BookId: bookIds }
+    });
+    
+    // Lấy danh sách CategoryId
+    const categoryIds = [...new Set(books.map(book => book.CategoryId))];
+    
+    // Truy vấn thông tin danh mục riêng biệt
+    const categories = await db.Category.findAll({
+      where: { CategoryId: categoryIds }
+    });
+    
+    // Kết hợp dữ liệu thủ công
+    const booksInBin = bookBins.map(bookBin => {
+      const book = books.find(b => b.BookId === bookBin.BookId) || {};
+      const category = categories.find(c => c.CategoryId === book.CategoryId) || {};
+      
+      return {
+        BookBinId: bookBin.BookBinId,
+        BookId: bookBin.BookId,
+        BinId: bookBin.BinId,
+        Quantity: bookBin.Quantity,
+        Book: {
+          BookId: book.BookId,
+          Title: book.Title,
+          Author: book.Author,
+          Publisher: book.Publisher,
+          CategoryId: book.CategoryId,
+          CategoryName: category.Name
+        }
+      };
+    });
+    
+    // Tính tổng số lượng sách trong bin
+    const totalBooks = bookBins.reduce((sum, item) => sum + item.Quantity, 0);
+    
+    return res.status(200).json({
+      bin,
+      totalBooks,
+      booksInBin
+    });
+  } catch (error) {
+    console.error('Error getting books in bin:', error);
+    return res.status(500).json({ message: 'Đã xảy ra lỗi khi lấy thông tin sách trong bin' });
+  }
+};
+

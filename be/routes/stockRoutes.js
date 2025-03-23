@@ -7,8 +7,8 @@ import {
 
 const stockRoutes = express.Router();
 
-stockRoutes.get("/stocks", getAllStock);        
-stockRoutes.patch("/stocks", updateStock); 
+stockRoutes.get("/stocks", getAllStock);
+stockRoutes.patch("/stocks", updateStock);
 // lấy số lượng tồn kho theo id sách
 stockRoutes.get("/stocks/:id", getStockByIdBook);
 

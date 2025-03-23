@@ -1,262 +1,407 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
-  Layout,
-  Card,
-  Row,
-  Col,
-  Statistic,
-  Table,
-  Progress,
-  Tabs,
-  List,
-  Spin,
-  Tag,
-} from "antd";
-import axios from "axios";
+  Row, Col, Card, Statistic, Table, Progress, Spin, Alert, Divider, Typography, Badge, List, Tag, Space, Tooltip
+} from 'antd';
 import {
-  ArrowUpOutlined,
-  ArrowDownOutlined,
-  BookOutlined,
-  UserOutlined,
-  DollarOutlined,
-  ShoppingCartOutlined,
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-  MedicineBoxOutlined
-} from "@ant-design/icons";
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  AreaChart,
-  Area,
-  Legend,
-} from "recharts";
-import "antd/dist/reset.css";
+  TeamOutlined, BookOutlined, ShoppingCartOutlined, WarningOutlined, CheckCircleOutlined,
+  ClockCircleOutlined, RiseOutlined, FallOutlined, DatabaseOutlined, FileTextOutlined,
+  BankOutlined, UserOutlined, ApartmentOutlined, InboxOutlined, PercentageOutlined
+} from '@ant-design/icons';
+import { Pie, Bar, Line } from '@ant-design/plots';
 
-const { Content } = Layout;
-const { TabPane } = Tabs;
-
-const dashboardData = {
-  users: 5200,
-  books: 1250,
-  bookImports: 340,
-  bookExports: 290,
-  revenue: 120000,
-  pendingOrders: 45,
-};
-
-const bookStats = [
-  { name: "Fiction", value: 400 },
-  { name: "Non-fiction", value: 300 },
-  { name: "Science", value: 200 },
-  { name: "Others", value: 150 },
-];
-
-const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
-
-const monthlySales = [
-  { name: "Jan", sales: 4000 },
-  { name: "Feb", sales: 3000 },
-  { name: "Mar", sales: 5000 },
-  { name: "Apr", sales: 7000 },
-  { name: "May", sales: 6000 },
-  { name: "Jun", sales: 8000 },
-];
-
-const recentTransactions = [
-  { key: "1", type: "Import", book: "Data Structures", quantity: 50 },
-  { key: "2", type: "Export", book: "Machine Learning", quantity: 20 },
-  { key: "3", type: "Import", book: "JavaScript Fundamentals", quantity: 40 },
-  { key: "4", type: "Export", book: "Python for Data Science", quantity: 35 },
-];
+const { Title, Text } = Typography;
 
 const Dashboard = () => {
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
+  const [dashboardData, setDashboardData] = useState(null);
+
   useEffect(() => {
-    console.log("Fetching data..."); // 
-    axios.get("http://localhost:9999/api/dashboard")
-      .then((response) => {
-        console.log("API Response:", response.data); // 
-        // setData({...response.data.data});
-        setData(response.data.data);
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get('http://localhost:9999/api/dashboard');
+        setDashboardData(response.data.data);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err);
+        setError('Đã xảy ra lỗi khi tải dữ liệu dashboard!');
+      } finally {
         setLoading(false);
-      })
-      .catch((error) => {
-        console.error("Lỗi khi lấy dữ liệu dashboard:", error.response || error);
-        setLoading(false);
-      });
+      }
+    };
+
+    fetchData();
   }, []);
-  console.log(data);
 
   if (loading) {
     return (
-      <Layout style={{ padding: 20, background: "#f0f2f5", minHeight: "100vh" }}>
-        <Content>
-          <Spin size="large" />
-        </Content>
-      </Layout>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+        <Spin size="large" tip="Đang tải dữ liệu..." />
+      </div>
     );
   }
 
-  if (!data) {
-    return null; // Không render gì cả nếu không có dữ liệu
+  if (error) {
+    return (
+      <Alert
+        message="Lỗi"
+        description={error}
+        type="error"
+        showIcon
+        style={{ margin: '20px' }}
+      />
+    );
   }
 
+  // Chuẩn bị dữ liệu cho biểu đồ status đơn nhập hàng
+  const importOrderStatusData = [
+    { type: 'Mới', value: dashboardData.importOrdersStats.newImportOrders },
+    { type: 'Phê duyệt', value: dashboardData.importOrdersStats.approvedImportOrders },
+    { type: 'Đã nhận', value: dashboardData.importOrdersStats.receivedImportOrders },
+    { type: 'Nhập kho', value: dashboardData.importOrdersStats.approveImportOrders },
+  ];
+
+  // Chuẩn bị dữ liệu cho biểu đồ người dùng theo vai trò
+  const userRoleData = dashboardData.usersStats.usersByRole.map(role => ({
+    type: role.Role || 'Không rõ',
+    value: role.count
+  }));
+
+  // Chuẩn bị dữ liệu cho biểu đồ tình trạng bin
+  const binStatusData = [
+    { type: 'Còn trống', value: dashboardData.binsStats.availableBins },
+    { type: 'Đã đầy', value: dashboardData.binsStats.fullBins },
+  ];
+
+  // Cấu hình cho biểu đồ pie
+  const pieConfig = {
+    appendPadding: 10,
+    data: importOrderStatusData,
+    angleField: 'value',
+    colorField: 'type',
+    radius: 0.8,
+    label: {
+      type: 'outer',
+      content: '{name} {percentage}',
+    },
+    interactions: [{ type: 'pie-legend-active' }, { type: 'element-active' }],
+  };
+
+  const userRolePieConfig = {
+    ...pieConfig,
+    data: userRoleData,
+  };
+
+  const binStatusPieConfig = {
+    ...pieConfig,
+    data: binStatusData,
+  };
 
   return (
-    <Layout style={{ padding: 20, background: "#f0f2f5" }}>
-      <Content>
-        <Row gutter={16}>
-          {[
-            {
-              title: "Nhân viên",
-              value: data.totalUsers,
-              icon: <UserOutlined />,
-              color: "#1890ff",
-              extra: (
-                <div style={{ marginTop: 10, display: "flex", justifyContent: "center", gap: "" }}>
-                  <Tag color="green">
-                    <CheckCircleOutlined /> {data.totalUsersActive} Active
-                  </Tag>
-                  <Tag color="red">
-                    <CloseCircleOutlined /> {data.totalUsersInactive} Inactive
-                  </Tag>
-              </div>
-              ),
-            },
-            {
-              title: "Số lượng sách",
-              value: data.totalBook,
-              icon: <ShoppingCartOutlined />,
-              color: "#13c2c2",
-            },
-            {
-              title: "Tổng hàng tồn kho",
-              value: data.totalStockQuantity,
-              icon: <MedicineBoxOutlined />,
-              color: "#52c41a",
-            },
-            {
-              title: "Tổng đơn nhập sách",
-              value: data.totalIO,
-              icon: <ArrowUpOutlined />,
-              color: "#ff4d4f",
-            },
-            {
-              title: "Tổng đơn",
-              value: 'Chưa cập nhật',
-              icon: <ArrowDownOutlined />,
-              color: "#722ed1",
-            },
-            // {
-            //   title: "Total Revenue",
-            //   value: `$${dashboardData.revenue}`,
-            //   icon: <DollarOutlined />,
-            //   color: "#faad14",
-            // },
-           
-          ].map((stat, index) => (
-            <Col span={4} key={index}>
-              <Card style={{ background: stat.color, color: "white" }}>
+    <div className="dashboard-container" style={{ padding: '20px' }}>
+      <Title level={2} style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <DatabaseOutlined /> Dashboard Tổng Quan
+      </Title>
+
+      {/* Section 1: Thống kê tổng quan */}
+      <Title level={4} style={{ marginTop: '20px', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <RiseOutlined /> Thống Kê Tổng Quan
+      </Title>
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={12} md={6}>
+          <Card bordered={false} className="dashboard-card">
+            <Statistic
+              title="Tổng Người Dùng"
+              value={dashboardData.usersStats.totalUsers}
+              prefix={<TeamOutlined />}
+              valueStyle={{ color: '#3f8600' }}
+            />
+            <div style={{ marginTop: '10px' }}>
+              <Tag color="green">Hoạt động: {dashboardData.usersStats.totalActiveUsers}</Tag>
+              <Tag color="red">Không hoạt động: {dashboardData.usersStats.totalInactiveUsers}</Tag>
+            </div>
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card bordered={false} className="dashboard-card">
+            <Statistic
+              title="Tổng Sách"
+              value={dashboardData.booksStats.totalBooks}
+              prefix={<BookOutlined />}
+              valueStyle={{ color: '#1890ff' }}
+            />
+            <div style={{ marginTop: '10px' }}>
+              <Tag color="blue">Mới (30 ngày): {dashboardData.booksStats.recentBooks}</Tag>
+              <Tag color="cyan">Số lượng: {dashboardData.booksStats.totalBookQuantity}</Tag>
+            </div>
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card bordered={false} className="dashboard-card">
+            <Statistic
+              title="Đơn Nhập Hàng"
+              value={dashboardData.importOrdersStats.totalImportOrders}
+              prefix={<ShoppingCartOutlined />}
+              valueStyle={{ color: '#722ed1' }}
+            />
+            <div style={{ marginTop: '10px' }}>
+              <Tag color="purple">Mới: {dashboardData.importOrdersStats.newImportOrders}</Tag>
+              <Tag color="geekblue">Đã phê duyệt: {dashboardData.importOrdersStats.approvedImportOrders}</Tag>
+            </div>
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card bordered={false} className="dashboard-card">
+            <Statistic
+              title="Sách Lỗi"
+              value={dashboardData.faultsStats.totalFaults}
+              prefix={<WarningOutlined />}
+              valueStyle={{ color: '#cf1322' }}
+            />
+            <div style={{ marginTop: '10px' }}>
+              <Tag color="orange">Mới (30 ngày): {dashboardData.faultsStats.recentFaults}</Tag>
+              <Progress 
+                percent={Math.round((dashboardData.faultsStats.totalFaults / dashboardData.booksStats.totalBookQuantity) * 100 * 100) / 100} 
+                size="small" 
+                status="exception" 
+              />
+            </div>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Section 2: Thống kê chi tiết */}
+      <Row gutter={[16, 16]} style={{ marginTop: '20px' }}>
+        <Col xs={24} lg={12}>
+          <Card 
+            title={<><InboxOutlined /> Trạng Thái Đơn Nhập Hàng</>} 
+            bordered={false} 
+            className="dashboard-card"
+          >
+            <Pie {...pieConfig} />
+          </Card>
+        </Col>
+        <Col xs={24} lg={12}>
+          <Card 
+            title={<><UserOutlined /> Người Dùng Theo Vai Trò</>} 
+            bordered={false} 
+            className="dashboard-card"
+          >
+            <Pie {...userRolePieConfig} />
+          </Card>
+        </Col>
+        <Col xs={24} lg={8}>
+          <Card 
+            title={<><ApartmentOutlined /> Trạng Thái Bin</>} 
+            bordered={false} 
+            className="dashboard-card"
+          >
+            <Pie {...binStatusPieConfig} />
+          </Card>
+        </Col>
+        <Col xs={24} lg={16}>
+          <Card 
+            title={<><WarningOutlined /> Cảnh Báo Tồn Kho</>} 
+            bordered={false} 
+            className="dashboard-card"
+          >
+            <Row gutter={[16, 16]}>
+              <Col span={12}>
                 <Statistic
-                  title={stat.title}
-                  value={stat.value}
-                  prefix={stat.icon}
-                  valueStyle={{ color: "white" }}
+                  title="Sách Tồn Kho Thấp"
+                  value={dashboardData.stockStats.lowStockItems}
+                  valueStyle={{ color: '#cf1322' }}
+                  prefix={<FallOutlined />}
                 />
-                {stat.extra && <div style={{ marginTop: 10 }}>{stat.extra}</div>}
-              </Card>
-            </Col>
-          ))}
-        </Row>
-        <Row gutter={16} style={{ marginTop: 20 }}></Row>
+                <Progress
+                  percent={Math.round((dashboardData.stockStats.lowStockItems / dashboardData.booksStats.totalBooks) * 100)}
+                  status="exception"
+                  strokeColor="#cf1322"
+                />
+              </Col>
+              <Col span={12}>
+                <Statistic
+                  title="Sách Tồn Kho Cao"
+                  value={dashboardData.stockStats.overStockItems}
+                  valueStyle={{ color: '#faad14' }}
+                  prefix={<RiseOutlined />}
+                />
+                <Progress
+                  percent={Math.round((dashboardData.stockStats.overStockItems / dashboardData.booksStats.totalBooks) * 100)}
+                  status="normal"
+                  strokeColor="#faad14"
+                />
+              </Col>
+            </Row>
+          </Card>
+        </Col>
+      </Row>
 
-        <Row gutter={16} style={{ marginTop: 20 }}>
-          <Col span={12}>
-            <Card title="Book Categories Distribution">
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie
-                    data={bookStats}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                    label
-                  >
-                    {bookStats.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={COLORS[index % COLORS.length]}
-                      />
-                    ))}
-                  </Pie>
-                  <Legend verticalAlign="bottom" height={36} />
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-              <List
-                dataSource={bookStats}
-                renderItem={(item) => (
-                  <List.Item>
-                    <Tag
-                      color={COLORS[bookStats.indexOf(item) % COLORS.length]}
-                    >
-                      {item.name}
-                    </Tag>
-                    <span>{item.value} books</span>
-                  </List.Item>
-                )}
-              />
-            </Card>
-          </Col>
-          <Col span={12}>
-            <Card title="Monthly Sales Trend">
-              <ResponsiveContainer width="100%" height={200}>
-                <AreaChart data={monthlySales}>
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Area
-                    type="monotone"
-                    dataKey="sales"
-                    stroke="#1890ff"
-                    fill="#1890ff"
+      {/* Section 3: Thống kê chi tiết */}
+      <Row gutter={[16, 16]} style={{ marginTop: '20px' }}>
+        <Col xs={24} md={12}>
+          <Card 
+            title={<><BookOutlined /> Top 5 Sách Tồn Kho Nhiều Nhất</>} 
+            bordered={false} 
+            className="dashboard-card"
+          >
+            <List
+              itemLayout="horizontal"
+              dataSource={dashboardData.stockStats.topStockedBooks}
+              renderItem={(item, index) => (
+                <List.Item>
+                  <List.Item.Meta
+                    avatar={<Badge count={index + 1} style={{ backgroundColor: index === 0 ? '#f5222d' : index === 1 ? '#fa8c16' : '#52c41a' }} />}
+                    title={item.Book.Title}
+                    description={`Số lượng: ${item.Quantity}`}
                   />
-                </AreaChart>
-              </ResponsiveContainer>
-            </Card>
-          </Col>
-        </Row>
-
-        <Row gutter={16} style={{ marginTop: 20 }}>
-          <Col span={24}>
-            <Card title="Recent Transactions">
-              <Table
-                dataSource={recentTransactions}
-                pagination={false}
-                columns={[
-                  { title: "Type", dataIndex: "type", key: "type" },
-                  { title: "Book", dataIndex: "book", key: "book" },
-                  { title: "Quantity", dataIndex: "quantity", key: "quantity" },
-                ]}
+                  <Tag color={item.Quantity > 100 ? 'red' : item.Quantity > 50 ? 'orange' : 'green'}>
+                    {item.Quantity}
+                  </Tag>
+                </List.Item>
+              )}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} md={12}>
+          <Card 
+            title={<><FileTextOutlined /> Thống Kê Metadata</>} 
+            bordered={false} 
+            className="dashboard-card"
+          >
+            <Row gutter={[16, 16]}>
+              <Col span={8}>
+                <Statistic
+                  title="Thể Loại"
+                  value={dashboardData.metadataStats.totalCategories}
+                  prefix={<BookOutlined />}
+                />
+              </Col>
+              <Col span={8}>
+                <Statistic
+                  title="Tác Giả"
+                  value={dashboardData.metadataStats.totalAuthors}
+                  prefix={<UserOutlined />}
+                />
+              </Col>
+              <Col span={8}>
+                <Statistic
+                  title="Nhà Xuất Bản"
+                  value={dashboardData.metadataStats.totalPublishers}
+                  prefix={<BankOutlined />}
+                />
+              </Col>
+            </Row>
+            <Divider />
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Text strong>Tỷ lệ sách/thể loại: </Text>
+              <Progress 
+                percent={Math.round((dashboardData.booksStats.totalBooks / dashboardData.metadataStats.totalCategories) * 10)} 
+                format={percent => `${Math.round((dashboardData.booksStats.totalBooks / dashboardData.metadataStats.totalCategories) * 100) / 100} sách/thể loại`}
               />
-            </Card>
-          </Col>
-        </Row>
-      </Content>
-    </Layout>
+              <Text strong>Tỷ lệ sách/tác giả: </Text>
+              <Progress 
+                percent={Math.round((dashboardData.booksStats.totalBooks / dashboardData.metadataStats.totalAuthors) * 10)} 
+                format={percent => `${Math.round((dashboardData.booksStats.totalBooks / dashboardData.metadataStats.totalAuthors) * 100) / 100} sách/tác giả`}
+                strokeColor="#1890ff"
+              />
+            </Space>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Section 4: Thống kê bin */}
+      <Row gutter={[16, 16]} style={{ marginTop: '20px' }}>
+        <Col span={24}>
+          <Card 
+            title={<><InboxOutlined /> Thống Kê Bin</>} 
+            bordered={false} 
+            className="dashboard-card"
+          >
+            <Row gutter={[16, 16]}>
+              <Col xs={24} sm={8}>
+                <Statistic
+                  title="Tổng Số Bin"
+                  value={dashboardData.binsStats.totalBins}
+                  prefix={<InboxOutlined />}
+                />
+              </Col>
+              <Col xs={24} sm={8}>
+                <Statistic
+                  title="Bin Còn Trống"
+                  value={dashboardData.binsStats.availableBins}
+                  prefix={<CheckCircleOutlined />}
+                  valueStyle={{ color: '#3f8600' }}
+                />
+                <Progress 
+                  percent={Math.round((dashboardData.binsStats.availableBins / dashboardData.binsStats.totalBins) * 100)} 
+                  status="success" 
+                />
+              </Col>
+              <Col xs={24} sm={8}>
+                <Statistic
+                  title="Bin Đã Đầy"
+                  value={dashboardData.binsStats.fullBins}
+                  prefix={<WarningOutlined />}
+                  valueStyle={{ color: '#cf1322' }}
+                />
+                <Progress 
+                  percent={Math.round((dashboardData.binsStats.fullBins / dashboardData.binsStats.totalBins) * 100)} 
+                  status="exception" 
+                />
+              </Col>
+              <Col span={24} style={{ marginTop: '20px' }}>
+                <Statistic
+                  title="Tỷ Lệ Sách Đã Phân Bổ Vào Bin"
+                  value={Math.round((dashboardData.binsStats.booksInBins / dashboardData.booksStats.totalBooks) * 100)}
+                  suffix="%"
+                  prefix={<PercentageOutlined />}
+                  valueStyle={{ color: '#1890ff' }}
+                />
+                <Progress 
+                  percent={Math.round((dashboardData.binsStats.booksInBins / dashboardData.booksStats.totalBooks) * 100)} 
+                  status="active" 
+                  strokeColor="#1890ff"
+                />
+              </Col>
+            </Row>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* CSS cho dashboard */}
+      <style jsx>{`
+        .dashboard-container .dashboard-card {
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+          border-radius: 8px;
+          height: 100%;
+        }
+        
+        .dashboard-container .ant-card-head {
+          border-bottom: 1px solid #f0f0f0;
+          padding: 0 16px;
+        }
+        
+        .dashboard-container .ant-statistic-title {
+          font-size: 14px;
+          color: rgba(0, 0, 0, 0.45);
+        }
+        
+        .dashboard-container .ant-progress-text {
+          font-size: 12px;
+        }
+        
+        .dashboard-container .ant-tag {
+          margin-bottom: 5px;
+        }
+        
+        .dashboard-container .ant-list-item-meta-title {
+          margin-bottom: 0;
+        }
+      `}</style>
+    </div>
   );
 };
 

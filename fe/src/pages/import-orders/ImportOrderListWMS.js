@@ -119,24 +119,33 @@ const ImportOrderListWMS = () => {
     // Hàm xử lý phê duyệt nhập hàng
     const handleCheckOrder = async (body, orderId) => {
         try {
-            console.log("body",body);
-            console.log("body",orderId);
+            console.log("handleCheckOrder body:", body);
+            console.log("handleCheckOrder orderId:", orderId);
             
             const payload = {
                 Status: body.Status,
-                LogStatus: body.Status,
+                LogStatus: body.LogStatus,
                 CreatedBy: user.userId,
+                LogNote: body.LogNote,
                 FaultBooks: body.FaultBooks,
-                LogNote: body.LogNote
-            }
-            await axios.post(`http://localhost:9999/api/import-orders/${orderId}/approveWMS`, payload);
-            message.success("Gửi yêu cầu phê duyệt thành công!");
-            fetchOrders(); // Refresh orders
-            setIsEditModalOpen(false); // Close modal
-
-            toast.success(`Hoàn thành!`, { autoClose: 2000 });
+                BinAllocations: body.BinAllocations
+            };
+            
+            console.log("Final API payload:", payload);
+            
+            // Gọi API và trả về response để hàm gọi có thể xử lý
+            const response = await axios.post(`http://localhost:9999/api/import-orders/${orderId}/approveWMS`, payload);
+            
+            // Refresh danh sách đơn hàng nhưng không hiển thị toast ở đây
+            // Vì toast sẽ được hiển thị bởi component gọi đến handleCheckOrder
+            fetchOrders();
+            
+            // Trả về response để component gọi có thể sử dụng
+            return response;
         } catch (error) {
-            message.error("Lỗi khi chỉnh sửa đơn nhập!");
+            console.error("Error in handleCheckOrder:", error);
+            // Throw error để component gọi có thể bắt và xử lý
+            throw error;
         }
     };
 
