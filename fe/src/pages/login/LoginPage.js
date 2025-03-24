@@ -7,15 +7,15 @@ import { AuthContext } from "../../context/AuthContext"; // Import AuthContext
 import { toast } from "react-toastify";
 
 const LoginPage = () => {
-    
-    const { login, user } = useContext(AuthContext); // Lấy hàm login từ AuthContext
+
+    const { login, user } = useContext(AuthContext); // Get login function from AuthContext
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [form] = Form.useForm();
     const navigate = useNavigate(); // Hook to navigate between routes
-    const [loading, setLoading] = useState(false); // Trạng thái loading khi đăng nhập
+    const [loading, setLoading] = useState(false); // Loading state when logging in
 
     useEffect(() => {
-        // Nếu user đã đăng nhập, điều hướng đến trang chính
+        // If user is already logged in, redirect to main page
         if (user) {
             navigate('/');
         }
@@ -26,29 +26,29 @@ const LoginPage = () => {
 
     const handleLogin = async (values) => {
         try {
-            // Gửi request đăng nhập đến API
+            // Send login request to API
             const response = await axios.post('http://localhost:9999/api/auth/login', {
                 email: values.email,
                 password: values.password,
             });
 
-            // Kiểm tra kết quả trả về từ API
+            // Check result from API
             if (response.data.code == 200) {
-                // Lưu token vào localStorage
+                // Save token to localStorage
                 //localStorage.setItem('accessToken', response.data.tokens.accessToken);
                 //localStorage.setItem('refreshToken', response.data.tokens.refreshToken);
 
                 const { accessToken, refreshToken } = response.data.tokens;
-                const user = response.data.data.user; // Lấy thông tin user từ response
+                const user = response.data.data.user; // Get user info from response
 
-                // Gọi hàm login từ AuthContext, local
+                // Call login function from AuthContext
                 login(user, accessToken, refreshToken);
-              
-                //Thông báo
+
+                // Notification
                 toast.success(`Welcome ${user.FullName}!`, { autoClose: 2000 });
 
-                // Chuyển hướng đến trang chính sau khi đăng nhập thành công
-                navigate('/'); // Hoặc bất kỳ trang nào bạn muốn chuyển hướng đến
+                // Redirect to main page after successful login
+                navigate('/'); // Or any page you want to redirect to
             } else {
                 toast.error(`Please check your email or password`);
             }
@@ -64,12 +64,12 @@ const LoginPage = () => {
 
     const handleForgotPassword = async (values) => {
         try {
-            // Gửi request quên mật khẩu đến API
+            // Send forgot password request to API
             const response = await axios.post('http://localhost:9999/api/auth/forgot-password', {
                 email: values.email,
             });
 
-            // Kiểm tra kết quả trả về từ API
+            // Check result from API
             if (response.data.success) {
                 notification.success({
                     message: 'Password Reset Email Sent',
@@ -176,7 +176,7 @@ const LoginPage = () => {
                                 type="link"
                                 onClick={showForgotPasswordModal}
                                 block
-                                style={{ 
+                                style={{
                                     fontWeight: 'bold',
                                     color: '#1a237e',
                                     height: '40px',

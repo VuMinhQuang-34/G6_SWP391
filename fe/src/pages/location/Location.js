@@ -6,12 +6,12 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './location.css'; // Tạo file CSS riêng cho component này
 
-const API_BASE_URL = "http://localhost:9999/api"; // Cập nhật URL API
+const API_BASE_URL = "http://localhost:9999/api"; // Update API URL
 
 const { Option } = Select;
 const { Title, Text } = Typography;
 
-// Component mô phỏng kho với giao diện cải tiến
+// Component simulating warehouse with improved interface
 const WarehouseVisualizer = ({ shelves, bins, selectedShelf, onSelectShelf }) => {
     const [warehouseData, setWarehouseData] = useState({
         shelves: [],
@@ -44,35 +44,35 @@ const WarehouseVisualizer = ({ shelves, bins, selectedShelf, onSelectShelf }) =>
         return { empty, low, medium, high, total: bins.length };
     }, [bins]);
 
-    // Tính toán số lượng kệ mỗi hàng dựa trên tổng số kệ
+    // Calculate the number of shelves per row based on total shelves
     const getShelvesPerRow = (totalShelves) => {
         if (totalShelves <= 4) return 2;
         if (totalShelves <= 9) return 3;
         if (totalShelves <= 16) return 4;
-        return 5; // Tối đa 5 kệ mỗi hàng
+        return 5; // Maximum 5 shelves per row
     };
 
-    // Lấy số lượng kệ mỗi hàng
+    // Get the number of shelves per row
     const shelvesPerRow = getShelvesPerRow(warehouseData.shelves.length);
 
     return (
         <div className="warehouse-visualizer">
             <div className="warehouse-header">
                 <Title level={4} className="warehouse-title">
-                    <HomeOutlined /> Sơ đồ kho
+                    <HomeOutlined /> Warehouse Layout
                 </Title>
                 <div className="warehouse-stats">
-                    <Tag color="default" className="stat-tag">Tổng số: {statsData.total} bin</Tag>
-                    <Tag color="default" className="stat-tag">Trống: {statsData.empty}</Tag>
-                    <Tag color="success" className="stat-tag">Ít sách: {statsData.low}</Tag>
-                    <Tag color="warning" className="stat-tag">Vừa: {statsData.medium}</Tag>
-                    <Tag color="error" className="stat-tag">Đầy: {statsData.high}</Tag>
+                    <Tag color="default" className="stat-tag">Total: {statsData.total} bins</Tag>
+                    <Tag color="default" className="stat-tag">Empty: {statsData.empty}</Tag>
+                    <Tag color="success" className="stat-tag">Low books: {statsData.low}</Tag>
+                    <Tag color="warning" className="stat-tag">Medium books: {statsData.medium}</Tag>
+                    <Tag color="error" className="stat-tag">High books: {statsData.high}</Tag>
                 </div>
             </div>
 
             <Alert
-                message="Hướng dẫn"
-                description="Click vào kệ để lọc danh sách bin. Hover lên bin để xem thông tin chi tiết."
+                message="Instructions"
+                description="Click on a shelf to filter the bin list. Hover over a bin to see detailed information."
                 type="info"
                 showIcon
                 closable
@@ -88,10 +88,10 @@ const WarehouseVisualizer = ({ shelves, bins, selectedShelf, onSelectShelf }) =>
                     <div className="door-label">Cửa ra vào</div>
                 </div>
 
-                {/* Vẽ các kệ và bin */}
+                {/* Draw shelves and bins */}
                 {warehouseData.shelves.map((shelf, index) => {
-                    // Tính toán vị trí kệ trong kho (layout tự động)
-                    const shelfWidth = 90;  // % của cha (chia cho số kệ mỗi hàng)
+                    // Calculate shelf position in warehouse (automatic layout)
+                    const shelfWidth = 90;  // % of parent (divided by number of shelves per row)
                     const shelfHeight = 80; // px (giảm chiều cao)
                     const shelfMargin = 15;  // px (giảm margin)
 
@@ -101,10 +101,10 @@ const WarehouseVisualizer = ({ shelves, bins, selectedShelf, onSelectShelf }) =>
                     const left = (col * (shelfWidth / shelvesPerRow + 2)) + 5; // % (điều chỉnh spacing)
                     const top = (row * (shelfHeight + shelfMargin)) + 50; // px từ trên xuống
 
-                    // Lọc bin theo kệ hiện tại
+                    // Filter bins by current shelf
                     const shelfBins = warehouseData.allBins.filter(bin => bin.ShelfId === shelf.ShelfId);
 
-                    // Tính toán layout cho bin bên trong kệ
+                    // Calculate layout for bins inside shelf
                     const maxBinsPerRow = Math.min(Math.ceil(Math.sqrt(shelfBins.length * 2)), 6);
                     const binGridTemplate = `repeat(auto-fill, minmax(${100 / maxBinsPerRow}%, 1fr))`;
 
@@ -121,7 +121,7 @@ const WarehouseVisualizer = ({ shelves, bins, selectedShelf, onSelectShelf }) =>
                                 height: `${shelfHeight}px`,
                             }}
                             onClick={() => onSelectShelf(shelf.ShelfId)}
-                            title={`Kệ: ${shelf.ShelfId} - ${shelf.Name}`}
+                            title={`Shelf: ${shelf.ShelfId} - ${shelf.Name}`}
                         >
                             <div className="shelf-header">
                                 <InboxOutlined className="shelf-icon" />
@@ -129,9 +129,9 @@ const WarehouseVisualizer = ({ shelves, bins, selectedShelf, onSelectShelf }) =>
                             </div>
 
                             <div className="shelf-bins" style={{ display: 'grid', gridTemplateColumns: binGridTemplate }}>
-                                {/* Vẽ các bin trong kệ */}
+                                {/* Draw bins in shelf */}
                                 {shelfBins.map(bin => {
-                                    // Tính màu sắc dựa trên số lượng sách
+                                    // Calculate color based on book quantity
                                     const binFillPercentage = bin.Quantity_Current / bin.Quantity_Max_Limit;
                                     let binClass = "bin-empty";
 
@@ -162,20 +162,19 @@ const WarehouseVisualizer = ({ shelves, bins, selectedShelf, onSelectShelf }) =>
                     );
                 })}
 
-                {/* Tooltip thông tin bin khi hover */}
+                {/* Bin information tooltip on hover */}
                 {hoverInfo && (
                     <div className="bin-tooltip" style={{
                         top: '10px',
                         right: '10px',
                     }}>
                         <div className="tooltip-header">
-                            <BookOutlined /> Thông tin Bin
+                            <BookOutlined /> Bin Information
                         </div>
                         <div className="tooltip-content">
-                            <p><strong>Mã Bin:</strong> {hoverInfo.BinId}</p>
-                            <p><strong>Tên:</strong> {hoverInfo.Name}</p>
-                            <p><strong>Kệ:</strong> {hoverInfo.ShelfId}</p>
-                            <p><strong>Sách hiện tại:</strong> {hoverInfo.Quantity_Current}/{hoverInfo.Quantity_Max_Limit}</p>
+                            <p><strong>Bin ID:</strong> {hoverInfo.BinId}</p>
+                            <p><strong>Shelf:</strong> {hoverInfo.ShelfId}</p>
+                            <p><strong>Current Books:</strong> {hoverInfo.Quantity_Current}/{hoverInfo.Quantity_Max_Limit}</p>
                             <div className="tooltip-progress">
                                 <div
                                     className="progress-bar"
@@ -187,25 +186,25 @@ const WarehouseVisualizer = ({ shelves, bins, selectedShelf, onSelectShelf }) =>
                 )}
             </div>
 
-            {/* Thêm chú thích màu */}
+            {/* Color legend */}
             <div className="warehouse-legend">
-                <div className="legend-title">Chú thích:</div>
+                <div className="legend-title">Legend:</div>
                 <div className="legend-items">
                     <div className="legend-item">
                         <div className="legend-color bin-empty-color"></div>
-                        <div className="legend-label">Trống (0 sách)</div>
+                        <div className="legend-label">Empty (0 books)</div>
                     </div>
                     <div className="legend-item">
                         <div className="legend-color bin-low-color"></div>
-                        <div className="legend-label">Ít sách (&lt;50%)</div>
+                        <div className="legend-label">Low books (&lt;50%)</div>
                     </div>
                     <div className="legend-item">
                         <div className="legend-color bin-medium-color"></div>
-                        <div className="legend-label">Vừa phải (50-80%)</div>
+                        <div className="legend-label">Medium books (50-80%)</div>
                     </div>
                     <div className="legend-item">
                         <div className="legend-color bin-high-color"></div>
-                        <div className="legend-label">Đầy (&gt;80%)</div>
+                        <div className="legend-label">High books (&gt;80%)</div>
                     </div>
                 </div>
             </div>
@@ -215,7 +214,7 @@ const WarehouseVisualizer = ({ shelves, bins, selectedShelf, onSelectShelf }) =>
 
 const Location = () => {
     const [bins, setBins] = useState([]);
-    const [allBins, setAllBins] = useState([]); // Thêm state cho tất cả bins
+    const [allBins, setAllBins] = useState([]); // Add state for all bins
     const [shelves, setShelves] = useState([]);
     const [loading, setLoading] = useState(false);
     const [searchShelfId, setSearchShelfId] = useState("");
@@ -393,25 +392,25 @@ const Location = () => {
     // Columns with improved styling
     const columns = [
         {
-            title: "Mã Bin",
+            title: "Bin ID",
             dataIndex: "BinId",
             key: "BinId",
             sorter: (a, b) => a.BinId.localeCompare(b.BinId),
             render: (text) => <span className="bin-id">{text}</span>,
         },
         {
-            title: "Mã Shelf",
+            title: "Shelf ID",
             dataIndex: "ShelfId",
             key: "ShelfId",
             render: (text) => <Tag color="blue">{text}</Tag>,
         },
         {
-            title: "Tên Bin",
+            title: "Bin Name",
             dataIndex: "Name",
             key: "Name",
         },
         {
-            title: "Số lượng sách",
+            title: "Book Quantity",
             key: "book_quantity",
             render: (_, record) => (
                 <Tooltip title={`${record.Quantity_Current} / ${record.Quantity_Max_Limit}`}>
@@ -431,24 +430,24 @@ const Location = () => {
             sorter: (a, b) => a.Quantity_Current - b.Quantity_Current,
         },
         {
-            title: "Mô tả",
+            title: "Description",
             dataIndex: "Description",
             key: "Description",
             ellipsis: true,
         },
         {
-            title: "Hành động",
+            title: "Actions",
             key: "action",
             render: (_, record) => (
                 <Space size="middle" className="action-buttons">
                     {record.Quantity_Current === 0 && (
                         <Popconfirm
-                            title={`Xóa Bin ${record.BinId}`}
-                            description="Bạn có chắc chắn muốn xóa bin này?"
+                            title={`Delete Bin ${record.BinId}`}
+                            description="Are you sure you want to delete this bin?"
                             icon={<QuestionCircleOutlined style={{ color: 'red' }} />}
                             onConfirm={() => handleDeleteBin(record.BinId)}
-                            okText="Xóa"
-                            cancelText="Hủy"
+                            okText="Delete"
+                            cancelText="Cancel"
                             okButtonProps={{ danger: true, loading: deletingBinId === record.BinId }}
                         >
                             <Button
@@ -457,7 +456,7 @@ const Location = () => {
                                 icon={<DeleteOutlined />}
                                 loading={deletingBinId === record.BinId}
                             >
-                                Xóa
+                                Delete
                             </Button>
                         </Popconfirm>
                     )}
@@ -482,10 +481,10 @@ const Location = () => {
             <div className="page-header">
                 <div>
                     <Title level={3} className="page-title">
-                        <DashboardOutlined /> Quản lý Kho Sách
+                        <DashboardOutlined /> Manage Book Warehouse
                     </Title>
                     <Text className="page-description">
-                        Quản lý kệ, bin và phân bổ sách trong kho
+                        Manage shelves, bins and distribute books in the warehouse
                     </Text>
                 </div>
                 <Button
@@ -494,7 +493,7 @@ const Location = () => {
                     onClick={showAddModal}
                     className="add-button"
                 >
-                    Thêm Bin
+                    Add Bin
                 </Button>
             </div>
 
@@ -504,19 +503,19 @@ const Location = () => {
                     <Card bordered={false} className="data-card">
                         <div className="card-title-section">
                             <Title level={4} className="card-title">
-                                <InboxOutlined /> Danh sách Bin
+                                <InboxOutlined /> Bin List
                             </Title>
 
                             <div className="search-section">
                                 <Select
                                     showSearch
-                                    placeholder="Chọn Shelf"
+                                    placeholder="Select Shelf"
                                     value={searchShelfId}
                                     onChange={setSearchShelfId}
                                     className="shelf-select"
                                     allowClear
                                 >
-                                    <Option value="">Tất cả</Option>
+                                    <Option value="">All</Option>
                                     {shelves.map((shelf) => (
                                         <Option key={shelf.ShelfId} value={shelf.ShelfId}>
                                             {shelf.ShelfId} - {shelf.Name}
@@ -531,20 +530,20 @@ const Location = () => {
                                         onClick={handleSearch}
                                         className="action-button search-button"
                                     >
-                                        Tìm kiếm
+                                        Search
                                     </Button>
                                     <Button
                                         icon={<ReloadOutlined />}
                                         onClick={resetFilters}
                                         className="action-button"
                                     >
-                                        Làm mới
+                                        Refresh
                                     </Button>
                                 </Space>
                             </div>
                         </div>
 
-                        <Spin spinning={loading} tip="Đang tải dữ liệu...">
+                        <Spin spinning={loading} tip="Loading data...">
                             <Table
                                 columns={columns}
                                 dataSource={bins}
@@ -562,7 +561,7 @@ const Location = () => {
                                 total={pagination.total}
                                 onChange={handleTableChange}
                                 showSizeChanger
-                                showTotal={(total) => `Tổng cộng ${total} mục`}
+                                showTotal={(total) => `Total ${total} items`}
                                 className="custom-pagination"
                             />
                         </div>
@@ -587,7 +586,7 @@ const Location = () => {
                 title={
                     <div className="modal-title">
                         <PlusOutlined className="modal-icon" />
-                        <span>Thêm mới Bin</span>
+                        <span>Add New Bin</span>
                     </div>
                 }
                 visible={isModalVisible}
@@ -607,36 +606,36 @@ const Location = () => {
                         <Col span={12}>
                             <Form.Item
                                 name="BinId"
-                                label="Mã Bin"
+                                label="Bin ID"
                                 rules={[
                                     {
                                         required: true,
-                                        message: 'Vui lòng nhập mã Bin!'
+                                        message: 'Please enter Bin ID!'
                                     },
                                     {
                                         pattern: /^[A-Za-z0-9-_]+$/,
-                                        message: 'Mã Bin chỉ chứa chữ cái, số, dấu gạch ngang hoặc gạch dưới'
+                                        message: 'Bin ID can only contain letters, numbers, dash or underscore'
                                     }
                                 ]}
                             >
-                                <Input placeholder="Nhập mã Bin" prefix={<InboxOutlined />} />
+                                <Input placeholder="Enter Bin ID" prefix={<InboxOutlined />} />
                             </Form.Item>
                         </Col>
 
                         <Col span={12}>
                             <Form.Item
                                 name="ShelfId"
-                                label="Kệ"
+                                label="Shelf"
                                 rules={[
                                     {
                                         required: true,
-                                        message: 'Vui lòng chọn kệ!'
+                                        message: 'Please select a shelf!'
                                     }
                                 ]}
                             >
                                 <Select
                                     showSearch
-                                    placeholder="Chọn kệ"
+                                    placeholder="Select shelf"
                                     optionFilterProp="children"
                                 >
                                     {shelves.map((shelf) => (
@@ -651,20 +650,20 @@ const Location = () => {
 
                     <Form.Item
                         name="Name"
-                        label="Tên Bin"
+                        label="Bin Name"
                         rules={[
                             {
                                 required: true,
-                                message: 'Vui lòng nhập tên Bin!'
+                                message: 'Please enter Bin Name!'
                             }
                         ]}
                     >
-                        <Input placeholder="Nhập tên Bin" />
+                        <Input placeholder="Enter Bin Name" />
                     </Form.Item>
 
                     <Form.Item
                         name="Quantity_Max_Limit"
-                        label="Số lượng sách tối đa"
+                        label="Maximum Book Quantity"
                         rules={[
                             {
                                 required: true,

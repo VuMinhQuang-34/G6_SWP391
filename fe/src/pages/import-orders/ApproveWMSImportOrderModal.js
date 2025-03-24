@@ -13,46 +13,46 @@ const ApproveWMSImportOrderModal = ({ visible, onCancel, onEdit, suppliers, book
     const [selectedBooks, setSelectedBooks] = useState([]);
     const [selectedFaultBooks, setSelectedFaultBooks] = useState([]);
     const [logNote, setLogNote] = useState('');
-    const [bins, setBins] = useState([]); // Danh sách tất cả bin trong kho
+    const [bins, setBins] = useState([]); // List of all bins in the warehouse
     const [loadingBins, setLoadingBins] = useState(false);
-    
-    // Thay đổi cấu trúc dữ liệu để hỗ trợ nhiều bin cho mỗi sách
-    // Dạng { bookId: [{ binId, quantity }] }
+
+    // Change data structure to support multiple bins for each book
+    // Format { bookId: [{ binId, quantity }] }
     const [bookBinAllocations, setBookBinAllocations] = useState({});
 
     console.log("ApproveWMSImportOrderModal books =>", books);
     console.log("ApproveWMSImportOrderModal order =>", order);
-    
-    // Fetch danh sách bin từ API khi modal hiển thị
+
+    // Fetch bin list from API when modal is displayed
     useEffect(() => {
         if (visible) {
             fetchBins();
         }
     }, [visible]);
 
-    // Fetch danh sách bin
+    // Fetch bin list
     const fetchBins = async () => {
         try {
             setLoadingBins(true);
             const response = await axios.get('http://localhost:9999/api/bins');
             console.log("Bin response data:", response.data);
-            
-            // Dữ liệu bins nằm trong response.data.data (cấu trúc phân trang)
+
+            // Bins data is in response.data.data (pagination structure)
             if (response.data && response.data.data) {
                 setBins(response.data.data);
             } else {
                 setBins([]);
-                toast.error('Cấu trúc dữ liệu bin không hợp lệ');
+                toast.error('Invalid bin data structure');
             }
-            
+
             setLoadingBins(false);
         } catch (error) {
             console.error('Error fetching bins:', error);
-            toast.error('Không thể lấy danh sách bin');
+            toast.error('Unable to retrieve bin list');
             setLoadingBins(false);
         }
     };
-    
+
     useEffect(() => {
         if (order) {
             form.setFieldsValue({
@@ -62,8 +62,8 @@ const ApproveWMSImportOrderModal = ({ visible, onCancel, onEdit, suppliers, book
             });
             setSelectedBooks(order.details || []);
             setSelectedFaultBooks(order?.faultBooks || []);
-            
-            // Khởi tạo bookBinAllocations với mảng rỗng cho mỗi sách
+
+            // Initialize bookBinAllocations with empty array for each book
             const initialAllocations = {};
             (order.details || []).forEach(book => {
                 initialAllocations[book.BookId] = [];
@@ -126,190 +126,165 @@ const ApproveWMSImportOrderModal = ({ visible, onCancel, onEdit, suppliers, book
         setSelectedBooks(updatedDetails);
     };
 
-    // Thêm một dòng phân bổ mới cho sách
+    // Add new bin allocation for a book
     const addAllocation = (bookId) => {
-        setBookBinAllocations(prev => {
-            const bookAllocations = [...(prev[bookId] || [])];
-            bookAllocations.push({ binId: null, quantity: 0 });
-            return {
-                ...prev,
-                [bookId]: bookAllocations
-            };
+        const newAllocations = { ...bookBinAllocations };
+        if (!newAllocations[bookId]) {
+            newAllocations[bookId] = [];
+        }
+
+        newAllocations[bookId].push({
+            binId: undefined,
+            quantity: 1
         });
+
+        setBookBinAllocations(newAllocations);
     };
 
-    // Xóa một dòng phân bổ
+    // Remove bin allocation at specified index
     const removeAllocation = (bookId, index) => {
-        setBookBinAllocations(prev => {
-            const bookAllocations = [...(prev[bookId] || [])];
-            bookAllocations.splice(index, 1);
-            return {
-                ...prev,
-                [bookId]: bookAllocations
-            };
-        });
+        const newAllocations = { ...bookBinAllocations };
+        if (newAllocations[bookId] && newAllocations[bookId].length > index) {
+            newAllocations[bookId].splice(index, 1);
+            setBookBinAllocations(newAllocations);
+        }
     };
 
-    // Cập nhật bin cho một dòng phân bổ
+    // Update bin ID for a specific allocation
     const updateAllocationBin = (bookId, index, binId) => {
-        setBookBinAllocations(prev => {
-            const bookAllocations = [...(prev[bookId] || [])];
-            bookAllocations[index] = { ...bookAllocations[index], binId };
-            return {
-                ...prev,
-                [bookId]: bookAllocations
-            };
-        });
+        const newAllocations = { ...bookBinAllocations };
+        if (newAllocations[bookId] && newAllocations[bookId].length > index) {
+            newAllocations[bookId][index].binId = binId;
+            setBookBinAllocations(newAllocations);
+        }
     };
 
-    // Cập nhật số lượng cho một dòng phân bổ
+    // Update quantity for a specific allocation
     const updateAllocationQuantity = (bookId, index, quantity) => {
-        setBookBinAllocations(prev => {
-            const bookAllocations = [...(prev[bookId] || [])];
-            bookAllocations[index] = { ...bookAllocations[index], quantity: parseInt(quantity) || 0 };
-            return {
-                ...prev,
-                [bookId]: bookAllocations
-            };
-        });
+        const newAllocations = { ...bookBinAllocations };
+        if (newAllocations[bookId] && newAllocations[bookId].length > index) {
+            newAllocations[bookId][index].quantity = quantity;
+            setBookBinAllocations(newAllocations);
+        }
     };
 
-    // Tính số lượng đã phân bổ cho một sách
+    // Calculate total allocated quantity for a book
     const getAllocatedQuantity = (bookId) => {
         const allocations = bookBinAllocations[bookId] || [];
         return allocations.reduce((sum, alloc) => sum + (parseInt(alloc.quantity) || 0), 0);
     };
 
-    // Tính số lượng còn lại cần phân bổ cho một sách
+    // Calculate remaining quantity that needs to be allocated
     const getRemainingQuantity = (bookId) => {
         const book = selectedBooks.find(b => b.BookId === bookId);
         if (!book) return 0;
-        
+
         const faultBook = selectedFaultBooks.find(fb => fb.BookId === bookId);
-        const totalQuantity = parseInt(book.Quantity) || 0;
-        const faultQuantity = parseInt(faultBook?.Quantity) || 0;
-        const effectiveQuantity = totalQuantity - faultQuantity;
-        
+        const faultQuantity = faultBook ? parseInt(faultBook.Quantity) || 0 : 0;
+
+        const effectiveQuantity = parseInt(book.Quantity) - faultQuantity;
         const allocatedQuantity = getAllocatedQuantity(bookId);
+
         return Math.max(0, effectiveQuantity - allocatedQuantity);
     };
 
-    // Kiểm tra bin có đủ không gian không
+    // Check if bin has enough capacity for required space
     const checkBinCapacity = (bin, requiredSpace) => {
         const availableSpace = bin.Quantity_Max_Limit - bin.Quantity_Current;
         return availableSpace >= requiredSpace;
     };
 
-    // Lọc bin phù hợp cho sách (chỉ hiển thị bin có đủ không gian)
+    // Get available bins that can accommodate the given quantity
     const getAvailableBins = (quantity) => {
         return bins.filter(bin => checkBinCapacity(bin, quantity));
     };
 
     const handleApprove = async (action) => {
-        console.log("action =>", action);
-        console.log("Current bookBinAllocations state:", bookBinAllocations);
-        
-        // Kiểm tra xem sách đã được phân bổ đủ chưa nếu action là "Approve"
-        if (action === "Approve") {
-            // Kiểm tra từng sách đã phân bổ đủ chưa
-            for (const book of selectedBooks) {
-                const faultBook = selectedFaultBooks.find(fb => fb.BookId === book.BookId);
-                const effectiveQuantity = book.Quantity - (faultBook?.Quantity || 0);
-                
-                // Bỏ qua kiểm tra nếu số lượng thực tế là 0
-                if (effectiveQuantity <= 0) continue;
-                
-                const allocations = bookBinAllocations[book.BookId] || [];
-                const allocatedQuantity = getAllocatedQuantity(book.BookId);
-                
-                if (allocatedQuantity !== effectiveQuantity) {
-                    toast.error(`Sách "${book.Title}" chưa được phân bổ đủ. Đã phân bổ ${allocatedQuantity}/${effectiveQuantity} quyển.`);
-                    return;
-                }
-            }
-        }
-        
         try {
-            // Chuẩn bị binAllocations để gửi lên server
+            // Validation phase
+            // 1. Check if all books have proper bin allocations
+            const booksWithIncompleteAllocations = selectedBooks.filter(book => {
+                // Skip fault books (they don't need bin allocation)
+                const faultBook = selectedFaultBooks.find(fb => fb.BookId === book.BookId);
+                const faultQuantity = faultBook ? parseInt(faultBook.Quantity) || 0 : 0;
+
+                // If all books are faulty, skip bin allocation check
+                if (faultQuantity >= parseInt(book.Quantity)) {
+                    return false;
+                }
+
+                // Check if this book has the correct number of allocations
+                return getRemainingQuantity(book.BookId) > 0;
+            });
+
+            if (booksWithIncompleteAllocations.length > 0) {
+                toast.error("Please allocate all books to bins before approving");
+                return;
+            }
+
+            // 2. Check if all allocations have valid bin IDs
+            let hasInvalidBins = false;
+            Object.values(bookBinAllocations).forEach(allocations => {
+                allocations.forEach(allocation => {
+                    if (!allocation.binId) {
+                        hasInvalidBins = true;
+                    }
+                });
+            });
+
+            if (hasInvalidBins) {
+                toast.error("Please select valid bins for all allocations");
+                return;
+            }
+
+            // Format bin allocations for API
             const binAllocations = [];
-            
-            if (action === "Approve") {
-                // Tạo mảng các phân bổ bin cho từng sách
-                Object.keys(bookBinAllocations).forEach(bookId => {
-                    const allocations = bookBinAllocations[bookId] || [];
-                    console.log(`Allocations for book ${bookId}:`, allocations);
-                    
-                    allocations.forEach(allocation => {
-                        if (allocation.binId && allocation.quantity > 0) {
-                            binAllocations.push({
-                                BookId: parseInt(bookId),
-                                BinId: allocation.binId,
-                                Quantity: parseInt(allocation.quantity)
-                            });
-                        }
-                    });
+            Object.entries(bookBinAllocations).forEach(([bookId, allocations]) => {
+                allocations.forEach(allocation => {
+                    if (allocation.binId && allocation.quantity > 0) {
+                        binAllocations.push({
+                            BookId: bookId,
+                            BinId: allocation.binId,
+                            Quantity: allocation.quantity
+                        });
+                    }
                 });
+            });
+
+            if (binAllocations.length === 0 && selectedBooks.some(book => {
+                const faultBook = selectedFaultBooks.find(fb => fb.BookId === book.BookId);
+                const faultQuantity = faultBook ? parseInt(faultBook.Quantity) || 0 : 0;
+                return faultQuantity < parseInt(book.Quantity);
+            })) {
+                toast.error("No valid bin allocations found");
+                return;
             }
-            
-            console.log("Final binAllocations array:", binAllocations);
-            
-            // Chuẩn bị FaultBooks từ selectedFaultBooks
-            const faultBooks = selectedFaultBooks
-                .filter(book => book.Quantity > 0)
-                .map(book => ({
-                    BookId: book.BookId,
-                    Quantity: parseInt(book.Quantity),
-                    Note: book.Note || ''
-                }));
-            
-            // Chuẩn bị payload để gửi đi
+
+            // Format data for API request
+            const status = action === "Approve" ? "Done" : "Reject";
             const payload = {
-                Status: action === "Approve" ? "ApproveImport" : "Rejected",
-                LogStatus: action === "Approve" ? "ApproveImport" : "Rejected",
-                CreatedBy: user?.userId,
-                LogNote: action === "Approve" ? "Approve" : "Reject",
-                FaultBooks: faultBooks
+                Status: status,
+                LogStatus: status,
+                LogNote: form.getFieldValue('LogNote') || '',
+                FaultBooks: selectedFaultBooks,
+                BinAllocations: binAllocations
             };
-            
-            // Thêm BinAllocations vào payload nếu đang phê duyệt và có phân bổ
-            if (action === "Approve" && binAllocations.length > 0) {
-                payload.BinAllocations = binAllocations;
+
+            const response = await onEdit(payload, order.ImportOrderId);
+            console.log("API Response:", response);
+
+            // Success handling
+            if (action === "Approve") {
+                toast.success("Import order has been approved and books assigned to bins");
+            } else {
+                toast.info("Import order has been rejected");
             }
-            
-            console.log("Final payload being sent:", payload);
-            
-            // Hiển thị loading message
-            const toastLoading = toast.loading("Đang xử lý đơn nhập...");
-            
-            try {
-                // Gọi API thông qua hàm onEdit (handleCheckOrder)
-                const response = await onEdit(payload, order.ImportOrderId);
-                
-                // Update toast với thông báo thành công
-                toast.success(toastLoading, { 
-                    render: "Đơn nhập đã được phê duyệt thành công!", 
-                    type: "success", 
-                    isLoading: false,
-                    autoClose: 3000
-                });
-                
-                // Đóng modal sau khi phê duyệt thành công
-                onCancel();
-            } catch (apiError) {
-                console.error("API error:", apiError);
-                
-                // Update toast với thông báo lỗi
-                toast.success(toastLoading, { 
-                    render: `Lỗi: ${apiError.response?.data?.message || apiError.message || "Đã xảy ra lỗi!"}`, 
-                    type: "error", 
-                    isLoading: false,
-                    autoClose: 5000
-                });
-            }
-            
+
+            onCancel();
+
         } catch (error) {
-            console.error(`Error ${action === "Approve" ? "approving" : "rejecting"} import order:`, error);
-            toast.error(`Lỗi khi ${action === "Approve" ? "phê duyệt" : "từ chối"} đơn nhập: ${error.message}`);
+            console.error("Error approving import order:", error);
+            toast.error("An error occurred while processing the import order");
         }
     };
 
@@ -317,53 +292,48 @@ const ApproveWMSImportOrderModal = ({ visible, onCancel, onEdit, suppliers, book
         onCancel();
     };
 
-    // Thêm logs trong handleAddBinAllocation (nếu bạn có hàm này)
     const handleAddBinAllocation = (bookId, binId, quantity) => {
-        console.log(`Adding bin allocation: Book ${bookId}, Bin ${binId}, Quantity ${quantity}`);
-        
-        // Kiểm tra/cập nhật state
         const newAllocations = { ...bookBinAllocations };
-        
         if (!newAllocations[bookId]) {
             newAllocations[bookId] = [];
         }
-        
+
         newAllocations[bookId].push({
             binId,
             quantity: parseInt(quantity)
         });
-        
+
         console.log("Updated bookBinAllocations:", newAllocations);
         setBookBinAllocations(newAllocations);
     };
 
     return (
         <Modal
-            title="Phê Duyệt Đơn Nhập"
+            title="Approve Import Order"
             open={visible}
             onCancel={onCancel}
             footer={null}
             width={900}
         >
             <Form form={form} layout="vertical">
-                <h3>Chi tiết đơn nhập</h3>
+                <h3>Import Order Details</h3>
                 <Table
                     dataSource={selectedBooks}
                     columns={[
                         {
-                            title: 'ID Sách',
+                            title: 'Book ID',
                             dataIndex: 'BookId',
                             width: 80
                         },
                         {
-                            title: 'Tên Sách',
+                            title: 'Book Title',
                             render: (_, record) => (
-                                <span>{record.BookInfo ? record.BookInfo.Title : 'Không có thông tin'}</span>
+                                <span>{record.BookInfo ? record.BookInfo.Title : 'No information'}</span>
                             ),
                             width: 200
                         },
                         {
-                            title: 'Số Lượng Nhập',
+                            title: 'Import Quantity',
                             render: (_, record) => (
                                 <Input
                                     type="number"
@@ -378,16 +348,16 @@ const ApproveWMSImportOrderModal = ({ visible, onCancel, onEdit, suppliers, book
                             width: 120
                         },
                         {
-                            title: 'Phân bổ vào kho',
+                            title: 'Allocate to Warehouse',
                             render: (_, record) => {
-                                // Tính số lượng thực tế sau khi trừ sách lỗi
+                                // Calculate actual quantity after subtracting defective books
                                 const faultBook = selectedFaultBooks.find(fb => fb.BookId === record.BookId);
                                 const effectiveQuantity = record.Quantity - (faultBook?.Quantity || 0);
                                 const remainingQuantity = getRemainingQuantity(record.BookId);
 
-                                // Nếu số lượng thực tế = 0, không cần phân bổ
+                                // If actual quantity = 0, no allocation needed
                                 if (effectiveQuantity <= 0) {
-                                    return <span>Không cần (sách lỗi)</span>;
+                                    return <span>Not needed (defective books)</span>;
                                 }
 
                                 const allocations = bookBinAllocations[record.BookId] || [];
@@ -396,15 +366,15 @@ const ApproveWMSImportOrderModal = ({ visible, onCancel, onEdit, suppliers, book
                                     <div>
                                         <div style={{ marginBottom: '8px' }}>
                                             <span style={{ fontWeight: 'bold' }}>
-                                                Còn lại cần phân bổ: {remainingQuantity}/{effectiveQuantity}
+                                                Remaining to allocate: {remainingQuantity}/{effectiveQuantity}
                                             </span>
                                         </div>
-                                        
+
                                         {allocations.map((allocation, index) => (
                                             <Row key={index} gutter={8} style={{ marginBottom: '8px' }}>
                                                 <Col span={12}>
                                                     <Select
-                                                        placeholder="Chọn bin"
+                                                        placeholder="Select bin"
                                                         style={{ width: '100%' }}
                                                         value={allocation.binId}
                                                         onChange={(value) => updateAllocationBin(record.BookId, index, value)}
@@ -412,14 +382,14 @@ const ApproveWMSImportOrderModal = ({ visible, onCancel, onEdit, suppliers, book
                                                     >
                                                         {bins && bins.length > 0 && bins.map(bin => (
                                                             <Option key={bin.BinId} value={bin.BinId}>
-                                                                {bin.BinId} - {bin.Name} - Còn trống: {bin.Quantity_Max_Limit - bin.Quantity_Current}
+                                                                {bin.BinId} - {bin.Name} - Available: {bin.Quantity_Max_Limit - bin.Quantity_Current}
                                                             </Option>
                                                         ))}
                                                     </Select>
                                                 </Col>
                                                 <Col span={8}>
                                                     <InputNumber
-                                                        placeholder="Số lượng"
+                                                        placeholder="Quantity"
                                                         style={{ width: '100%' }}
                                                         min={1}
                                                         max={remainingQuantity + allocation.quantity}
@@ -428,29 +398,29 @@ const ApproveWMSImportOrderModal = ({ visible, onCancel, onEdit, suppliers, book
                                                     />
                                                 </Col>
                                                 <Col span={4}>
-                                                    <Button 
-                                                        icon={<DeleteOutlined />} 
+                                                    <Button
+                                                        icon={<DeleteOutlined />}
                                                         onClick={() => removeAllocation(record.BookId, index)}
                                                         danger
                                                     />
                                                 </Col>
                                             </Row>
                                         ))}
-                                        
+
                                         {remainingQuantity > 0 && (
-                                            <Button 
-                                                type="dashed" 
-                                                onClick={() => addAllocation(record.BookId)} 
+                                            <Button
+                                                type="dashed"
+                                                onClick={() => addAllocation(record.BookId)}
                                                 style={{ width: '100%' }}
                                                 icon={<PlusOutlined />}
                                             >
-                                                Thêm vị trí
+                                                Add Location
                                             </Button>
                                         )}
-                                        
+
                                         {allocations.length === 0 && (
                                             <div style={{ color: 'red', fontSize: '12px' }}>
-                                                Vui lòng thêm vị trí phân bổ sách
+                                                Please add bin allocation locations
                                             </div>
                                         )}
                                     </div>
@@ -458,7 +428,7 @@ const ApproveWMSImportOrderModal = ({ visible, onCancel, onEdit, suppliers, book
                             }
                         },
                         {
-                            title: 'Đơn Giá',
+                            title: 'Unit Price',
                             render: (_, record) => (
                                 <Input
                                     type="number"
@@ -473,7 +443,7 @@ const ApproveWMSImportOrderModal = ({ visible, onCancel, onEdit, suppliers, book
                             width: 100
                         },
                         {
-                            title: 'Tổng Giá',
+                            title: 'Total Price',
                             render: (_, record) => (
                                 <span>{(record.Quantity || 0) * (record.Price || 0)}</span>
                             ),
@@ -485,27 +455,27 @@ const ApproveWMSImportOrderModal = ({ visible, onCancel, onEdit, suppliers, book
                 />
 
                 <div style={{ marginTop: 20 }}>
-                    <strong>Tổng số lượng sách: {selectedBooks.reduce((sum, book) => sum + (book.Quantity || 0), 0)}</strong>
+                    <strong>Total Book Quantity: {selectedBooks.reduce((sum, book) => sum + (book.Quantity || 0), 0)}</strong>
                     <br />
                 </div>
 
-                <div style={{border: '1px solid red', borderRadius: '10px', padding: '10px', margin: '5px 5px'}}>
-                    <h3>Danh sách sản phẩm lỗi (nếu có)</h3>
+                <div style={{ border: '1px solid red', borderRadius: '10px', padding: '10px', margin: '5px 5px' }}>
+                    <h3>Defective Product List (if any)</h3>
                     <Table
                         dataSource={selectedFaultBooks}
                         columns={[
                             {
-                                title: 'ID Sách',
+                                title: 'Book ID',
                                 dataIndex: 'BookId',
                             },
                             {
-                                title: 'Tên Sách',
+                                title: 'Book Title',
                                 render: (_, record) => (
-                                    <span>{record.Title ? record.Title : 'Không có thông tin'}</span>
+                                    <span>{record.Title ? record.Title : 'No information'}</span>
                                 ),
                             },
                             {
-                                title: 'Số Lượng Sách Lỗi',
+                                title: 'Defective Book Quantity',
                                 render: (_, record) => (
                                     <Input
                                         type="number"
@@ -516,7 +486,7 @@ const ApproveWMSImportOrderModal = ({ visible, onCancel, onEdit, suppliers, book
                                 ),
                             },
                             {
-                                title: 'Ghi chú',
+                                title: 'Note',
                                 render: (_, record) => (
                                     <Input
                                         type="text"
@@ -533,21 +503,21 @@ const ApproveWMSImportOrderModal = ({ visible, onCancel, onEdit, suppliers, book
 
                 <Divider />
                 <div style={{ marginBottom: '16px' }}>
-                    <Tooltip title="Phân bổ chính xác số lượng sách vào các bin. Tổng số lượng phân bổ phải bằng với số lượng sách thực tế (sau khi trừ sách lỗi).">
+                    <Tooltip title="Allocate the exact number of books to bins. The total allocation must equal the actual book quantity (after subtracting defective books).">
                         <InfoCircleOutlined style={{ marginRight: '8px' }} />
-                        <span>Lưu ý: Phải phân bổ đúng số lượng sách vào các bin trước khi phê duyệt.</span>
+                        <span>Note: You must allocate the correct number of books to bins before approval.</span>
                     </Tooltip>
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '5px' }}>
                     <Button type="default" onClick={handleClose}>
-                        Đóng
+                        Close
                     </Button>
                     <Button type="default" danger onClick={() => handleApprove("Reject")} style={{ marginRight: '10px' }}>
-                        Từ chối
+                        Reject
                     </Button>
                     <Button type="primary" onClick={() => handleApprove("Approve")} style={{ marginRight: '10px' }}>
-                        Phê duyệt nhập kho
+                        Approve Warehouse Import
                     </Button>
                 </div>
             </Form>

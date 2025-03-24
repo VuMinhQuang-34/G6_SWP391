@@ -21,7 +21,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-//Thông báo
+// Notifications
 import { toast } from "react-toastify";
 
 const { confirm } = Modal;
@@ -41,7 +41,7 @@ const UserList = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [editForm] = Form.useForm();
 
-  // Gọi API lấy danh sách Users
+  // Call API to get Users list
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -52,27 +52,27 @@ const UserList = () => {
       setUsers(response.data);
       setLoading(false);
     } catch (error) {
-      message.error("Lỗi khi tải danh sách người dùng!");
+      message.error("Error loading user list!");
       setLoading(false);
     }
   };
 
-  // Xử lý tìm kiếm theo email
+  // Handle search by email
   const handleSearch = (e) => {
     setSearchText(e.target.value);
   };
 
-  // Xử lý lọc theo Trạng thái (Active/Inactive)
+  // Handle filter by Status (Active/Inactive)
   const handleStatusFilter = (value) => {
     setStatusFilter(value);
   };
 
-  // Xử lý lọc theo Quyền (Admin/Staff)
+  // Handle filter by Role (Admin/Staff)
   const handleRoleFilter = (value) => {
     setRoleFilter(value);
   };
 
-  // Xử lý khi nhấn "Chỉnh sửa"
+  // Handle "Edit" button click
   const handleEdit = (id) => {
     navigate(`/admin/users/${id}`);
   };
@@ -100,35 +100,34 @@ const UserList = () => {
           u.userId === selectedUser.userId ? { ...u, ...values } : u
         )
       );
-      toast.success(`Cập nhật thành công`, { autoClose: 2000 });
+      toast.success(`Update successful`, { autoClose: 2000 });
 
-      message.success("Cập nhật user thành công!");
+      message.success("User updated successfully!");
       setIsEditModalOpen(false);
     } catch (error) {
-      message.error("Lỗi khi cập nhật user!");
-      toast.error(`Cập nhật thất bại`);
+      message.error("Error updating user!");
+      toast.error(`Update failed`);
     }
   };
 
-  // Xác nhận cập nhật trạng thái user
+  // Confirm user status update
   const showDeleteConfirm = (user) => {
     console.log("Clicked delete for user:", user);
 
     Modal.confirm({
-      title: `Bạn có chắc chắn muốn cập nhật trạng thái user này?`,
+      title: `Are you sure you want to update this user's status?`,
       icon: React.createElement(ExclamationCircleOutlined),
-      content: `User sẽ được chuyển sang trạng thái ${
-        user.Status === "Active" ? "Inactive" : "Active"
-      }`,
-      okText: "Xác nhận",
+      content: `User will be changed to ${user.Status === "Active" ? "Inactive" : "Active"
+        } status`,
+      okText: "Confirm",
       okType: "danger",
-      cancelText: "Hủy",
+      cancelText: "Cancel",
       onOk() {
         handleToggleStatus(user);
       },
     });
   };
-  // Xử lý cập nhật trạng thái User (Active ⇆ Inactive)
+  // Handle updating user status (Active ⇆ Inactive)
   const handleToggleStatus = async (user) => {
     try {
       const newStatus = user.Status == "Active" ? "Inactive" : "Active";
@@ -140,26 +139,26 @@ const UserList = () => {
           u.userId === user.userId ? { ...u, Status: newStatus } : u
         )
       );
-      toast.success(`Cập nhật thành công`, { autoClose: 2000 });
-      message.success(`User đã chuyển sang trạng thái ${newStatus}`);
+      toast.success(`Update successful`, { autoClose: 2000 });
+      message.success(`User status changed to ${newStatus}`);
     } catch (error) {
-      message.error("Lỗi khi cập nhật trạng thái user!");
-      toast.error(`Cập nhật thất bại`);
+      message.error("Error updating user status!");
+      toast.error(`Update failed`);
     }
   };
 
-  // Xử lý mở Modal thêm tài khoản
+  // Handle opening the Add User Modal
   const showAddUserModal = () => {
     setIsModalOpen(true);
   };
 
-  // Xử lý đóng Modal thêm tài khoản
+  // Handle closing the Add User Modal
   const handleCancel = () => {
     setIsModalOpen(false);
     form.resetFields();
   };
 
-  // Xử lý submit form để thêm tài khoản
+  // Handle form submission to add a user
   const handleAddUser = async (values) => {
     try {
       const response = await axios.post(
@@ -167,27 +166,27 @@ const UserList = () => {
         values
       );
 
-      // Sau khi tạo user thành công, gọi API lấy danh sách user mới nhất
+      // After successfully creating the user, call API to get the latest list
       const updatedUsers = await axios.get("http://localhost:9999/api/users");
 
-      // Cập nhật lại danh sách user từ API
+      // Update the user list from API
       setUsers(updatedUsers.data);
 
-      // Hiển thị thông báo thành công
-      message.success("Thêm user thành công!");
+      // Display success message
+      message.success("User added successfully!");
 
-      // Hiển thị toast thông báo thành công
+      // Display success toast notification
+      toast.success(`Account created successfully`, { autoClose: 2000 });
 
-      toast.success(`Thêm mới tài khoản thành công`, { autoClose: 2000 });
-      // Đóng popup thêm user
+      // Close the add user popup
       handleCancel();
     } catch (error) {
-      message.error("Lỗi khi thêm user!");
-      toast.error(`Cập nhật thất bại`);
+      message.error("Error adding user!");
+      toast.error(`Update failed`);
     }
   };
 
-  // Lọc danh sách user theo điều kiện tìm kiếm & filter
+  // Filter user list by search & filter conditions
   const filteredUsers = users.filter((user) => {
     const matchEmail = user.Email
       ? user.Email.toLowerCase().includes(searchText.toLowerCase())
@@ -197,20 +196,20 @@ const UserList = () => {
     return matchEmail && matchStatus && matchRole;
   });
 
-  // Cấu hình cột hiển thị trong bảng
+  // Configure columns displayed in the table
   const columns = [
     {
-      title: "Mã nhân viên",
+      title: "Employee ID",
       dataIndex: "userId",
       key: "userId",
       width: 80,
       sorter: (a, b) => a.userId - b.userId,
     },
-    { title: "Họ và Tên", dataIndex: "FullName", key: "FullName" },
+    { title: "Full Name", dataIndex: "FullName", key: "FullName" },
     { title: "Email", dataIndex: "Email", key: "Email" },
-    { title: "Số điện thoại", dataIndex: "PhoneNumber", key: "PhoneNumber" },
+    { title: "Phone Number", dataIndex: "PhoneNumber", key: "PhoneNumber" },
     {
-      title: "Vị trí",
+      title: "Position",
       dataIndex: "roleId",
       key: "roleId",
       render: (role) => (
@@ -220,7 +219,7 @@ const UserList = () => {
       ),
     },
     {
-      title: "Trạng thái",
+      title: "Status",
       dataIndex: "Status",
       key: "Status",
       render: (status) => (
@@ -228,7 +227,7 @@ const UserList = () => {
       ),
     },
     {
-      title: "Hành động",
+      title: "Actions",
       key: "actions",
       render: (text, record) => (
         <Space>
@@ -237,18 +236,18 @@ const UserList = () => {
             icon={<EditOutlined />}
             onClick={() => showEditUserModal(record)}
           >
-            Chỉnh sửa
+            Edit
           </Button>
-          {/* <Button type="danger" icon={<DeleteOutlined />} onClick={() => showDeleteConfirm(record)}>Cập nhật trạng thái</Button> */}
+          {/* <Button type="danger" icon={<DeleteOutlined />} onClick={() => showDeleteConfirm(record)}>Update Status</Button> */}
           <Popconfirm
-            title="Bạn có chắc chắn muốn xóa user này?"
-            okText="Xác nhận"
-            cancelText="Hủy"
+            title="Are you sure you want to delete this user?"
+            okText="Confirm"
+            cancelText="Cancel"
             onConfirm={() => handleToggleStatus(record)}
             okButtonProps={{ danger: true }}
           >
             <Button type="danger" icon={<DeleteOutlined />}>
-              Cập nhật trạng thái
+              Update Status
             </Button>
           </Popconfirm>
         </Space>
@@ -258,26 +257,26 @@ const UserList = () => {
 
   return (
     <div style={{ padding: "20px" }}>
-      <h2>Quản lý người dùng</h2>
+      <h2>User Management</h2>
 
       <Space style={{ marginBottom: 20 }}>
         <Input
-          placeholder="Tìm kiếm theo Email..."
+          placeholder="Search by Email..."
           prefix={<SearchOutlined />}
           value={searchText}
           onChange={handleSearch}
           style={{ width: 250 }}
         />
         <Select
-          placeholder="Lọc theo trạng thái"
+          placeholder="Filter by status"
           style={{ width: 180 }}
           onChange={handleStatusFilter}
           allowClear
         >
-          <Option value="Active">Hoạt động</Option>
-          <Option value="Inactive">Không hoạt động</Option>
+          <Option value="Active">Active</Option>
+          <Option value="Inactive">Inactive</Option>
         </Select>
-        {/* <Select placeholder="Lọc theo quyền" style={{ width: 150 }} onChange={handleRoleFilter} allowClear>
+        {/* <Select placeholder="Filter by role" style={{ width: 150 }} onChange={handleRoleFilter} allowClear>
                     <Option value="1">Admin</Option>
                     <Option value="2">Manager</Option>
                     <Option value="3">Staff</Option>
@@ -288,7 +287,7 @@ const UserList = () => {
           icon={<PlusOutlined />}
           onClick={showAddUserModal}
         >
-          Thêm tài khoản
+          Add Account
         </Button>
       </Space>
 
@@ -301,9 +300,9 @@ const UserList = () => {
         pagination={{ pageSize: 10 }}
       />
 
-      {/* Modal Thêm tài khoản */}
+      {/* Add Account Modal */}
       <Modal
-        title="Thêm tài khoản"
+        title="Add Account"
         open={isModalOpen}
         onCancel={handleCancel}
         footer={null}
@@ -311,8 +310,8 @@ const UserList = () => {
         <Form form={form} layout="vertical" onFinish={handleAddUser}>
           <Form.Item
             name="FullName"
-            label="Họ và Tên"
-            rules={[{ required: true, message: "Vui lòng nhập họ và tên!" }]}
+            label="Full Name"
+            rules={[{ required: true, message: "Please enter full name!" }]}
           >
             <Input />
           </Form.Item>
@@ -320,28 +319,28 @@ const UserList = () => {
             name="Email"
             label="Email"
             rules={[
-              { type: "email", required: true, message: "Email không hợp lệ!" },
+              { type: "email", required: true, message: "Invalid email!" },
             ]}
           >
             <Input />
           </Form.Item>
           <Form.Item
             name="Password"
-            label="Mật khẩu"
-            rules={[{ required: true, message: "Vui lòng nhập mật khẩu!" }]}
+            label="Password"
+            rules={[{ required: true, message: "Please enter password!" }]}
           >
             <Input.Password />
           </Form.Item>
           <Form.Item
             name="PhoneNumber"
-            label="Số điện thoại"
+            label="Phone Number"
             rules={[
-              { required: true, message: "Vui lòng nhập số điện thoại!" },
+              { required: true, message: "Please enter phone number!" },
             ]}
           >
             <Input />
           </Form.Item>
-          <Form.Item name="roleId" label="Quyền" rules={[{ required: true }]}>
+          <Form.Item name="roleId" label="Role" rules={[{ required: true }]}>
             <Select>
               <Option value="1">Admin</Option>
               <Option value="2">Manager</Option>
@@ -349,23 +348,23 @@ const UserList = () => {
             </Select>
           </Form.Item>
           <Button type="primary" htmlType="submit">
-            Thêm
+            Add
           </Button>
         </Form>
       </Modal>
 
       <Modal
-        title="Chỉnh sửa thông tin User"
+        title="Edit User Information"
         open={isEditModalOpen}
         onCancel={() => setIsEditModalOpen(false)}
         footer={null}
       >
         <Form form={editForm} layout="vertical" onFinish={handleUpdateUser}>
-          {/* Họ và Tên */}
+          {/* Full Name */}
           <Form.Item
             name="FullName"
-            label="Họ và Tên"
-            rules={[{ required: true, message: "Vui lòng nhập họ và tên!" }]}
+            label="Full Name"
+            rules={[{ required: true, message: "Please enter full name!" }]}
           >
             <Input />
           </Form.Item>
@@ -375,34 +374,34 @@ const UserList = () => {
             name="Email"
             label="Email"
             rules={[
-              { required: true, message: "Vui lòng nhập email!" },
-              { type: "email", message: "Email không hợp lệ!" },
+              { required: true, message: "Please enter email!" },
+              { type: "email", message: "Invalid email!" },
             ]}
           >
             <Input />
           </Form.Item>
 
-          {/* Số điện thoại (Chỉ nhận 10 chữ số) */}
+          {/* Phone Number (10 digits only) */}
           <Form.Item
             name="PhoneNumber"
-            label="Số điện thoại"
+            label="Phone Number"
             rules={[
-              { required: true, message: "Vui lòng nhập số điện thoại!" },
+              { required: true, message: "Please enter phone number!" },
               {
                 pattern: /^0\d{9}$/,
                 message:
-                  "Số điện thoại không hợp lệ! (phải có 10 chữ số, bắt đầu bằng 0)",
+                  "Invalid phone number! (must have 10 digits, starting with 0)",
               },
             ]}
           >
             <Input />
           </Form.Item>
 
-          {/* Quyền */}
+          {/* Role */}
           <Form.Item
             name="roleId"
-            label="Vị trí"
-            rules={[{ required: true, message: "Vui lòng chọn vị trí công việc!" }]}
+            label="Position"
+            rules={[{ required: true, message: "Please select a position!" }]}
           >
             <Select>
               <Option value={1}>Admin</Option>
@@ -412,7 +411,7 @@ const UserList = () => {
           </Form.Item>
 
           <Button type="primary" htmlType="submit">
-            Lưu
+            Save
           </Button>
         </Form>
       </Modal>

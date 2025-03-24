@@ -31,7 +31,7 @@ const Dashboard = () => {
         setError(null);
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
-        setError('Đã xảy ra lỗi khi tải dữ liệu dashboard!');
+        setError('An error occurred while loading dashboard data!');
       } finally {
         setLoading(false);
       }
@@ -43,34 +43,34 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
-        <Spin size="large" tip="Đang tải dữ liệu dashboard..." />
+        <Spin size="large" tip="Loading dashboard data..." />
       </div>
     );
   }
 
   if (error) {
     return (
-      <Alert
-        message="Lỗi"
-        description={error}
-        type="error"
-        showIcon
-        action={
-          <Button size="small" type="primary" onClick={() => window.location.reload()}>
-            Thử lại
-          </Button>
-        }
-        style={{ margin: '20px' }}
-      />
+      <div style={{ padding: '20px' }}>
+        <Alert
+          message="Error"
+          description={error}
+          type="error"
+          showIcon
+        />
+      </div>
     );
   }
 
   if (!dashboardData) {
     return (
-      <Empty
-        description="Không có dữ liệu"
-        style={{ margin: '100px auto' }}
-      />
+      <div style={{ padding: '20px' }}>
+        <Alert
+          message="No Data"
+          description="No dashboard data available"
+          type="warning"
+          showIcon
+        />
+      </div>
     );
   }
 
@@ -128,17 +128,17 @@ const Dashboard = () => {
   })) || [];
 
   const importOrderStatusData = [
-    { key: 'new', status: 'Mới', count: dashboardData.importOrdersStats?.newImportOrders || 0 },
-    { key: 'approved', status: 'Phê duyệt', count: dashboardData.importOrdersStats?.approvedImportOrders || 0 },
-    { key: 'received', status: 'Đã nhận', count: dashboardData.importOrdersStats?.receivedImportOrders || 0 },
-    { key: 'imported', status: 'Nhập kho', count: dashboardData.importOrdersStats?.approveImportOrders || 0 }
+    { key: 'new', status: 'New', count: dashboardData.importOrdersStats?.newImportOrders || 0 },
+    { key: 'approved', status: 'Approved', count: dashboardData.importOrdersStats?.approvedImportOrders || 0 },
+    { key: 'received', status: 'Received', count: dashboardData.importOrdersStats?.receivedImportOrders || 0 },
+    { key: 'imported', status: 'Imported', count: dashboardData.importOrdersStats?.approveImportOrders || 0 }
   ];
 
   const exportOrderStatusData = [
-    { key: 'new', status: 'Mới', count: dashboardData.exportOrdersStats?.newExportOrders || 0 },
-    { key: 'approved', status: 'Phê duyệt', count: dashboardData.exportOrdersStats?.approvedExportOrders || 0 },
-    { key: 'completed', status: 'Hoàn thành', count: dashboardData.exportOrdersStats?.completedExportOrders || 0 },
-    { key: 'cancelled', status: 'Hủy', count: dashboardData.exportOrdersStats?.cancelledExportOrders || 0 }
+    { key: 'new', status: 'New', count: dashboardData.exportOrdersStats?.newExportOrders || 0 },
+    { key: 'approved', status: 'Approved', count: dashboardData.exportOrdersStats?.approvedExportOrders || 0 },
+    { key: 'completed', status: 'Completed', count: dashboardData.exportOrdersStats?.completedExportOrders || 0 },
+    { key: 'cancelled', status: 'Cancelled', count: dashboardData.exportOrdersStats?.cancelledExportOrders || 0 }
   ];
 
   const binStatusData = [
@@ -192,12 +192,12 @@ const Dashboard = () => {
 
   const timelineColumns = [
     {
-      title: 'Tháng',
+      title: 'Month',
       dataIndex: 'month',
       key: 'month',
     },
     {
-      title: 'Đơn nhập',
+      title: 'Import Orders',
       dataIndex: 'importOrders',
       key: 'importOrders',
       render: value => (
@@ -205,7 +205,7 @@ const Dashboard = () => {
       )
     },
     {
-      title: 'Đơn xuất',
+      title: 'Export Orders',
       dataIndex: 'exportOrders',
       key: 'exportOrders',
       render: value => (
@@ -216,17 +216,17 @@ const Dashboard = () => {
 
   const userRoleColumns = [
     {
-      title: 'Vai trò',
+      title: 'Role',
       dataIndex: 'role',
       key: 'role',
     },
     {
-      title: 'Số lượng',
+      title: 'Count',
       dataIndex: 'count',
       key: 'count',
     },
     {
-      title: 'Phần trăm',
+      title: 'Percentage',
       dataIndex: 'percentage',
       key: 'percentage',
       render: value => (
@@ -240,17 +240,17 @@ const Dashboard = () => {
 
   const orderStatusColumns = [
     {
-      title: 'Trạng thái',
+      title: 'Status',
       dataIndex: 'status',
       key: 'status',
     },
     {
-      title: 'Số lượng',
+      title: 'Count',
       dataIndex: 'count',
       key: 'count',
     },
     {
-      title: 'Phần trăm',
+      title: 'Percentage',
       key: 'percentage',
       render: (_, record) => {
         const total = record.type === 'import'
@@ -267,10 +267,10 @@ const Dashboard = () => {
               size="small"
               showInfo={false}
               strokeColor={
-                record.status === 'Mới' ? colors.primary :
-                  record.status === 'Phê duyệt' ? colors.success :
-                    record.status === 'Đã nhận' || record.status === 'Hoàn thành' ? colors.warning :
-                      record.status === 'Nhập kho' ? colors.purple :
+                record.status === 'New' ? colors.primary :
+                  record.status === 'Approved' ? colors.success :
+                    record.status === 'Received' || record.status === 'Completed' ? colors.warning :
+                      record.status === 'Imported' ? colors.purple :
                         colors.error
               }
             />
@@ -282,7 +282,7 @@ const Dashboard = () => {
 
   const binStatusColumns = [
     {
-      title: 'Trạng thái',
+      title: 'Status',
       dataIndex: 'status',
       key: 'status',
       render: text => (
@@ -294,12 +294,12 @@ const Dashboard = () => {
       )
     },
     {
-      title: 'Số lượng',
+      title: 'Count',
       dataIndex: 'count',
       key: 'count',
     },
     {
-      title: 'Phần trăm',
+      title: 'Percentage',
       key: 'percentage',
       render: (_, record) => {
         const total = dashboardData.warehouseStats?.totalBins || 0;
@@ -327,13 +327,13 @@ const Dashboard = () => {
           <Title level={2} style={{ margin: 0 }}>
             <DatabaseOutlined /> Dashboard
           </Title>
-          <Text type="secondary">Tổng quan hệ thống quản lý kho sách</Text>
+          <Text type="secondary">Overview of Book Warehouse Management System</Text>
         </div>
         <Segmented
           options={[
-            { value: '3months', label: '3 tháng' },
-            { value: '6months', label: '6 tháng' },
-            { value: '1year', label: 'Năm' }
+            { value: '3months', label: '3 months' },
+            { value: '6months', label: '6 months' },
+            { value: '1year', label: 'Year' }
           ]}
           value={timeRange}
           onChange={setTimeRange}
@@ -344,20 +344,20 @@ const Dashboard = () => {
         <Col xs={24} sm={12} md={6}>
           <Card style={dashboardStyles.card} hoverable>
             <Statistic
-              title="Tổng người dùng"
+              title="Total Users"
               value={dashboardData.usersStats?.totalUsers}
               prefix={<TeamOutlined style={{ color: colors.primary }} />}
               valueStyle={{ color: colors.primary }}
             />
             <div style={dashboardStyles.statFooter}>
-              <Tooltip title="Người dùng đang hoạt động">
+              <Tooltip title="Active Users">
                 <span>
-                  <Badge status="success" /> Hoạt động: {dashboardData.usersStats?.totalActiveUsers}
+                  <Badge status="success" /> Active: {dashboardData.usersStats?.totalActiveUsers}
                 </span>
               </Tooltip>
-              <Tooltip title="Người dùng mới trong 30 ngày qua">
+              <Tooltip title="New Users in the past 30 days">
                 <span>
-                  <ArrowUpOutlined style={{ color: colors.success }} /> {dashboardData.usersStats?.recentUsers || 0} mới
+                  <ArrowUpOutlined style={{ color: colors.success }} /> {dashboardData.usersStats?.recentUsers || 0} new
                 </span>
               </Tooltip>
             </div>
@@ -366,20 +366,20 @@ const Dashboard = () => {
         <Col xs={24} sm={12} md={6}>
           <Card style={dashboardStyles.card} hoverable>
             <Statistic
-              title="Tổng đầu sách"
+              title="Total Book Titles"
               value={dashboardData.booksStats?.totalBooks}
               prefix={<BookOutlined style={{ color: colors.success }} />}
               valueStyle={{ color: colors.success }}
             />
             <div style={dashboardStyles.statFooter}>
-              <Tooltip title="Tổng số lượng sách trong kho">
+              <Tooltip title="Total number of books in stock">
                 <span>
-                  <Badge status="processing" /> Số lượng: {dashboardData.booksStats?.totalBookQuantity || 0}
+                  <Badge status="processing" /> Quantity: {dashboardData.booksStats?.totalBookQuantity || 0}
                 </span>
               </Tooltip>
-              <Tooltip title="Sách mới trong 30 ngày qua">
+              <Tooltip title="New books in the past 30 days">
                 <span>
-                  <ArrowUpOutlined style={{ color: colors.success }} /> {dashboardData.booksStats?.recentBooks || 0} mới
+                  <ArrowUpOutlined style={{ color: colors.success }} /> {dashboardData.booksStats?.recentBooks || 0} new
                 </span>
               </Tooltip>
             </div>
@@ -388,18 +388,18 @@ const Dashboard = () => {
         <Col xs={24} sm={12} md={6}>
           <Card style={dashboardStyles.card} hoverable>
             <Statistic
-              title="Đơn nhập hàng"
+              title="Total Import Orders"
               value={dashboardData.importOrdersStats?.totalImportOrders}
               prefix={<ImportOutlined style={{ color: colors.warning }} />}
               valueStyle={{ color: colors.warning }}
             />
             <div style={dashboardStyles.statFooter}>
-              <Tooltip title="Đơn nhập mới chưa xử lý">
+              <Tooltip title="Total import orders">
                 <span>
-                  <ClockCircleOutlined style={{ color: colors.warning }} /> {dashboardData.importOrdersStats?.newImportOrders || 0} mới
+                  <ClockCircleOutlined style={{ color: colors.warning }} /> {dashboardData.importOrdersStats?.newImportOrders || 0} new
                 </span>
               </Tooltip>
-              <Tooltip title="Tổng giá trị đơn nhập">
+              <Tooltip title="Total value of import orders">
                 <span>
                   <DollarOutlined /> {Number(dashboardData.importOrdersStats?.totalImportValue || 0).toLocaleString()} VND
                 </span>
@@ -410,18 +410,18 @@ const Dashboard = () => {
         <Col xs={24} sm={12} md={6}>
           <Card style={dashboardStyles.card} hoverable>
             <Statistic
-              title="Đơn xuất hàng"
+              title="Total Export Orders"
               value={dashboardData.exportOrdersStats?.totalExportOrders}
               prefix={<ExportOutlined style={{ color: colors.purple }} />}
               valueStyle={{ color: colors.purple }}
             />
             <div style={dashboardStyles.statFooter}>
-              <Tooltip title="Đơn xuất mới chưa xử lý">
+              <Tooltip title="Total export orders">
                 <span>
-                  <ClockCircleOutlined style={{ color: colors.warning }} /> {dashboardData.exportOrdersStats?.newExportOrders || 0} mới
+                  <ClockCircleOutlined style={{ color: colors.warning }} /> {dashboardData.exportOrdersStats?.newExportOrders || 0} new
                 </span>
               </Tooltip>
-              <Tooltip title="Tổng giá trị đơn xuất">
+              <Tooltip title="Total value of export orders">
                 <span>
                   <DollarOutlined /> {Number(dashboardData.exportOrdersStats?.totalExportValue || 0).toLocaleString()} VND
                 </span>
@@ -438,7 +438,7 @@ const Dashboard = () => {
             title={
               <Space>
                 <LineChartOutlined style={{ color: colors.primary }} />
-                <span>Biểu đồ đơn hàng theo thời gian</span>
+                <span>Orders Timeline Chart</span>
               </Space>
             }
             hoverable
@@ -461,7 +461,7 @@ const Dashboard = () => {
                 return (
                   <Table.Summary.Row>
                     <Table.Summary.Cell index={0}>
-                      <strong>Tổng</strong>
+                      <strong>Total</strong>
                     </Table.Summary.Cell>
                     <Table.Summary.Cell index={1}>
                       <Tag color={colors.primary}><strong>{totalImport}</strong></Tag>
@@ -484,7 +484,7 @@ const Dashboard = () => {
             title={
               <Space>
                 <PieChartOutlined />
-                <span>Đơn nhập hàng theo trạng thái</span>
+                <span>Import Orders by Status</span>
               </Space>
             }
           >
@@ -502,7 +502,7 @@ const Dashboard = () => {
             title={
               <Space>
                 <PieChartOutlined />
-                <span>Đơn xuất hàng theo trạng thái</span>
+                <span>Export Orders by Status</span>
               </Space>
             }
           >
@@ -522,7 +522,7 @@ const Dashboard = () => {
           items={[
             {
               key: "1",
-              label: <span><TeamOutlined /> Quản lý người dùng & sách</span>,
+              label: <span><TeamOutlined /> User & Book Management</span>,
               children: (
                 <Row gutter={[16, 16]}>
                   <Col xs={24} md={12}>
@@ -530,7 +530,7 @@ const Dashboard = () => {
                       title={
                         <Space>
                           <UserOutlined />
-                          <span>Người dùng theo vai trò</span>
+                          <span>Users by Role</span>
                         </Space>
                       }
                       style={dashboardStyles.card}
@@ -548,7 +548,7 @@ const Dashboard = () => {
                       title={
                         <Space>
                           <BookOutlined />
-                          <span>Top 5 sách tồn kho nhiều nhất</span>
+                          <span>Top 5 Books with Highest Stock</span>
                         </Space>
                       }
                       style={dashboardStyles.card}
@@ -571,16 +571,16 @@ const Dashboard = () => {
                                 </Avatar>
                               }
                               title={item.Book?.Title}
-                              description={`Tác giả: ${item.Book?.Author || 'Không rõ'}`}
+                              description={`Author: ${item.Book?.Author || 'Unknown'}`}
                             />
                             <div>
                               <Tag color={item.Quantity > 100 ? 'red' : item.Quantity > 50 ? 'orange' : 'green'}>
-                                {item.Quantity} cuốn
+                                {item.Quantity} books
                               </Tag>
                             </div>
                           </List.Item>
                         )}
-                        locale={{ emptyText: 'Không có dữ liệu' }}
+                        locale={{ emptyText: 'No data available' }}
                       />
                     </Card>
                   </Col>
@@ -589,7 +589,7 @@ const Dashboard = () => {
             },
             {
               key: "2",
-              label: <span><ApartmentOutlined /> Quản lý kho & bin</span>,
+              label: <span><ApartmentOutlined /> Bin Management</span>,
               children: (
                 <Row gutter={[16, 16]}>
                   <Col xs={24} md={8}>
@@ -597,7 +597,7 @@ const Dashboard = () => {
                       title={
                         <Space>
                           <ApartmentOutlined />
-                          <span>Trạng thái bin</span>
+                          <span>Bin Status</span>
                         </Space>
                       }
                       style={dashboardStyles.card}
@@ -612,14 +612,14 @@ const Dashboard = () => {
                       <Row gutter={16}>
                         <Col span={12}>
                           <Statistic
-                            title="Tổng số bin"
+                            title="Total Bins"
                             value={dashboardData.warehouseStats?.totalBins}
                             prefix={<InboxOutlined />}
                           />
                         </Col>
                         <Col span={12}>
                           <Statistic
-                            title="Tổng số kệ"
+                            title="Total Shelves"
                             value={dashboardData.warehouseStats?.totalShelves}
                             prefix={<ApartmentOutlined />}
                           />
@@ -632,7 +632,7 @@ const Dashboard = () => {
                       title={
                         <Space>
                           <AlertOutlined />
-                          <span>Cảnh báo tồn kho</span>
+                          <span>Stock Level Management</span>
                         </Space>
                       }
                       style={dashboardStyles.card}
@@ -640,7 +640,7 @@ const Dashboard = () => {
                       <Row gutter={[16, 16]}>
                         <Col span={12}>
                           <Statistic
-                            title="Sách tồn kho thấp"
+                            title="Low Stock Books"
                             value={dashboardData.stockStats?.lowStockItems}
                             valueStyle={{ color: colors.error }}
                             prefix={<FallOutlined />}
@@ -653,13 +653,13 @@ const Dashboard = () => {
                           />
                           <Paragraph>
                             <Text type="secondary">
-                              {dashboardData.stockStats?.lowStockItems} đầu sách có số lượng tồn kho thấp hơn mức tối thiểu. Cần nhập thêm hàng.
+                              {dashboardData.stockStats?.lowStockItems} book titles have stock levels below the minimum threshold. Reordering required.
                             </Text>
                           </Paragraph>
                         </Col>
                         <Col span={12}>
                           <Statistic
-                            title="Sách tồn kho cao"
+                            title="High Stock Books"
                             value={dashboardData.stockStats?.overStockItems}
                             valueStyle={{ color: colors.warning }}
                             prefix={<RiseOutlined />}
@@ -673,7 +673,7 @@ const Dashboard = () => {
                           />
                           <Paragraph>
                             <Text type="secondary">
-                              {dashboardData.stockStats?.overStockItems} đầu sách có số lượng tồn kho vượt quá mức tối đa. Nên xuất hàng.
+                              {dashboardData.stockStats?.overStockItems} book titles have stock levels exceeding the maximum threshold. Consider exporting.
                             </Text>
                           </Paragraph>
                         </Col>
@@ -682,7 +682,7 @@ const Dashboard = () => {
                       <Row gutter={[16, 16]}>
                         <Col span={24}>
                           <Statistic
-                            title="Tỷ lệ sách đã phân bổ vào bin"
+                            title="Books Allocated to Bins Ratio"
                             value={dashboardData.booksStats?.totalBooks
                               ? Math.round((dashboardData.warehouseStats?.booksInBins / dashboardData.booksStats.totalBooks) * 100)
                               : 0}
@@ -705,7 +705,7 @@ const Dashboard = () => {
             },
             {
               key: "3",
-              label: <span><WarningOutlined /> Quản lý lỗi & trạng thái</span>,
+              label: <span><WarningOutlined /> Error & Status Management</span>,
               children: (
                 <Row gutter={[16, 16]}>
                   <Col xs={24} md={12}>
@@ -713,7 +713,7 @@ const Dashboard = () => {
                       title={
                         <Space>
                           <WarningOutlined />
-                          <span>Thống kê lỗi</span>
+                          <span>Error Statistics</span>
                         </Space>
                       }
                       style={dashboardStyles.card}
@@ -721,7 +721,7 @@ const Dashboard = () => {
                       <Row gutter={[16, 16]}>
                         <Col span={12}>
                           <Statistic
-                            title="Tổng số lỗi"
+                            title="Total Errors"
                             value={dashboardData.faultsStats?.totalFaults}
                             valueStyle={{ color: colors.error }}
                             prefix={<WarningOutlined />}
@@ -729,27 +729,27 @@ const Dashboard = () => {
                         </Col>
                         <Col span={12}>
                           <Statistic
-                            title="Lỗi mới (30 ngày)"
+                            title="New Errors (30 days)"
                             value={dashboardData.faultsStats?.recentFaults}
                             valueStyle={{ color: colors.warning }}
                             prefix={<ClockCircleOutlined />}
                           />
                         </Col>
                       </Row>
-                      <Divider orientation="left">Lỗi gần đây</Divider>
+                      <Divider orientation="left">Recent Errors</Divider>
                       <List
                         size="small"
                         dataSource={dashboardData.faultsStats?.recentFaultsList || []}
                         renderItem={(item) => (
                           <List.Item>
                             <List.Item.Meta
-                              title={item.Book?.Title || 'Không xác định'}
-                              description={`Số lượng: ${item.Quantity} - Ngày: ${new Date(item.FaultDate).toLocaleDateString()}`}
+                              title={item.Book?.Title || 'Unknown'}
+                              description={`Quantity: ${item.Quantity} - Date: ${new Date(item.FaultDate).toLocaleDateString()}`}
                             />
                             <Tag color="red">{item.OrderType}</Tag>
                           </List.Item>
                         )}
-                        locale={{ emptyText: 'Không có dữ liệu lỗi' }}
+                        locale={{ emptyText: 'No error data available' }}
                       />
                     </Card>
                   </Col>
@@ -758,7 +758,7 @@ const Dashboard = () => {
                       title={
                         <Space>
                           <FileDoneOutlined />
-                          <span>Thống kê trạng thái đơn hàng</span>
+                          <span>Order Status Statistics</span>
                         </Space>
                       }
                       style={dashboardStyles.card}
@@ -766,7 +766,7 @@ const Dashboard = () => {
                       <Row gutter={[16, 16]}>
                         <Col span={12}>
                           <Statistic
-                            title="Tổng thay đổi trạng thái"
+                            title="Total Status Changes"
                             value={dashboardData.statusLogsStats?.totalStatusChanges || 0}
                             valueStyle={{ color: colors.primary }}
                             prefix={<SolutionOutlined />}
@@ -774,14 +774,14 @@ const Dashboard = () => {
                         </Col>
                         <Col span={12}>
                           <Statistic
-                            title="Thay đổi gần đây (30 ngày)"
+                            title="Recent Changes (30 days)"
                             value={dashboardData.statusLogsStats?.recentStatusChanges || 0}
                             valueStyle={{ color: colors.cyan }}
                             prefix={<ClockCircleOutlined />}
                           />
                         </Col>
                       </Row>
-                      <Divider orientation="left">Trạng thái phổ biến</Divider>
+                      <Divider orientation="left">Popular Statuses</Divider>
                       <List
                         size="small"
                         dataSource={dashboardData.statusLogsStats?.mostCommonStatus || []}
@@ -789,7 +789,7 @@ const Dashboard = () => {
                           <List.Item>
                             <List.Item.Meta
                               title={item.Status}
-                              description={`Số lần xuất hiện: ${item.count}`}
+                              description={`Occurrence Count: ${item.count}`}
                             />
                             <Progress
                               percent={Math.round((item.count / (dashboardData.statusLogsStats?.totalStatusChanges || 1)) * 100)}
@@ -799,7 +799,7 @@ const Dashboard = () => {
                             />
                           </List.Item>
                         )}
-                        locale={{ emptyText: 'Không có dữ liệu trạng thái' }}
+                        locale={{ emptyText: 'No status data available' }}
                       />
                     </Card>
                   </Col>
@@ -816,7 +816,7 @@ const Dashboard = () => {
             title={
               <Space>
                 <FileTextOutlined />
-                <span>Thống kê metadata</span>
+                <span>Metadata Statistics</span>
               </Space>
             }
             style={dashboardStyles.card}
@@ -825,16 +825,16 @@ const Dashboard = () => {
               <Col xs={24} sm={8}>
                 <Card style={dashboardStyles.innerCard}>
                   <Statistic
-                    title="Thể loại"
+                    title="Total Categories"
                     value={dashboardData.metadataStats?.totalCategories}
                     prefix={<BookOutlined />}
                     valueStyle={{ color: colors.primary }}
                   />
                   <div style={dashboardStyles.statDescription}>
                     <Text type="secondary">
-                      Trung bình {dashboardData.metadataStats?.totalCategories && dashboardData.booksStats?.totalBooks
+                      Average {dashboardData.metadataStats?.totalCategories && dashboardData.booksStats?.totalBooks
                         ? Math.round((dashboardData.booksStats.totalBooks / dashboardData.metadataStats.totalCategories) * 100) / 100
-                        : 0} sách/thể loại
+                        : 0} books/category
                     </Text>
                   </div>
                 </Card>
@@ -842,16 +842,16 @@ const Dashboard = () => {
               <Col xs={24} sm={8}>
                 <Card style={dashboardStyles.innerCard}>
                   <Statistic
-                    title="Tác giả"
+                    title="Total Authors"
                     value={dashboardData.metadataStats?.totalAuthors}
                     prefix={<UserOutlined />}
                     valueStyle={{ color: colors.success }}
                   />
                   <div style={dashboardStyles.statDescription}>
                     <Text type="secondary">
-                      Trung bình {dashboardData.metadataStats?.totalAuthors && dashboardData.booksStats?.totalBooks
+                      Average {dashboardData.metadataStats?.totalAuthors && dashboardData.booksStats?.totalBooks
                         ? Math.round((dashboardData.booksStats.totalBooks / dashboardData.metadataStats.totalAuthors) * 100) / 100
-                        : 0} sách/tác giả
+                        : 0} books/author
                     </Text>
                   </div>
                 </Card>
@@ -859,16 +859,16 @@ const Dashboard = () => {
               <Col xs={24} sm={8}>
                 <Card style={dashboardStyles.innerCard}>
                   <Statistic
-                    title="Nhà xuất bản"
+                    title="Total Publishers"
                     value={dashboardData.metadataStats?.totalPublishers}
                     prefix={<BankOutlined />}
                     valueStyle={{ color: colors.purple }}
                   />
                   <div style={dashboardStyles.statDescription}>
                     <Text type="secondary">
-                      Trung bình {dashboardData.metadataStats?.totalPublishers && dashboardData.booksStats?.totalBooks
+                      Average {dashboardData.metadataStats?.totalPublishers && dashboardData.booksStats?.totalBooks
                         ? Math.round((dashboardData.booksStats.totalBooks / dashboardData.metadataStats.totalPublishers) * 100) / 100
-                        : 0} sách/NXB
+                        : 0} books/publisher
                     </Text>
                   </div>
                 </Card>

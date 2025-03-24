@@ -1,21 +1,245 @@
-/* fe/src/pages/home/Home.css */
-.fullscreen-image {
-    position: absolute; /* Đặt vị trí tuyệt đối */
-    top: 0; /* Bắt đầu từ trên cùng */
-    left: 0; /* Bắt đầu từ bên trái */
-    right: 0; /* Đến bên phải */
-    bottom: 0; /* Đến dưới cùng */
-    z-index: 100; /* Đặt dưới các phần tử khác */
-    object-fit: cover; /* Đảm bảo ảnh phủ toàn bộ không gian */
+/* fe/src/pages/home/HomePage.css */
+
+/* Global styles */
+.home-page {
+    font-family: 'Roboto', 'Segoe UI', Arial, sans-serif;
+    color: #333;
+    overflow-x: hidden;
 }
 
-.home-container {
-    position: relative; /* Để ảnh có thể được đặt tuyệt đối */
-    height: calc(100vh - 64px); /* Giả sử header có chiều cao 64px, điều chỉnh nếu cần */
-    width: 100%; /* Đảm bảo chiều rộng 100% */
-    overflow: hidden; /* Ẩn phần thừa nếu có */
+/* Hero Banner */
+.hero-banner {
+    position: relative;
+    height: 85vh;
+    width: 100%;
+    background: url('https://images.unsplash.com/photo-1507842217343-583bb7270b66?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80') no-repeat center center;
+    background-size: cover;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    margin-bottom: 60px;
 }
 
-#content {
-    padding: 0 !important;
+.overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.banner-content {
+    position: relative;
+    z-index: 2;
+    max-width: 800px;
+    padding: 0 20px;
+}
+
+.banner-title {
+    color: white !important;
+    font-size: 3.5rem !important;
+    font-weight: 700 !important;
+    margin-bottom: 20px !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.banner-subtitle {
+    color: white !important;
+    font-size: 1.5rem !important;
+    font-weight: 400 !important;
+    margin-bottom: 40px !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.banner-button {
+    font-size: 1.1rem !important;
+    height: auto !important;
+    padding: 12px 30px !important;
+    border-radius: 50px !important;
+    font-weight: 600 !important;
+}
+
+/* Section Styling */
+.section {
+    padding: 70px 10%;
+}
+
+.section-title {
+    text-align: center;
+    margin-bottom: 50px !important;
+    position: relative;
+    font-weight: 600 !important;
+}
+
+.section-title::after {
+    content: '';
+    display: block;
+    width: 80px;
+    height: 3px;
+    background: #1890ff;
+    margin: 15px auto 0;
+}
+
+/* Features Section */
+.features-section {
+    background-color: #f8f9fa;
+}
+
+.feature-card {
+    height: 100%;
+    text-align: center;
+    padding: 40px 20px;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+.feature-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+}
+
+.feature-icon {
+    font-size: 3rem;
+    color: #1890ff;
+    margin-bottom: 20px;
+}
+
+/* Categories Section */
+.category-card {
+    height: 100%;
+    overflow: hidden;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+}
+
+.category-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+}
+
+.category-card img {
+    height: 200px;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.category-card:hover img {
+    transform: scale(1.05);
+}
+
+/* Stats Section */
+.stats-section {
+    position: relative;
+    color: white;
+    padding: 80px 10%;
+}
+
+.stats-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+    z-index: -1;
+}
+
+.stats-content {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+}
+
+.section-title.light {
+    color: white !important;
+}
+
+.section-title.light::after {
+    background: white;
+}
+
+.stat-title {
+    color: rgba(255, 255, 255, 0.85) !important;
+    font-size: 1rem !important;
+}
+
+.stat-item {
+    color: white !important;
+}
+
+.stat-item .ant-statistic-content {
+    color: white !important;
+    font-size: 2rem !important;
+}
+
+/* About Section */
+.about-image img {
+    width: 100%;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.about-content {
+    padding: 0 20px;
+}
+
+/* CTA Section */
+.cta-section {
+    background-color: #f8f9fa;
+    text-align: center;
+    border-radius: 10px;
+    padding: 70px 20px;
+}
+
+.cta-text {
+    max-width: 600px;
+    margin: 0 auto 30px;
+    font-size: 1.2rem;
+}
+
+.cta-button {
+    font-size: 1.1rem !important;
+    height: auto !important;
+    padding: 12px 30px !important;
+    border-radius: 50px !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .hero-banner {
+        height: 70vh;
+    }
+
+    .banner-title {
+        font-size: 2.5rem !important;
+    }
+
+    .banner-subtitle {
+        font-size: 1.2rem !important;
+    }
+
+    .section {
+        padding: 50px 5%;
+    }
+}
+
+@media (max-width: 576px) {
+    .hero-banner {
+        height: 60vh;
+    }
+
+    .banner-title {
+        font-size: 2rem !important;
+    }
+
+    .banner-subtitle {
+        font-size: 1rem !important;
+    }
+
+    .section {
+        padding: 40px 20px;
+    }
 }

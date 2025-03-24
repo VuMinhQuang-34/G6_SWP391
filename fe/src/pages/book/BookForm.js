@@ -26,7 +26,7 @@ const DEFAULT_VALUES = {
     Edit_Date: new Date()
 };
 
-// Thêm hàm kiểm tra chuỗi rỗng hoặc chỉ chứa khoảng trắng
+// Add function to check for empty string or string with only whitespace
 const isEmptyOrWhitespace = (str) => {
     return !str || str.trim().length === 0;
 };
@@ -145,7 +145,7 @@ const BookForm = ({ initialValues, onCancel }) => {
         }
     }, [initialValues, form]);
 
-    // Thêm hàm xử lý upload ảnh
+    // Add function to handle image upload
     const handleImageChange = (info) => {
         if (info.file.status === 'uploading') {
             return;
@@ -177,19 +177,19 @@ const BookForm = ({ initialValues, onCancel }) => {
         return imageUrl;
     };
 
-    // Sửa lại hàm handleSubmit để thêm kiểm tra trước khi gửi
+    // Modify handleSubmit function to add validation before sending
     const handleSubmit = async (e) => {
         e?.preventDefault();
         try {
             setSubmitting(true);
             const values = await form.validateFields();
 
-            // Thêm ảnh vào values nếu có
+            // Add image to values if available
             if (imageUrl) {
                 values.Image = imageUrl;
             }
 
-            // Kiểm tra thêm một lần nữa trước khi gửi
+            // Check one more time before sending
             const stringFields = ['Title', 'Author', 'Publisher'];
             for (const field of stringFields) {
                 if (isEmptyOrWhitespace(values[field])) {

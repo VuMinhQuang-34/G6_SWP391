@@ -29,7 +29,7 @@ import { toast } from "react-toastify";
 const { Option } = Select;
 
 const ImportOrderListCheck = () => {
-    const { user } = useContext(AuthContext); // Lấy user từ AuthContext
+    const { user } = useContext(AuthContext); // Get user from AuthContext
     console.log(user);
 
     const [orders, setOrders] = useState([]);
@@ -44,20 +44,20 @@ const ImportOrderListCheck = () => {
     const [orderDetails, setOrderDetails] = useState([]);
     const [suppliers, setSuppliers] = useState([]);
 
-    //danh sách book theo 1 đơn order
+    // List of books for a specific order
     const [importBooks, setImportBooks] = useState([]);
 
-    // State cho tìm kiếm
+    // State for search
     const [searchId, setSearchId] = useState('');
     const [searchSupplier, setSearchSupplier] = useState('');
     const [searchStatus, setSearchStatus] = useState('');
     const [searchDate, setSearchDate] = useState('');
-    
-    // State cho phân trang
+
+    // State for pagination
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
 
-    // Gọi API lấy danh sách đơn nhập và sách
+    // Call API to get import orders and books
     useEffect(() => {
         fetchOrders();
         fetchBooks();
@@ -67,15 +67,15 @@ const ImportOrderListCheck = () => {
         setLoading(true);
         try {
             const params = {
-                Status: ["Approve"], // Thêm tiêu chí Status
-                ...(searchId && { ImportOrderId: searchId }), // Thêm tiêu chí ID nếu có
-                ...(searchSupplier && { SupplierID: searchSupplier }), // Thêm tiêu chí nhà cung cấp nếu có
-                ...(searchDate && { ImportDate: searchDate }), // Thêm tiêu chí ngày nhập nếu có
+                Status: ["Approve"], // Add Status criteria
+                ...(searchId && { ImportOrderId: searchId }), // Add ID criteria if available
+                ...(searchSupplier && { SupplierID: searchSupplier }), // Add supplier criteria if available
+                ...(searchDate && { ImportDate: searchDate }), // Add import date criteria if available
             };
             const response = await axios.get("http://localhost:9999/api/import-orders", { params });
-            setOrders(response.data.orders); // Đảm bảo sử dụng biến response ở đây
+            setOrders(response.data.orders); // Make sure to use the response variable here
         } catch (error) {
-            message.error("Lỗi khi tải danh sách đơn nhập!");
+            message.error("Error loading import order list!");
         } finally {
             setLoading(false);
         }
@@ -84,42 +84,40 @@ const ImportOrderListCheck = () => {
     const fetchBooks = async () => {
         try {
             const response = await axios.get("http://localhost:9999/api/books");
-            setBooks(response.data.data); // Lưu ý: Dữ liệu sách nằm trong `data`
+            setBooks(response.data.data); // Note: Book data is in `data`
         } catch (error) {
-            message.error("Lỗi khi tải danh sách sách!");
+            message.error("Error loading book list!");
         }
     };
 
-    // Hàm mở modal thêm đơn nhập
+    // Function to open add order modal
     const showAddOrderModal = () => {
         setIsAddModalOpen(true);
         form.resetFields();
     };
 
-    // Hàm mở modal chỉnh sửa đơn nhập
+    // Function to open edit order modal
     const showEditOrderModal = async (orderId) => {
         try {
             const response = await axios.get(`http://localhost:9999/api/import-orders/${orderId}`);
             setSelectedOrder(response.data); // Set selected order from API response
-            
+
             const bookList = await axios.get(`http://localhost:9999/api/import-orders/${orderId}/books`);
             setImportBooks(bookList.data);
 
             setIsEditModalOpen(true); // Open edit modal
         } catch (error) {
-            message.error("Lỗi khi tải thông tin đơn nhập!");
+            message.error("Error loading import order information!");
         }
     };
 
-   
 
-
-    // Hàm xử lý kiểm tra hàng
+    // Function to handle order checking
     const handleCheckOrder = async (body, orderId) => {
         try {
-            console.log("body",body);
-            console.log("body",orderId);
-            
+            console.log("body", body);
+            console.log("body", orderId);
+
             const payload = {
                 Status: body.Status,
                 LogStatus: body.Status,
@@ -128,55 +126,55 @@ const ImportOrderListCheck = () => {
                 LogNote: body.LogNote
             }
             await axios.post(`http://localhost:9999/api/import-orders/${orderId}/check`, payload);
-            message.success("Gửi yêu cầu phê duyệt thành công!");
+            message.success("Check request sent successfully!");
             fetchOrders(); // Refresh orders
             setIsEditModalOpen(false); // Close modal
 
-            toast.success(`Gửi yêu cầu phê duyệt thành công!`, { autoClose: 2000 });
+            toast.success(`Check request sent successfully!`, { autoClose: 2000 });
         } catch (error) {
-            message.error("Lỗi khi chỉnh sửa đơn nhập!");
+            message.error("Error updating import order!");
         }
     };
 
-    // Hàm xử lý xác nhận xóa đơn nhập
+    // Function to handle delete confirmation
     const handleDeleteOrder = async () => {
         try {
             await axios.delete(`http://localhost:9999/api/import-orders/${selectedOrder.ImportOrderId}`);
-            message.success("Xóa đơn nhập thành công!");
+            message.success("Import order deleted successfully!");
             fetchOrders();
             setIsDeleteModalOpen(false);
         } catch (error) {
-            message.error("Lỗi khi xóa đơn nhập!");
+            message.error("Error deleting import order!");
         }
     };
 
-    // Xử lý khi chọn sách
+    // Handle book selection
     const handleBookSelect = (selectedBooks) => {
         const newOrderDetails = selectedBooks.map((bookId) => ({
             BookId: bookId,
-            Quantity: 1, // Mặc định số lượng là 1
-            Price: 0, // Giá có thể được cập nhật sau
+            Quantity: 1, // Default quantity is 1
+            Price: 0, // Price can be updated later
         }));
         setOrderDetails(newOrderDetails);
     };
 
-    // Cập nhật giá và số lượng cho từng sách
+    // Update price and quantity for each book
     const handleDetailChange = (index, field, value) => {
         const newDetails = [...orderDetails];
         newDetails[index][field] = value;
         setOrderDetails(newDetails);
     };
 
-    // Tính tổng giá cho từng sách
+    // Calculate total price for each book
     const calculateTotalPrice = (quantity, price) => {
         return quantity * price;
     };
 
-    // Tính tổng số lượng sách và tổng số tiền
+    // Calculate total book quantity and total amount
     const totalQuantity = orderDetails.reduce((total, detail) => total + (parseInt(detail.Quantity) || 0), 0);
     const totalPrice = orderDetails.reduce((total, detail) => total + calculateTotalPrice(detail.Quantity, detail.Price), 0);
 
-    // Hàm tìm kiếm
+    // Search function
     const handleSearch = () => {
         const filteredOrders = orders.filter(order => {
             const matchesId = order.ImportOrderId?.toString().includes(searchId);
@@ -188,73 +186,72 @@ const ImportOrderListCheck = () => {
         return filteredOrders;
     };
 
-    // Hàm xóa dữ liệu tìm kiếm
+    // Clear search data
     const handleClearSearch = () => {
         setSearchId('');
         setSearchSupplier('');
         setSearchStatus('');
         setSearchDate('');
-        fetchOrders(); // Render lại toàn bộ dữ liệu
+        fetchOrders(); // Reload all data
     };
 
     const columns = [
         {
-            title: 'ID Đơn Nhập',
+            title: 'Import Order ID',
             dataIndex: 'ImportOrderId',
         },
         {
-            title: 'Nhà Cung Cấp',
+            title: 'Supplier',
             dataIndex: 'SupplierID',
         },
         {
-            title: 'Trạng Thái',
-             render: (_, record) => <HorizontalTimeline statusKey={record.Status} orderStatuses={orderStatuses} />,
-            //render: (_, record) => renderHorizontalTimeline(record.Status),
-            width: "40%", // Chiếm 50% bảng
+            title: 'Status',
+            render: (_, record) => <HorizontalTimeline statusKey={record.Status} orderStatuses={orderStatuses} />,
+            width: "40%", // Takes 40% of the table
         },
         {
-            title: 'Ngày Nhập',
+            title: 'Import Date',
             dataIndex: 'ImportDate',
             render: (text) => new Date(text).toLocaleDateString(),
         },
         {
-            title: 'Ghi Chú',
+            title: 'Note',
             dataIndex: 'Note',
         },
         {
-            title: 'Hành Động',
+            title: 'Actions',
             render: (_, record) => (
                 <Space size="middle">
-                    <Link to={`/orders-import/${record.ImportOrderId}`}>Xem</Link>
-                    <Button onClick={() => showEditOrderModal(record.ImportOrderId)}>Kiểm tra hàng</Button>
+                    <Link to={`/orders-import/${record.ImportOrderId}`}>View</Link>
+                    <Button onClick={() => showEditOrderModal(record.ImportOrderId)}>Check Goods</Button>
                 </Space>
             ),
         },
     ];
 
-    const filteredOrders = handleSearch(); // Lấy danh sách đơn hàng đã lọc
-    const paginatedOrders = filteredOrders.slice((currentPage - 1) * pageSize, currentPage * pageSize); // Phân trang
+    const filteredOrders = handleSearch(); // Get filtered order list
+    const paginatedOrders = filteredOrders.slice((currentPage - 1) * pageSize, currentPage * pageSize); // Paginate
 
     return (
         <div style={{ padding: "20px" }}>
-            <h2 style={{ 
-                textAlign: "start", 
-                fontSize: "24px", 
-                color: "#1890ff", // Màu sắc tiêu đề
-                fontWeight: "bold", // Đậm
-                textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)", // Bóng đổ nhẹ
-                marginBottom: "90px" // Khoảng cách dưới tiêu đề
+            <h2 style={{
+                textAlign: "start",
+                fontSize: "24px",
+                color: "#1890ff", // Title color
+                fontWeight: "bold", // Bold
+                textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)", // Light shadow
+                marginBottom: "90px" // Bottom margin
             }}>
-                Kiểm tra hàng
+                Check Import Goods
             </h2>
             <Space style={{ marginBottom: 20 }}>
-                <Input 
-                    placeholder="Tìm ID Đơn Nhập" 
-                    value={searchId} 
-                    onChange={(e) => setSearchId(e.target.value)} 
+                <Input
+                    placeholder="Search by Import Order ID"
+                    value={searchId}
+                    onChange={(e) => setSearchId(e.target.value)}
                 />
                 <Select
-                    placeholder="Chọn Nhà Cung Cấp"
+                    placeholder="Select Supplier"
                     value={searchSupplier}
                     onChange={value => setSearchSupplier(value)}
                     style={{ width: 200 }}
@@ -264,7 +261,7 @@ const ImportOrderListCheck = () => {
                     ))}
                 </Select>
                 <Select
-                    placeholder="Chọn Trạng Thái"
+                    placeholder="Select Status"
                     value={searchStatus}
                     onChange={value => setSearchStatus(value)}
                     style={{ width: 200 }}
@@ -273,14 +270,13 @@ const ImportOrderListCheck = () => {
                         <Option key={status.key} value={status.key}>{status.label}</Option>
                     ))}
                 </Select>
-                <DatePicker 
-                    placeholder="Tìm Ngày Nhập" 
-                    value={searchDate ? moment(searchDate) : null} 
-                    onChange={(date, dateString) => setSearchDate(dateString)} 
+                <DatePicker
+                    placeholder="Search by Import Date"
+                    value={searchDate ? moment(searchDate) : null}
+                    onChange={(date, dateString) => setSearchDate(dateString)}
                 />
-                <Button type="primary" onClick={handleSearch}>Tìm Kiếm</Button>
+                <Button type="primary" onClick={handleSearch}>Search</Button>
                 <Button type="default" onClick={handleClearSearch}>Clear</Button>
-                {/* <Button type="primary" onClick={showAddOrderModal}>Thêm đơn nhập</Button> */}
             </Space>
 
             <Table
@@ -300,9 +296,8 @@ const ImportOrderListCheck = () => {
                 columns={columns}
             />
 
-        
 
-            {/* Modal Chỉnh Sửa Đơn Nhập */}
+            {/* Check Import Order Modal */}
             <CheckImportOrderModal
                 visible={isEditModalOpen}
                 onCancel={() => setIsEditModalOpen(false)}
@@ -312,71 +307,71 @@ const ImportOrderListCheck = () => {
                 order={selectedOrder}
             />
 
-            {/* Modal Xác Nhận Xóa */}
+            {/* Delete Confirmation Modal */}
             <Modal
-                title="Xác Nhận Xóa"
+                title="Confirm Delete"
                 open={isDeleteModalOpen}
                 onCancel={() => setIsDeleteModalOpen(false)}
                 footer={[
                     <Button key="cancel" onClick={() => setIsDeleteModalOpen(false)}>
-                        Hủy
+                        Cancel
                     </Button>,
                     <Button key="delete" type="primary" danger onClick={handleDeleteOrder}>
-                        Xóa
+                        Delete
                     </Button>,
                 ]}
             >
-                <p>Bạn có chắc chắn muốn xóa đơn nhập này không?</p>
+                <p>Are you sure you want to delete this import order?</p>
             </Modal>
 
-            {/* Modal Chi Tiết Đơn Nhập */}
+            {/* Import Order Details Modal */}
             <Modal
-                title="Chi Tiết Đơn Nhập"
+                title="Import Order Details"
                 open={isViewModalOpen}
                 onCancel={() => setIsViewModalOpen(false)}
                 footer={null}
             >
                 {selectedOrder && (
                     <div>
-                        <p>ID Đơn Nhập: {selectedOrder.ImportOrderId}</p>
-                        <p>Nhà Cung Cấp: {selectedOrder.SupplierID}</p>
-                        <p>Ngày Nhập: {new Date(selectedOrder.ImportDate).toLocaleDateString()}</p>
-                        <p>Ghi Chú: {selectedOrder.Note}</p>
-                        <p>Người Tạo: {selectedOrder.CreatedBy}</p>
-                        <p>Ngày Tạo: {new Date(selectedOrder.Created_Date).toLocaleString()}</p>
-                        <p>Trạng Thái: {selectedOrder.Status || 'Chưa xác định'}</p>
+                        <p>Import Order ID: {selectedOrder.ImportOrderId}</p>
+                        <p>Supplier: {selectedOrder.SupplierID}</p>
+                        <p>Import Date: {new Date(selectedOrder.ImportDate).toLocaleDateString()}</p>
+                        <p>Note: {selectedOrder.Note}</p>
+                        <p>Created By: {selectedOrder.CreatedBy}</p>
+                        <p>Created Date: {new Date(selectedOrder.Created_Date).toLocaleString()}</p>
+                        <p>Status: {selectedOrder.Status || 'Undefined'}</p>
 
-                        {/* Hiển thị tổng số sách và tổng giá */}
-                        <h3>Thông Tin Tổng Hợp</h3>
-                        <p>Tổng Số Sách: {selectedOrder.totalQuantity}</p>
-                        <p>Tổng Giá: {selectedOrder.totalPrice} VNĐ</p>
+                        {/* Display total book quantity and total price */}
+                        <h3>Summary Information</h3>
+                        <p>Total Book Quantity: {selectedOrder.totalQuantity}</p>
+                        <p>Total Price: {selectedOrder.totalPrice} VND</p>
 
-                        {/* Hiển thị danh sách chi tiết đơn nhập */}
-                        <h3>Chi Tiết Đơn Nhập</h3>
+                        {/* Display import order details list */}
+                        <h3>Import Order Details</h3>
                         {orderDetails && orderDetails.length > 0 ? (
                             <Table
                                 dataSource={orderDetails}
-                                rowKey="BookId" // Sử dụng trường khóa chính
+                                rowKey="BookId" // Use primary key field
                                 columns={[
                                     {
-                                        title: 'ID Sách',
+                                        title: 'Book ID',
                                         dataIndex: 'BookId',
                                         key: 'BookId',
                                     },
                                     {
-                                        title: 'Số Lượng',
+                                        title: 'Quantity',
                                         dataIndex: 'Quantity',
                                         key: 'Quantity',
                                     },
                                     {
-                                        title: 'Đơn Giá',
+                                        title: 'Price',
                                         dataIndex: 'Price',
                                         key: 'Price',
                                     },
                                 ]}
                             />
                         ) : (
-                            <p>Không có chi tiết nào.</p>
+                            <p>No details available.</p>
                         )}
                     </div>
                 )}

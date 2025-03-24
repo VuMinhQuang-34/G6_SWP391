@@ -28,24 +28,24 @@ const EditImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, ord
                 SupplierID: values.SupplierID,
                 ImportDate: values.ImportDate,
                 Note: values.Note,
-                Status: "New", // Giữ nguyên trạng thái là "New"
-                CreatedBy: user.userId, // Hoặc lấy từ thông tin người dùng hiện tại
+                Status: "New", // Keep status as "New"
+                CreatedBy: user.userId, // Or get from current user information
                 orderDetails: selectedBooks.map(book => ({
                     BookId: book.BookId,
                     Quantity: book.Quantity,
                     Price: book.Price,
-                    // Thêm các thông tin khác nếu cần
+                    // Add other information if needed
                 })),
             };
 
-            console.log("Payload gửi đi:", updatedOrder); // Kiểm tra payload trước khi gửi
+            console.log("Payload being sent:", updatedOrder); // Check payload before sending
 
-            await onEdit(updatedOrder, order.ImportOrderId); // Truyền ID vào hàm onEdit
-            form.resetFields(); // Reset form sau khi sửa
-            setSelectedBooks([]); // Reset danh sách sách đã chọn
-            //toast.success(`Cập nhật thành công`, { autoClose: 2000 });
+            await onEdit(updatedOrder, order.ImportOrderId); // Pass ID to onEdit function
+            form.resetFields(); // Reset form after editing
+            setSelectedBooks([]); // Reset selected books list
+            //toast.success(`Update successful`, { autoClose: 2000 });
         } catch (error) {
-            message.error("Lỗi khi sửa đơn nhập!");
+            message.error("Error editing import order!");
         }
     };
 
@@ -55,8 +55,8 @@ const EditImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, ord
             const existingBook = selectedBooks.find(b => b.BookId === book.BookId);
             return {
                 ...book,
-                Quantity: existingBook ? existingBook.Quantity : 0, // Giữ nguyên số lượng nếu đã có
-                Price: existingBook ? existingBook.Price : 0, // Giữ nguyên giá nếu đã có
+                Quantity: existingBook ? existingBook.Quantity : 0, // Keep existing quantity if available
+                Price: existingBook ? existingBook.Price : 0, // Keep existing price if available
             };
         });
         setSelectedBooks(updatedBooks);
@@ -65,40 +65,40 @@ const EditImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, ord
     const handleQuantityChange = (bookId, value) => {
         const updatedDetails = selectedBooks.map((book) => {
             if (book.BookId === bookId) {
-                return { ...book, Quantity: value }; // Cập nhật số lượng
+                return { ...book, Quantity: value }; // Update quantity
             }
             return book;
         });
-        setSelectedBooks(updatedDetails); // Cập nhật lại selectedBooks
+        setSelectedBooks(updatedDetails); // Update selectedBooks
     };
 
     const handlePriceChange = (bookId, value) => {
         const updatedDetails = selectedBooks.map((book) => {
             if (book.BookId === bookId) {
-                return { ...book, Price: value }; // Cập nhật đơn giá
+                return { ...book, Price: value }; // Update price
             }
             return book;
         });
-        setSelectedBooks(updatedDetails); // Cập nhật lại selectedBooks
+        setSelectedBooks(updatedDetails); // Update selectedBooks
     };
 
     return (
         <Modal
-            title="Chỉnh Sửa Đơn Nhập"
+            title="Edit Import Order"
             open={visible}
             onCancel={onCancel}
             footer={null}
-            width={800} // Mở rộng chiều rộng của modal
+            width={800} // Increased modal width
         >
             <Form form={form} layout="vertical" onFinish={handleEditOrder}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Form.Item
                         name="SupplierID"
-                        label="Nhà cung cấp"
+                        label="Supplier"
                         style={{ flex: 1, marginRight: '10px' }}
-                        rules={[{ required: true, message: "Vui lòng chọn nhà cung cấp!" }]}
+                        rules={[{ required: true, message: "Please select a supplier!" }]}
                     >
-                        <Select placeholder="Chọn nhà cung cấp">
+                        <Select placeholder="Select supplier">
                             {suppliers.map((supplier, index) => (
                                 <Option key={index} value={supplier}>
                                     {supplier}
@@ -109,9 +109,9 @@ const EditImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, ord
 
                     <Form.Item
                         name="ImportDate"
-                        label="Ngày nhập"
+                        label="Import Date"
                         style={{ flex: 1, marginLeft: '10px' }}
-                        rules={[{ required: true, message: "Vui lòng nhập ngày nhập!" }]}
+                        rules={[{ required: true, message: "Please enter import date!" }]}
                     >
                         <Input type="date" />
                     </Form.Item>
@@ -119,53 +119,53 @@ const EditImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, ord
 
                 <Form.Item
                     name="Note"
-                    label="Ghi chú"
+                    label="Note"
                 >
-                    <Input.TextArea rows={2} placeholder="Nhập ghi chú nếu có" style={{ resize: 'none' }} />
+                    <Input.TextArea rows={2} placeholder="Enter notes if any" style={{ resize: 'none' }} />
                 </Form.Item>
 
-                {/* Bảng chi tiết đơn nhập */}
-                <h3>Chi tiết đơn nhập</h3>
+                {/* Import order details table */}
+                <h3>Import Order Details</h3>
                 <Table
                     dataSource={selectedBooks}
                     columns={[
                         {
-                            title: 'ID Sách',
+                            title: 'Book ID',
                             dataIndex: 'BookId',
                         },
                         {
-                            title: 'Tên Sách',
+                            title: 'Book Title',
                             //dataIndex: 'Title',
                             render: (_, record) => (
-                                <span>{record.BookInfo ? record.BookInfo.Title : 'Không có thông tin'}</span>
+                                <span>{record.BookInfo ? record.BookInfo.Title : 'No information'}</span>
                             ),
                         },
                         {
-                            title: 'Số Lượng Nhập',
+                            title: 'Import Quantity',
                             render: (_, record) => (
                                 <Input
                                     type="number"
-                                    min={0} // Cho phép nhập số lượng bất kỳ
-                                    value={record.Quantity || 0} // Sử dụng value
+                                    min={0} // Allow any quantity
+                                    value={record.Quantity || 0} // Use value
                                     onChange={(e) => handleQuantityChange(record.BookId, e.target.value)}
                                     required
                                 />
                             ),
                         },
                         {
-                            title: 'Đơn Giá',
+                            title: 'Unit Price',
                             render: (_, record) => (
                                 <Input
                                     type="number"
-                                    min={0} // Cho phép nhập đơn giá bất kỳ
-                                    value={record.Price || 0} // Sử dụng value
+                                    min={0} // Allow any price
+                                    value={record.Price || 0} // Use value
                                     onChange={(e) => handlePriceChange(record.BookId, e.target.value)}
                                     required
                                 />
                             ),
                         },
                         {
-                            title: 'Tổng Giá',
+                            title: 'Total Price',
                             render: (_, record) => (
                                 <span>{(record.Quantity || 0) * (record.Price || 0)}</span>
                             ),
@@ -175,17 +175,17 @@ const EditImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, ord
                     pagination={false}
                 />
 
-                {/* Hiển thị tổng số lượng và tổng số tiền */}
+                {/* Display total quantity and total amount */}
                 <div style={{ marginTop: 20 }}>
-                    <strong>Tổng số lượng sách: {selectedBooks.reduce((sum, book) => sum + (book.Quantity || 0), 0)}</strong>
+                    <strong>Total Book Quantity: {selectedBooks.reduce((sum, book) => sum + (book.Quantity || 0), 0)}</strong>
                     <br />
-                    <strong>Tổng số tiền: {selectedBooks.reduce((sum, book) => sum + (book.Price * (book.Quantity || 0)), 0)}</strong>
+                    <strong>Total Amount: {selectedBooks.reduce((sum, book) => sum + (book.Price * (book.Quantity || 0)), 0)}</strong>
                 </div>
 
-                <Form.Item label="Chọn sách">
+                <Form.Item label="Select Books">
                     <Select
                         mode="multiple"
-                        placeholder="Chọn sách"
+                        placeholder="Select books"
                         onChange={handleBookSelect}
                         style={{ width: '100%' }}
                     >
@@ -198,7 +198,7 @@ const EditImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, ord
                 </Form.Item>
 
                 <Button type="primary" htmlType="submit" style={{ width: '100%' }}>
-                    Lưu
+                    Save
                 </Button>
             </Form>
         </Modal>

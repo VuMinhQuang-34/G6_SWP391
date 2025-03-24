@@ -18,10 +18,10 @@ const DefaultLayout = () => {
     const { logout } = useContext(AuthContext);
     const navigate = useNavigate();
 
-    // Xử lý logout
+    // Handle logout
     const handleLogout = () => {
-        logout(); // Gọi hàm logout từ AuthContext
-        navigate("/login"); // Chuyển hướng về trang đăng nhập
+        logout(); // Call logout function from AuthContext
+        navigate("/login"); // Redirect to login page
     };
 
     return (
@@ -44,68 +44,68 @@ const DefaultLayout = () => {
                             <Link to="/dashboard">Dashboard</Link>
                         </Menu.Item>
                         <Menu.Item key="2" icon={<UserOutlined />}>
-                            <Link to="/admin/users">Nhân viên</Link>
+                            <Link to="/admin/users">Staff</Link>
                         </Menu.Item>
                         <Menu.Item key="3" icon={<SettingOutlined />}>
-                            <Link to="admin/categories">Loại sách</Link>
+                            <Link to="admin/categories">Book Categories</Link>
                         </Menu.Item>
                         <Menu.Item key="4" icon={<SettingOutlined />}>
-                            <Link to="admin/books">Sách</Link>
+                            <Link to="admin/books">Books</Link>
                         </Menu.Item>
                         {/* <Menu.Item key="5" icon={<SettingOutlined />}>
                             <Link to="orders-import">Import Order</Link>
                         </Menu.Item> */}
                         <Menu.SubMenu key="5" icon={<SettingOutlined />} title="Import Orders">
                             <Menu.Item key="5.1">
-                                <Link to="/orders-import">Tạo đơn nhập</Link>
+                                <Link to="/orders-import">Create Import Order</Link>
                             </Menu.Item>
                             <Menu.Item key="5.2">
-                                <Link to="/orders-import/approve">Phê duyệt đơn nhập</Link>
+                                <Link to="/orders-import/approve">Approve Import Order</Link>
                             </Menu.Item>
                             <Menu.Item key="5.3">
-                                <Link to="/orders-import/check">Nhập hàng</Link>
+                                <Link to="/orders-import/check">Receive Goods</Link>
                             </Menu.Item>
                             <Menu.Item key="5.4">
-                                <Link to="/orders-import/approve/wms">Lưu kho</Link>
+                                <Link to="/orders-import/approve/wms">Store in Warehouse</Link>
                             </Menu.Item>
                         </Menu.SubMenu>
                         <Menu.SubMenu key="6" icon={<SettingOutlined />} title="Export Orders">
                             <Menu.Item key="6.1">
-                                <Link to="/export-orders">Tạo đơn xuất</Link>
+                                <Link to="/export-orders">Create Export Order</Link>
                             </Menu.Item>
                             <Menu.Item key="6.2">
-                                <Link to="/export-orders/status/approve">Phê duyệt đơn xuất</Link>
+                                <Link to="/export-orders/status/approve">Approve Export Order</Link>
                             </Menu.Item>
                             <Menu.Item key="6.3">
-                                <Link to="/export-orders/status/packing">Đóng gói</Link>
+                                <Link to="/export-orders/status/packing">Packaging</Link>
                             </Menu.Item>
                             <Menu.Item key="6.4">
-                                <Link to="/export-orders/status/shipping">Vận chuyển & Hoàn thành</Link>
+                                <Link to="/export-orders/status/shipping">Shipping & Completion</Link>
                             </Menu.Item>
                         </Menu.SubMenu>
                         <Menu.Item key="7" icon={<SettingOutlined />}>
-                            <Link to="stock">Kho hàng</Link>
+                            <Link to="stock">Inventory</Link>
                         </Menu.Item>
                         {/* <Menu.Item key="3" icon={<SettingOutlined />}>  
-                            <Link to="/books">Kho sách</Link>
+                            <Link to="/books">Book Inventory</Link>
                         </Menu.Item> */}
                         {/* <Menu.Item key="4" icon={<SettingOutlined />}>
-                            <Link to="/inventory">Hàng tồn kho</Link>
+                            <Link to="/inventory">Stock</Link>
                         </Menu.Item>
                         <Menu.Item key="5" icon={<SettingOutlined />}>
-                            <Link to="/import-orders">Đơn nhập kho</Link>
+                            <Link to="/import-orders">Import Orders</Link>
                         </Menu.Item>
                         <Menu.Item key="6" icon={<SettingOutlined />}>
-                            <Link to="/export-orders">Đơn xuất kho</Link>
+                            <Link to="/export-orders">Export Orders</Link>
                         </Menu.Item>
                         <Menu.Item key="7" icon={<SettingOutlined />}>
-                            <Link to="/history">Lịch sử</Link>
+                            <Link to="/history">History</Link>
                         </Menu.Item>
                         <Menu.Item key="8" icon={<SettingOutlined />}>
-                            <Link to="/approval-management">Quản lý phê duyệt</Link>
+                            <Link to="/approval-management">Approval Management</Link>
                         </Menu.Item> */}
                         <Menu.Item key="9" icon={<SettingOutlined />}>
-                            <Link to="location">Vị trí kho hàng</Link>
+                            <Link to="location">Warehouse Location</Link>
                         </Menu.Item>
                         <Menu.Item key="10" icon={<LogoutOutlined />} danger onClick={handleLogout}>
                             Logout
@@ -125,7 +125,7 @@ const DefaultLayout = () => {
                                 borderRadius: "8px",
                             }}
                         >
-                            <Outlet /> {/* Hiển thị nội dung trang con */}
+                            <Outlet /> {/* Display child page content */}
                         </div>
                     </Content>
 

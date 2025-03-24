@@ -36,7 +36,7 @@ const StockManagement = () => {
     }
   };
 
-  // Xử lý tìm kiếm theo mã sách (BookId)
+  // Handle search by book ID (BookId)
   const handleSearch = (value) => {
     setSearchTerm(value);
     const filtered = stocks.filter((item) =>
@@ -46,7 +46,7 @@ const StockManagement = () => {
     setCurrentPage(1);
   };
 
-  // Hiển thị modal chỉnh sửa
+  // Display edit modal
   const showEditModal = (stock) => {
     setEditingStock(stock);
     form.setFieldsValue({
@@ -103,25 +103,25 @@ const StockManagement = () => {
         )
       );
 
-      toast.success(`Cập nhật thành công`, { autoClose: 2000 });
+      toast.success(`Update successful`, { autoClose: 2000 });
 
       setIsModalOpen(false);
     } catch (error) {
-      console.error("Lỗi khi cập nhật dữ liệu:", error);
-      toast.error(`Cập nhật thất bại`, { autoClose: 2000 });
+      console.error("Error updating data:", error);
+      toast.error(`Update failed`, { autoClose: 2000 });
     }
   };
 
   // Cấu hình cột bảng
   const columns = [
     {
-      title: "Mã Sách",
+      title: "Book ID",
       dataIndex: "BookId",
       key: "BookId",
       render: (text) => <b>{text}</b>,
     },
     {
-      title: "Số Lượng",
+      title: "Quantity",
       dataIndex: "Quantity",
       key: "Quantity",
       render: (value) => {
@@ -132,8 +132,8 @@ const StockManagement = () => {
             count={quantity}
             showZero={true}
             overflowCount={10000}
-            style={{ 
-              backgroundColor: quantity > 0 ? "#52c41a" : "#d9d9d9", 
+            style={{
+              backgroundColor: quantity > 0 ? "#52c41a" : "#d9d9d9",
               color: "white",
               fontSize: '14px',
               padding: '0 8px'
@@ -143,50 +143,50 @@ const StockManagement = () => {
       }
     },
     {
-      title: "Số Lượng Tồn Kho Tối Đa",
+      title: "Max Stock Quantity",
       dataIndex: "MaxStockQuantity",
       key: "MaxStockQuantity",
       render: (value) => {
         const maxValue = Number(value);
         return (
-          maxValue > 0 ? 
-          <Tag color="blue" style={{ fontSize: '14px', padding: '2px 10px' }}>
-            <DatabaseOutlined /> {maxValue}
-          </Tag> : 
-          <Tag color="default" style={{ fontSize: '14px', padding: '2px 10px' }}>
-            <InfoCircleOutlined /> 0
-          </Tag>
+          maxValue > 0 ?
+            <Tag color="blue" style={{ fontSize: '14px', padding: '2px 10px' }}>
+              <DatabaseOutlined /> {maxValue}
+            </Tag> :
+            <Tag color="default" style={{ fontSize: '14px', padding: '2px 10px' }}>
+              <InfoCircleOutlined /> 0
+            </Tag>
         );
       }
     },
     {
-      title: "Số Lượng Tồn Kho Tối Thiểu",
+      title: "Min Stock Quantity",
       dataIndex: "MinStockQuantity",
       key: "MinStockQuantity",
       render: (value) => {
         const minValue = Number(value);
         return (
-          minValue > 0 ? 
-          <Tag color="orange" style={{ fontSize: '14px', padding: '2px 10px' }}>
-            <WarningOutlined /> {minValue}
-          </Tag> : 
-          <Tag color="default" style={{ fontSize: '14px', padding: '2px 10px' }}>
-            <InfoCircleOutlined /> 0
-          </Tag>
+          minValue > 0 ?
+            <Tag color="orange" style={{ fontSize: '14px', padding: '2px 10px' }}>
+              <WarningOutlined /> {minValue}
+            </Tag> :
+            <Tag color="default" style={{ fontSize: '14px', padding: '2px 10px' }}>
+              <InfoCircleOutlined /> 0
+            </Tag>
         );
       }
     },
     {
-      title: "Thao Tác",
+      title: "Actions",
       key: "actions",
       render: (_, record) => (
-        <Button 
+        <Button
           type="primary"
-          icon={<EditOutlined />} 
+          icon={<EditOutlined />}
           onClick={() => showEditModal(record)}
           style={{ borderRadius: '6px' }}
         >
-          Sửa
+          Edit
         </Button>
       ),
     },
@@ -197,7 +197,7 @@ const StockManagement = () => {
       title={
         <Space align="center">
           <BookOutlined style={{ fontSize: '24px', color: '#1890ff' }} />
-          <Title level={4} style={{ margin: 0 }}>Quản lý tồn kho</Title>
+          <Title level={4} style={{ margin: 0 }}>Stock Management</Title>
         </Space>
       }
       bordered={false}
@@ -209,20 +209,20 @@ const StockManagement = () => {
       }}
     >
       <div className="stock-management-container">
-        {/* Thanh tìm kiếm */}
+        {/* Search bar */}
         <Search
-          placeholder="🔍 Nhập mã sách để tìm..."
+          placeholder="🔍 Enter book ID to search..."
           onSearch={handleSearch}
-          style={{ 
-            width: "100%", 
-            maxWidth: "400px", 
+          style={{
+            width: "100%",
+            maxWidth: "400px",
             marginBottom: 20,
             borderRadius: '8px',
             boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1)'
           }}
           enterButton={
             <Button type="primary" icon={<SearchOutlined />} style={{ borderRadius: '0 8px 8px 0', height: '40px' }}>
-              Tìm
+              Search
             </Button>
           }
           size="large"
@@ -233,13 +233,13 @@ const StockManagement = () => {
         {/* Loading */}
         {loading ? (
           <div style={{ textAlign: 'center', padding: '40px 0' }}>
-            <Spin tip="Đang tải dữ liệu..." size="large" />
+            <Spin tip="Loading data..." size="large" />
           </div>
         ) : filteredStocks.length === 0 ? (
-          <Alert 
-            message="Không tìm thấy dữ liệu!" 
-            type="warning" 
-            showIcon 
+          <Alert
+            message="No data found!"
+            type="warning"
+            showIcon
             style={{ marginBottom: '20px', borderRadius: '8px' }}
           />
         ) : (
@@ -252,18 +252,18 @@ const StockManagement = () => {
               pageSize: pageSize,
               onChange: (page) => setCurrentPage(page),
               showSizeChanger: false,
-              showTotal: (total) => `Tổng số ${total} sản phẩm`,
+              showTotal: (total) => `Total ${total} products`,
               style: { marginTop: '20px' }
             }}
             rowClassName={(record) => {
               // Kiểm tra MinStockQuantity và MaxStockQuantity khác 0 để tránh đánh dấu sai
-              if (record.MinStockQuantity > 0 && record.Quantity < record.MinStockQuantity) 
+              if (record.MinStockQuantity > 0 && record.Quantity < record.MinStockQuantity)
                 return "low-stock";
               if (record.MaxStockQuantity > 0 && record.Quantity > record.MaxStockQuantity)
                 return "over-stock";
               return "";
             }}
-            style={{ 
+            style={{
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
               borderRadius: '8px',
               overflow: 'hidden'
@@ -271,42 +271,42 @@ const StockManagement = () => {
           />
         )}
 
-        {/* Modal chỉnh sửa tồn kho */}
+        {/* Stock edit modal */}
         <Modal
           title={
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <EditOutlined style={{ color: '#1890ff', fontSize: '20px' }} />
-              <span>Chỉnh sửa tồn kho</span>
+              <span>Edit Stock</span>
             </div>
           }
           open={isModalOpen}
           onCancel={() => setIsModalOpen(false)}
           onOk={handleUpdateStock}
-          okText="Cập nhật"
-          cancelText="Hủy"
+          okText="Update"
+          cancelText="Cancel"
           okButtonProps={{ style: { borderRadius: '6px' } }}
           cancelButtonProps={{ style: { borderRadius: '6px' } }}
           style={{ top: 20 }}
           maskStyle={{ backdropFilter: 'blur(2px)' }}
         >
           <Form form={form} layout="vertical">
-            <Form.Item label="Mã Sách" name="BookId">
+            <Form.Item label="Book ID" name="BookId">
               <Input disabled style={{ borderRadius: '6px' }} />
             </Form.Item>
-            <Form.Item label="Số Lượng Hiện Tại" name="Quantity">
+            <Form.Item label="Current Quantity" name="Quantity">
               <Input type="number" disabled style={{ borderRadius: '6px' }} />
             </Form.Item>
-            <Form.Item 
-              label="Tồn Kho Tối Đa" 
+            <Form.Item
+              label="Max Stock Quantity"
               name="MaxStockQuantity"
-              extra="Số lượng tồn kho tối đa phải lớn hơn tồn kho tối thiểu"
+              extra="Max stock quantity must be greater than min stock quantity"
             >
               <Input type="number" style={{ borderRadius: '6px' }} />
             </Form.Item>
-            <Form.Item 
-              label="Tồn Kho Tối Thiểu" 
+            <Form.Item
+              label="Min Stock Quantity"
               name="MinStockQuantity"
-              extra="Số lượng tồn kho tối thiểu phải lớn hơn hoặc bằng 0"
+              extra="Min stock quantity must be greater than or equal to 0"
             >
               <Input type="number" style={{ borderRadius: '6px' }} />
             </Form.Item>

@@ -54,7 +54,7 @@ const ImportOrderListWMS = () => {
     const [searchSupplier, setSearchSupplier] = useState('');
     const [searchStatus, setSearchStatus] = useState('');
     const [searchDate, setSearchDate] = useState('');
-    
+
     // State cho phân trang
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
@@ -69,15 +69,15 @@ const ImportOrderListWMS = () => {
         setLoading(true);
         try {
             const params = {
-                Status: ["Receive"], // Thêm tiêu chí Status
-                ...(searchId && { ImportOrderId: searchId }), // Thêm tiêu chí ID nếu có
-                ...(searchSupplier && { SupplierID: searchSupplier }), // Thêm tiêu chí nhà cung cấp nếu có
-                ...(searchDate && { ImportDate: searchDate }), // Thêm tiêu chí ngày nhập nếu có
+                Status: ["Receive"], // Add Status criteria
+                ...(searchId && { ImportOrderId: searchId }), // Add ID criteria if provided
+                ...(searchSupplier && { SupplierID: searchSupplier }), // Add supplier criteria if provided
+                ...(searchDate && { ImportDate: searchDate }), // Add import date criteria if provided
             };
             const response = await axios.get("http://localhost:9999/api/import-orders", { params });
             setOrders(response.data.orders); // Đảm bảo sử dụng biến response ở đây
         } catch (error) {
-            message.error("Lỗi khi tải danh sách đơn nhập!");
+            message.error("Error loading import orders list!");
         } finally {
             setLoading(false);
         }
@@ -88,7 +88,7 @@ const ImportOrderListWMS = () => {
             const response = await axios.get("http://localhost:9999/api/books");
             setBooks(response.data.data); // Lưu ý: Dữ liệu sách nằm trong `data`
         } catch (error) {
-            message.error("Lỗi khi tải danh sách sách!");
+            message.error("Error loading books list!");
         }
     };
 
@@ -103,17 +103,17 @@ const ImportOrderListWMS = () => {
         try {
             const response = await axios.get(`http://localhost:9999/api/import-orders/${orderId}`);
             setSelectedOrder(response.data); // Set selected order from API response
-            
+
             const bookList = await axios.get(`http://localhost:9999/api/import-orders/${orderId}/books`);
             setImportBooks(bookList.data);
 
             setIsEditModalOpen(true); // Open edit modal
         } catch (error) {
-            message.error("Lỗi khi tải thông tin đơn nhập!");
+            message.error("Error loading import order information!");
         }
     };
 
-   
+
 
 
     // Hàm xử lý phê duyệt nhập hàng
@@ -121,7 +121,7 @@ const ImportOrderListWMS = () => {
         try {
             console.log("handleCheckOrder body:", body);
             console.log("handleCheckOrder orderId:", orderId);
-            
+
             const payload = {
                 Status: body.Status,
                 LogStatus: body.LogStatus,
@@ -130,16 +130,16 @@ const ImportOrderListWMS = () => {
                 FaultBooks: body.FaultBooks,
                 BinAllocations: body.BinAllocations
             };
-            
+
             console.log("Final API payload:", payload);
-            
+
             // Gọi API và trả về response để hàm gọi có thể xử lý
             const response = await axios.post(`http://localhost:9999/api/import-orders/${orderId}/approveWMS`, payload);
-            
+
             // Refresh danh sách đơn hàng nhưng không hiển thị toast ở đây
             // Vì toast sẽ được hiển thị bởi component gọi đến handleCheckOrder
             fetchOrders();
-            
+
             // Trả về response để component gọi có thể sử dụng
             return response;
         } catch (error) {
@@ -153,11 +153,11 @@ const ImportOrderListWMS = () => {
     const handleDeleteOrder = async () => {
         try {
             await axios.delete(`http://localhost:9999/api/import-orders/${selectedOrder.ImportOrderId}`);
-            message.success("Xóa đơn nhập thành công!");
+            message.success("Import order deleted successfully!");
             fetchOrders();
             setIsDeleteModalOpen(false);
         } catch (error) {
-            message.error("Lỗi khi xóa đơn nhập!");
+            message.error("Error deleting import order!");
         }
     };
 
@@ -166,7 +166,7 @@ const ImportOrderListWMS = () => {
         const newOrderDetails = selectedBooks.map((bookId) => ({
             BookId: bookId,
             Quantity: 1, // Mặc định số lượng là 1
-            Price: 0, // Giá có thể được cập nhật sau
+            Price: 0, // Price can be updated later
         }));
         setOrderDetails(newOrderDetails);
     };
@@ -210,34 +210,34 @@ const ImportOrderListWMS = () => {
 
     const columns = [
         {
-            title: 'ID Đơn Nhập',
+            title: 'Import Order ID',
             dataIndex: 'ImportOrderId',
         },
         {
-            title: 'Nhà Cung Cấp',
+            title: 'Supplier',
             dataIndex: 'SupplierID',
         },
         {
-            title: 'Trạng Thái',
-             render: (_, record) => <HorizontalTimeline statusKey={record.Status} orderStatuses={orderStatuses} />,
+            title: 'Status',
+            render: (_, record) => <HorizontalTimeline statusKey={record.Status} orderStatuses={orderStatuses} />,
             //render: (_, record) => renderHorizontalTimeline(record.Status),
             width: "40%", // Chiếm 50% bảng
         },
         {
-            title: 'Ngày Nhập',
+            title: 'Import Date',
             dataIndex: 'ImportDate',
             render: (text) => new Date(text).toLocaleDateString(),
         },
         {
-            title: 'Ghi Chú',
+            title: 'Note',
             dataIndex: 'Note',
         },
         {
-            title: 'Hành Động',
+            title: 'Action',
             render: (_, record) => (
                 <Space size="middle">
-                    <Link to={`/orders-import/${record.ImportOrderId}`}>Xem</Link>
-                    <Button onClick={() => showEditOrderModal(record.ImportOrderId)}>Phê duyệt nhập hàng</Button>
+                    <Link to={`/orders-import/${record.ImportOrderId}`}>View</Link>
+                    <Button onClick={() => showEditOrderModal(record.ImportOrderId)}>Approve Import</Button>
                 </Space>
             ),
         },
@@ -248,51 +248,41 @@ const ImportOrderListWMS = () => {
 
     return (
         <div style={{ padding: "20px" }}>
-            <h2 style={{ 
-                textAlign: "start", 
-                fontSize: "24px", 
-                color: "#1890ff", // Màu sắc tiêu đề
+            <h2 style={{
+                textAlign: "start",
+                fontSize: "24px",
+                color: "#1890ff", // Title color
                 fontWeight: "bold", // Đậm
                 textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)", // Bóng đổ nhẹ
-                marginBottom: "90px" // Khoảng cách dưới tiêu đề
+                marginBottom: "90px" // Space below title
             }}>
-                Kiểm tra hàng
+                Check Inventory
             </h2>
-            <Space style={{ marginBottom: 20 }}>
-                <Input 
-                    placeholder="Tìm ID Đơn Nhập" 
-                    value={searchId} 
-                    onChange={(e) => setSearchId(e.target.value)} 
-                />
-                <Select
-                    placeholder="Chọn Nhà Cung Cấp"
-                    value={searchSupplier}
-                    onChange={value => setSearchSupplier(value)}
-                    style={{ width: 200 }}
-                >
-                    {suppliersList.map(supplier => (
-                        <Option key={supplier} value={supplier}>{supplier}</Option>
-                    ))}
-                </Select>
-                <Select
-                    placeholder="Chọn Trạng Thái"
-                    value={searchStatus}
-                    onChange={value => setSearchStatus(value)}
-                    style={{ width: 200 }}
-                >
-                    {orderStatuses.map(status => (
-                        <Option key={status.key} value={status.key}>{status.label}</Option>
-                    ))}
-                </Select>
-                <DatePicker 
-                    placeholder="Tìm Ngày Nhập" 
-                    value={searchDate ? moment(searchDate) : null} 
-                    onChange={(date, dateString) => setSearchDate(dateString)} 
-                />
-                <Button type="primary" onClick={handleSearch}>Tìm Kiếm</Button>
-                <Button type="default" onClick={handleClearSearch}>Clear</Button>
-                {/* <Button type="primary" onClick={showAddOrderModal}>Thêm đơn nhập</Button> */}
-            </Space>
+            <div style={{ marginBottom: "16px", display: "flex", justifyContent: "space-between" }}>
+                <Space>
+                    <Input
+                        allowClear
+                        placeholder="Search Import Order ID"
+                        value={searchId}
+                        onChange={(e) => setSearchId(e.target.value.trim())}
+                    />
+                    <Input
+                        allowClear
+                        placeholder="Search Supplier"
+                        value={searchSupplier}
+                        onChange={(e) => setSearchSupplier(e.target.value.trim())}
+                    />
+                    <DatePicker
+                        allowClear
+                        placeholder="Search Import Date"
+                        value={searchDate}
+                        onChange={(date) => setSearchDate(date)}
+                    />
+                    <Button type="primary" onClick={handleSearch}>Search</Button>
+                    <Button onClick={handleClearSearch}>Clear</Button>
+                    {/* <Button type="primary" onClick={showAddOrderModal}>Add Import Order</Button> */}
+                </Space>
+            </div>
 
             <Table
                 dataSource={paginatedOrders}
@@ -311,7 +301,7 @@ const ImportOrderListWMS = () => {
                 columns={columns}
             />
 
-        
+
 
             {/* Modal Chỉnh Sửa Đơn Nhập */}
             <ApproveWMSImportOrderModal
@@ -323,64 +313,64 @@ const ImportOrderListWMS = () => {
                 order={selectedOrder}
             />
 
-            {/* Modal Xác Nhận Xóa */}
+            {/* Delete Confirmation Modal */}
             <Modal
-                title="Xác Nhận Xóa"
+                title="Confirm Delete"
                 open={isDeleteModalOpen}
                 onCancel={() => setIsDeleteModalOpen(false)}
                 footer={[
                     <Button key="cancel" onClick={() => setIsDeleteModalOpen(false)}>
-                        Hủy
+                        Cancel
                     </Button>,
                     <Button key="delete" type="primary" danger onClick={handleDeleteOrder}>
-                        Xóa
+                        Delete
                     </Button>,
                 ]}
             >
-                <p>Bạn có chắc chắn muốn xóa đơn nhập này không?</p>
+                <p>Are you sure you want to delete this import order?</p>
             </Modal>
 
-            {/* Modal Chi Tiết Đơn Nhập */}
+            {/* Import Order Details Modal */}
             <Modal
-                title="Chi Tiết Đơn Nhập"
+                title="Import Order Details"
                 open={isViewModalOpen}
                 onCancel={() => setIsViewModalOpen(false)}
                 footer={null}
             >
                 {selectedOrder && (
                     <div>
-                        <p>ID Đơn Nhập: {selectedOrder.ImportOrderId}</p>
-                        <p>Nhà Cung Cấp: {selectedOrder.SupplierID}</p>
-                        <p>Ngày Nhập: {new Date(selectedOrder.ImportDate).toLocaleDateString()}</p>
-                        <p>Ghi Chú: {selectedOrder.Note}</p>
-                        <p>Người Tạo: {selectedOrder.CreatedBy}</p>
-                        <p>Ngày Tạo: {new Date(selectedOrder.Created_Date).toLocaleString()}</p>
-                        <p>Trạng Thái: {selectedOrder.Status || 'Chưa xác định'}</p>
+                        <p>Import Order ID: {selectedOrder.ImportOrderId}</p>
+                        <p>Supplier: {selectedOrder.SupplierID}</p>
+                        <p>Import Date: {new Date(selectedOrder.ImportDate).toLocaleDateString()}</p>
+                        <p>Note: {selectedOrder.Note}</p>
+                        <p>Created By: {selectedOrder.CreatedBy}</p>
+                        <p>Creation Date: {new Date(selectedOrder.Created_Date).toLocaleString()}</p>
+                        <p>Status: {selectedOrder.Status || 'Undefined'}</p>
 
-                        {/* Hiển thị tổng số sách và tổng giá */}
-                        <h3>Thông Tin Tổng Hợp</h3>
-                        <p>Tổng Số Sách: {selectedOrder.totalQuantity}</p>
-                        <p>Tổng Giá: {selectedOrder.totalPrice} VNĐ</p>
+                        {/* Display total books and total price */}
+                        <h3>Summary Information</h3>
+                        <p>Total Books: {selectedOrder.totalQuantity}</p>
+                        <p>Total Price: {selectedOrder.totalPrice} VND</p>
 
-                        {/* Hiển thị danh sách chi tiết đơn nhập */}
-                        <h3>Chi Tiết Đơn Nhập</h3>
+                        {/* Display import order detail list */}
+                        <h3>Import Order Details</h3>
                         {orderDetails && orderDetails.length > 0 ? (
                             <Table
                                 dataSource={orderDetails}
-                                rowKey="BookId" // Sử dụng trường khóa chính
+                                rowKey="BookId"
                                 columns={[
                                     {
-                                        title: 'ID Sách',
+                                        title: 'Book ID',
                                         dataIndex: 'BookId',
                                         key: 'BookId',
                                     },
                                     {
-                                        title: 'Số Lượng',
+                                        title: 'Quantity',
                                         dataIndex: 'Quantity',
                                         key: 'Quantity',
                                     },
                                     {
-                                        title: 'Đơn Giá',
+                                        title: 'Price',
                                         dataIndex: 'Price',
                                         key: 'Price',
                                     },

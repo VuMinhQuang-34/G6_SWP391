@@ -14,7 +14,7 @@ const CheckImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, or
 
     console.log("CheckImportOrderModal books =>", books);
     console.log("CheckImportOrderModal order =>", order);
-    
+
     useEffect(() => {
         if (order) {
             form.setFieldsValue({
@@ -33,7 +33,7 @@ const CheckImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, or
             return {
                 ...book,
                 BookInfo: {
-                    Title: book.Title || '',  // Đảm bảo có BookInfo.Title
+                    Title: book.Title || '',  // Ensure BookInfo.Title exists
                     Author: book.Author || '',
                     Publisher: book.Publisher || ''
                 },
@@ -48,41 +48,41 @@ const CheckImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, or
     const handleQuantityChange = (bookId, value) => {
         const updatedDetails = selectedBooks.map((book) => {
             if (book.BookId === bookId) {
-                return { ...book, Quantity: value }; // Cập nhật số lượng
+                return { ...book, Quantity: value }; // Update quantity
             }
             return book;
         });
-        setSelectedBooks(updatedDetails); // Cập nhật lại selectedBooks
+        setSelectedBooks(updatedDetails); // Update selectedBooks
     };
 
     const handleQuantityFaultBooks = (bookId, value) => {
         const updatedDetails = selectedFaultBooks.map((book) => {
             if (book.BookId === bookId) {
-                return { ...book, Quantity: value }; // Cập nhật số lượng
+                return { ...book, Quantity: value }; // Update quantity
             }
             return book;
         });
-        setSelectedFaultBooks(updatedDetails); // Cập nhật lại selectedBooks
+        setSelectedFaultBooks(updatedDetails); // Update selectedBooks
     };
 
     const handleChangeNoteFault = (bookId, value) => {
         const updatedDetails = selectedFaultBooks.map((book) => {
             if (book.BookId === bookId) {
-                return { ...book, Note: value }; // Cập nhật note
+                return { ...book, Note: value }; // Update note
             }
             return book;
         });
-        setSelectedFaultBooks(updatedDetails); // Cập nhật lại selectedBooks
+        setSelectedFaultBooks(updatedDetails); // Update selectedBooks
     };
 
     const handlePriceChange = (bookId, value) => {
         const updatedDetails = selectedBooks.map((book) => {
             if (book.BookId === bookId) {
-                return { ...book, Price: value }; // Cập nhật đơn giá
+                return { ...book, Price: value }; // Update price
             }
             return book;
         });
-        setSelectedBooks(updatedDetails); // Cập nhật lại selectedBooks
+        setSelectedBooks(updatedDetails); // Update selectedBooks
     };
 
     //#region Check
@@ -90,9 +90,9 @@ const CheckImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, or
         // Logic for approving the order
         const values = await form.validateFields();
 
-        await onEdit({...order, Status: "Receive", FaultBooks: selectedFaultBooks, LogNote: values.LogNote}, order.ImportOrderId);
+        await onEdit({ ...order, Status: "Receive", FaultBooks: selectedFaultBooks, LogNote: values.LogNote }, order.ImportOrderId);
         setSelectedFaultBooks([]);
-        
+
         // Clear specific field
         form.setFieldsValue({
             LogNote: ''
@@ -108,21 +108,21 @@ const CheckImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, or
     //#region UI
     return (
         <Modal
-            title="Phê Duyệt Đơn Nhập"
+            title="Approve Import Order"
             open={visible}
             onCancel={onCancel}
             footer={null}
-            width={800} // Mở rộng chiều rộng của modal
+            width={800} // Increase modal width
         >
             <Form form={form} layout="vertical">
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Form.Item
                         name="SupplierID"
-                        label="Nhà cung cấp"
+                        label="Supplier"
                         style={{ flex: 1, marginRight: '10px' }}
-                        rules={[{ required: true, message: "Vui lòng chọn nhà cung cấp!" }]}
+                        rules={[{ required: true, message: "Please select a supplier!" }]}
                     >
-                        <Select placeholder="Chọn nhà cung cấp" disabled>
+                        <Select placeholder="Select supplier" disabled>
                             {suppliers.map((supplier, index) => (
                                 <Option key={index} value={supplier}>
                                     {supplier}
@@ -133,9 +133,9 @@ const CheckImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, or
 
                     <Form.Item
                         name="ImportDate"
-                        label="Ngày nhập"
+                        label="Import Date"
                         style={{ flex: 1, marginLeft: '10px' }}
-                        rules={[{ required: true, message: "Vui lòng nhập ngày nhập!" }]}
+                        rules={[{ required: true, message: "Please enter import date!" }]}
                     >
                         <Input type="date" disabled />
                     </Form.Item>
@@ -143,34 +143,34 @@ const CheckImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, or
 
                 <Form.Item
                     name="Note"
-                    label="Ghi chú"
+                    label="Note"
                 >
-                    <Input.TextArea rows={2} placeholder="Nhập ghi chú nếu có" style={{ resize: 'none' }} disabled />
+                    <Input.TextArea rows={2} placeholder="Enter notes if any" style={{ resize: 'none' }} disabled />
                 </Form.Item>
 
-                {/* Bảng chi tiết đơn nhập */}
-                <h3>Chi tiết đơn nhập</h3>
+                {/* Import order details table */}
+                <h3>Import Order Details</h3>
                 <Table
                     dataSource={selectedBooks}
                     columns={[
                         {
-                            title: 'ID Sách',
+                            title: 'Book ID',
                             dataIndex: 'BookId',
                         },
                         {
-                            title: 'Tên Sách',
+                            title: 'Book Title',
                             //dataIndex: 'Title',
                             render: (_, record) => (
-                                <span>{record.BookInfo ? record.BookInfo.Title : 'Không có thông tin'}</span>
+                                <span>{record.BookInfo ? record.BookInfo.Title : 'No information'}</span>
                             ),
                         },
                         {
-                            title: 'Số Lượng Nhập',
+                            title: 'Import Quantity',
                             render: (_, record) => (
                                 <Input
                                     type="number"
-                                    min={0} // Cho phép nhập số lượng bất kỳ
-                                    value={record.Quantity || 0} // Sử dụng value
+                                    min={0} // Allow any quantity
+                                    value={record.Quantity || 0} // Use value
                                     onChange={(e) => handleQuantityChange(record.BookId, e.target.value)}
                                     required
                                     disabled
@@ -178,12 +178,12 @@ const CheckImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, or
                             ),
                         },
                         {
-                            title: 'Đơn Giá',
+                            title: 'Unit Price',
                             render: (_, record) => (
                                 <Input
                                     type="number"
-                                    min={0} // Cho phép nhập đơn giá bất kỳ
-                                    value={record.Price || 0} // Sử dụng value
+                                    min={0} // Allow any price
+                                    value={record.Price || 0} // Use value
                                     onChange={(e) => handlePriceChange(record.BookId, e.target.value)}
                                     required
                                     disabled
@@ -191,7 +191,7 @@ const CheckImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, or
                             ),
                         },
                         {
-                            title: 'Tổng Giá',
+                            title: 'Total Price',
                             render: (_, record) => (
                                 <span>{(record.Quantity || 0) * (record.Price || 0)}</span>
                             ),
@@ -201,57 +201,57 @@ const CheckImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, or
                     pagination={false}
                 />
 
-                {/* Hiển thị tổng số lượng và tổng số tiền */}
+                {/* Display total quantity and amount */}
                 <div style={{ marginTop: 20 }}>
-                    <strong>Tổng số lượng sách: {selectedBooks.reduce((sum, book) => sum + (book.Quantity || 0), 0)}</strong>
+                    <strong>Total Book Quantity: {selectedBooks.reduce((sum, book) => sum + (book.Quantity || 0), 0)}</strong>
                     <br />
                 </div>
                 <Form.Item
-                        name="LogNote"
-                        label="Ghi chú"
-                    >
-                        <Input.TextArea rows={2} placeholder="Nhập ghi chú nếu có" style={{ resize: 'none' }} 
-                            // onChange={(e) => {
-                            //     console.log(logNote);
-                                
-                            //     setLogNote(e.target.value)
-                            // }} 
-                        />
-                    </Form.Item>
+                    name="LogNote"
+                    label="Note"
+                >
+                    <Input.TextArea rows={2} placeholder="Enter notes if any" style={{ resize: 'none' }}
+                    // onChange={(e) => {
+                    //     console.log(logNote);
 
-                <div style={{border: '1px solid red', borderRadius: '10px', padding: '10px', margin: '5px 5px'}}>
-                    <h3>Xử lý sách lỗi (nếu có)</h3>
+                    //     setLogNote(e.target.value)
+                    // }} 
+                    />
+                </Form.Item>
+
+                <div style={{ border: '1px solid red', borderRadius: '10px', padding: '10px', margin: '5px 5px' }}>
+                    <h3>Handle Defective Books (if any)</h3>
                     <Table
                         dataSource={selectedFaultBooks}
                         columns={[
                             {
-                                title: 'ID Sách',
+                                title: 'Book ID',
                                 dataIndex: 'BookId',
                             },
                             {
-                                title: 'Tên Sách',
+                                title: 'Book Title',
                                 //dataIndex: 'Title',
                                 render: (_, record) => (
-                                    <span>{record.BookInfo ? record.BookInfo.Title : 'Không có thông tin'}</span>
+                                    <span>{record.BookInfo ? record.BookInfo.Title : 'No information'}</span>
                                 ),
                             },
                             {
-                                title: 'Số Lượng Sách Lỗi',
+                                title: 'Defective Book Quantity',
                                 render: (_, record) => (
                                     <Input
                                         type="number"
-                                        min={0} // Cho phép nhập số lượng bất kỳ
-                                        value={record.Quantity || 0} // Sử dụng value
+                                        min={0} // Allow any quantity
+                                        value={record.Quantity || 0} // Use value
                                         onChange={(e) => handleQuantityFaultBooks(record.BookId, e.target.value)}
                                     />
                                 ),
                             },
                             {
-                                title: 'Ghi chú',
+                                title: 'Note',
                                 render: (_, record) => (
                                     <Input
                                         type="text"
-                                        value={record.Note || ""} // Sử dụng value
+                                        value={record.Note || ""} // Use value
                                         onChange={(e) => handleChangeNoteFault(record.BookId, e.target.value)}
                                     />
                                 ),
@@ -261,10 +261,10 @@ const CheckImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, or
                         pagination={false}
                     />
 
-                    <Form.Item label="Chọn sách">
+                    <Form.Item label="Select Books">
                         <Select
                             mode="multiple"
-                            placeholder="Chọn sách"
+                            placeholder="Select books"
                             onChange={handleBookSelect}
                             style={{ width: '100%' }}
                         >
@@ -276,17 +276,17 @@ const CheckImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, or
                         </Select>
                     </Form.Item>
 
-                    
+
 
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '5px' }}>
                     <Button type="default" onClick={handleClose}>
-                        Đóng
+                        Close
                     </Button>
-                
+
                     <Button type="primary" onClick={handleCheck} style={{ marginRight: '10px' }}>
-                        Gửi yêu cầu phê duyệt
+                        Send Approval Request
                     </Button>
                 </div>
             </Form>

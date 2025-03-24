@@ -89,7 +89,7 @@ const BookList = () => {
     // Handle book deletion
     const handleDelete = async (id) => {
         try {
-            // Kiểm tra token với đúng key
+            // Check token with correct key
             const token = localStorage.getItem('accessToken');
             if (!token) {
                 message.error('Please login to perform this action');
@@ -100,160 +100,126 @@ const BookList = () => {
             const response = await axios.delete(`/books/${id}`);
             if (response.data.success) {
                 message.success('Book deleted successfully');
-                setRefreshKey(prev => prev + 1); // Force refresh
+                fetchBooks();
             } else {
                 message.error(response.data.message || 'Failed to delete book');
             }
         } catch (error) {
-            const errorMessage = error.response?.data?.message ||
-                error.message ||
-                'Failed to delete book';
-            message.error(errorMessage);
-            console.error('Error deleting book:', error);
+            message.error('Error deleting book');
+            console.error('Error:', error);
         }
     };
 
-    // Handle modal
+    // Show modal for add/edit
     const showModal = (book = null) => {
-        console.log('Show modal with book:', book); // Debug log
-        if (book) {
-            // Đảm bảo tất cả các trường cần thiết đều có
-            setEditingBook({
-                BookId: book.BookId,
-                Title: book.Title,
-                Author: book.Author,
-                CategoryId: book.CategoryId,
-                Publisher: book.Publisher,
-                PublishingYear: book.PublishingYear,
-                NumberOfPages: book.NumberOfPages,
-                Language: book.Language,
-                Status: book.Status || 'Active'
-            });
-        } else {
-            setEditingBook(null);
-        }
+        setEditingBook(book);
         setModalVisible(true);
     };
 
+    // Close the modal
     const handleModalClose = () => {
-        setEditingBook(null);
         setModalVisible(false);
+        setEditingBook(null);
     };
 
+    // Handle form save
     const handleSave = async (values) => {
         try {
-            const token = localStorage.getItem('accessToken');
-            if (!token) {
-                message.error('Please login to perform this action');
-                window.location.href = '/login';
-                return;
-            }
+            let formData = new FormData();
+
+            // Append all form values to FormData
+            Object.keys(values).forEach(key => {
+                if (key === 'Image' && values[key] && values[key][0] && values[key][0].originFileObj) {
+                    formData.append(key, values[key][0].originFileObj);
+                } else if (values[key] !== undefined && values[key] !== null) {
+                    formData.append(key, values[key]);
+                }
+            });
+
+            let response;
 
             if (editingBook) {
-                const response = await axios.put(`/books/${editingBook.BookId}`, values);
-                if (response.data.success) {
-                    message.success('Book updated successfully');
-                    handleModalClose();
-                    fetchBooks(); // Gọi trực tiếp fetchBooks thay vì dùng refreshKey
-                } else {
-                    message.error(response.data.message || 'Failed to update book');
-                }
+                // Update existing book
+                response = await axios.put(`/books/${editingBook.BookId}`, formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+                message.success('Book updated successfully');
             } else {
-                const response = await axios.post('/books', values);
-                if (response.data.success) {
-                    message.success('Book created successfully');
-                    handleModalClose();
-                    fetchBooks(); // Gọi trực tiếp fetchBooks thay vì dùng refreshKey
-                } else {
-                    message.error(response.data.message || 'Failed to create book');
-                }
+                // Create new book
+                response = await axios.post('/books', formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+                message.success('Book added successfully');
             }
+
+            // Close modal and refresh book list
+            handleModalClose();
+            fetchBooks();
+
         } catch (error) {
-            const errorMessage = error.response?.data?.message ||
-                error.message ||
-                'Failed to save book';
-            message.error(errorMessage);
+            message.error('Error saving book');
             console.error('Error saving book:', error);
         }
     };
 
-    // Handle category change
+    // Handle category filter change
     const handleCategoryChange = (value) => {
         setSelectedCategory(value);
-        setPage(1); // Reset về trang 1 khi thay đổi filter
+        setPage(1); // Reset to first page when changing filter
     };
 
-    // Table columns
+    // Table columns configuration
     const columns = [
         {
             title: 'Image',
             dataIndex: 'Image',
             key: 'Image',
-            render: (image) => {
-                if (!image) {
-                    return (
-                        <div
-                            style={{
-                                width: '50px',
-                                height: '70px',
-                                background: '#eee',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                            }}
-                        >
-                            No image
-                        </div>
-                    );
-                }
-
-                // Handle image data from server
-                let imageUrl;
-                if (typeof image === 'string') {
-                    imageUrl = image;
-                } else if (image.type === 'Buffer' && Array.isArray(image.data)) {
-                    // Convert Buffer data to base64
-                    const bytes = new Uint8Array(image.data);
-                    const binary = bytes.reduce((acc, byte) => acc + String.fromCharCode(byte), '');
-                    imageUrl = `data:image/jpeg;base64,${btoa(binary)}`;
-                } else {
-                    return <div>Invalid image format</div>;
-                }
-
-                return (
+            render: (text, record) => (
+                <div style={{ width: '50px', height: '70px', overflow: 'hidden' }}>
                     <img
-                        src={imageUrl}
-                        alt="Book cover"
-                        style={{
-                            width: '50px',
-                            height: '70px',
-                            objectFit: 'cover'
-                        }}
+                        src={record.Image ? `${API_BASE_URL}/books/image/${record.BookId}` : 'https://via.placeholder.com/150x200?text=No+Image'}
+                        alt={record.Title}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
-                );
-            }
+                </div>
+            ),
         },
         {
             title: 'Title',
             dataIndex: 'Title',
             key: 'Title',
-            sorter: (a, b) => a.Title.localeCompare(b.Title)
+            sorter: (a, b) => a.Title.localeCompare(b.Title),
         },
         {
             title: 'Author',
             dataIndex: 'Author',
-            key: 'Author'
-        },
-        {
-            title: 'Category',
-            dataIndex: ['Category', 'CategoryName'],
-            key: 'Category',
-            render: (text, record) => record.Category?.CategoryName || 'N/A'
+            key: 'Author',
         },
         {
             title: 'Publisher',
             dataIndex: 'Publisher',
-            key: 'Publisher'
+            key: 'Publisher',
+        },
+        {
+            title: 'Category',
+            dataIndex: 'Category',
+            key: 'Category',
+            render: (_, record) => record.Category?.Name || 'N/A',
+        },
+        {
+            title: 'Publishing Year',
+            dataIndex: 'PublishingYear',
+            key: 'PublishingYear',
+            sorter: (a, b) => a.PublishingYear - b.PublishingYear,
+        },
+        {
+            title: 'Language',
+            dataIndex: 'Language',
+            key: 'Language',
         },
         {
             title: 'Status',
@@ -263,13 +229,13 @@ const BookList = () => {
                 <Tag color={status === 'Active' ? 'green' : 'red'}>
                     {status}
                 </Tag>
-            )
+            ),
         },
         {
             title: 'Actions',
-            key: 'actions',
+            key: 'action',
             render: (_, record) => (
-                <Space>
+                <Space size="middle">
                     <Button
                         type="primary"
                         icon={<EditOutlined />}
@@ -278,95 +244,99 @@ const BookList = () => {
                         Edit
                     </Button>
                     <Popconfirm
-                        title="Are you sure to delete this book?"
+                        title="Are you sure you want to delete this book?"
                         onConfirm={() => handleDelete(record.BookId)}
                         okText="Yes"
                         cancelText="No"
                     >
                         <Button
-                            type="primary"
-                            danger
+                            type="danger"
                             icon={<DeleteOutlined />}
                         >
                             Delete
                         </Button>
                     </Popconfirm>
                 </Space>
-            )
-        }
+            ),
+        },
     ];
 
+    // Configure pagination
+    const paginationConfig = {
+        current: page,
+        pageSize: pageSize,
+        total: total,
+        onChange: (page, pageSize) => {
+            setPage(page);
+            setPageSize(pageSize);
+        },
+        showSizeChanger: true,
+        showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} books`,
+    };
+
     return (
-        <Card title="Book Management">
-            <Space direction="vertical" style={{ width: '100%', marginBottom: 16 }}>
-                <Space>
-                    <Button
-                        type="primary"
-                        icon={<PlusOutlined />}
-                        onClick={() => showModal()}
-                    >
-                        Add New Book
-                    </Button>
-                    <Search
-                        placeholder="Search books..."
-                        allowClear
-                        onSearch={value => setSearchText(value)}
-                        style={{ width: 300 }}
-                    />
-                    <Select
-                        placeholder="Filter by category"
-                        style={{ width: 200 }}
-                        allowClear
-                        value={selectedCategory}
-                        onChange={handleCategoryChange}
-                    >
-                        {categories && categories.length > 0 && categories.map(category => (
-                            <Option
-                                key={category.categoryId}
-                                value={category.categoryId}
-                            >
-                                {category.CategoryName}
-                            </Option>
-                        ))}
-                    </Select>
-                </Space>
+        <div style={{ padding: '20px' }}>
+            <Card title="Book Management" bordered={false}>
+                <div style={{ marginBottom: 16 }}>
+                    <Space wrap>
+                        <Search
+                            placeholder="Search books..."
+                            allowClear
+                            onSearch={(value) => {
+                                setSearchText(value);
+                                setPage(1); // Reset to first page on new search
+                            }}
+                            style={{ width: 300 }}
+                        />
+                        <Select
+                            placeholder="Filter by Category"
+                            style={{ width: 200 }}
+                            allowClear
+                            loading={categoriesLoading}
+                            onChange={handleCategoryChange}
+                        >
+                            {categories.map(category => (
+                                <Option key={category.CategoryId} value={category.CategoryId}>
+                                    {category.Name}
+                                </Option>
+                            ))}
+                        </Select>
+                        <Button
+                            type="primary"
+                            icon={<PlusOutlined />}
+                            onClick={() => showModal()}
+                        >
+                            Add Book
+                        </Button>
+                    </Space>
+                </div>
 
                 <Table
                     columns={columns}
                     dataSource={books}
                     rowKey="BookId"
                     loading={loading}
-                    pagination={false}
+                    pagination={paginationConfig}
+                    scroll={{ x: 'max-content' }}
                 />
-
-                <Pagination
-                    total={total}
-                    current={page}
-                    pageSize={pageSize}
-                    onChange={(page, pageSize) => {
-                        setPage(page);
-                        setPageSize(pageSize);
-                    }}
-                    showSizeChanger
-                    showTotal={(total) => `Total ${total} items`}
-                />
-            </Space>
+            </Card>
 
             <Modal
-                title={editingBook ? 'Edit Book' : 'Add New Book'}
-                open={modalVisible}
+                title={editingBook ? "Edit Book" : "Add New Book"}
+                visible={modalVisible}
                 onCancel={handleModalClose}
                 footer={null}
                 width={800}
-                destroyOnClose={true}
+                destroyOnClose
             >
                 <BookForm
-                    key={editingBook?.BookId || 'new'}
                     initialValues={editingBook}
+                    onSave={handleSave}
                     onCancel={handleModalClose}
+                    categories={categories}
                 />
             </Modal>
-        </Card>
+        </div>
     );
 };
 

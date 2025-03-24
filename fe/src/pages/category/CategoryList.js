@@ -110,14 +110,13 @@ const CategoryList = () => {
                         Edit
                     </Button>
                     <Popconfirm
-                        title="Delete Category"
-                        description="Are you sure you want to delete this category?"
+                        title="Are you sure you want to delete this category?"
                         onConfirm={() => handleDelete(record.categoryId)}
-                        okText="Yes, Delete"
-                        cancelText="No, Cancel"
+                        okText="Yes"
+                        cancelText="No"
+                        okButtonProps={{ danger: true }}
                     >
                         <Button
-                            type="primary"
                             danger
                             icon={<DeleteOutlined />}
                         >
@@ -130,84 +129,87 @@ const CategoryList = () => {
     ];
 
     return (
-        <div style={{ padding: '24px' }}>
-            <Card>
-                <Space style={{ marginBottom: '16px' }} size="large">
-                    <Button
-                        type="primary"
-                        icon={<PlusOutlined />}
-                        onClick={() => {
-                            setEditingCategory(null);
-                            form.resetFields();
-                            setIsModalVisible(true);
-                        }}
-                    >
-                        Add New Category
-                    </Button>
-
-                    <Input
-                        placeholder="Search by ID or name..."
-                        prefix={<SearchOutlined />}
-                        value={searchText}
-                        onChange={e => setSearchText(e.target.value)}
-                        style={{ width: '300px' }}
-                        allowClear
-                    />
-                </Space>
+        <Card
+            title="Category Management"
+            extra={
+                <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => {
+                        setEditingCategory(null);
+                        form.resetFields();
+                        setIsModalVisible(true);
+                    }}
+                >
+                    Add Category
+                </Button>
+            }
+            style={{ margin: '20px' }}
+        >
+            <Space direction="vertical" style={{ width: '100%' }}>
+                <Input
+                    placeholder="Search categories..."
+                    prefix={<SearchOutlined />}
+                    value={searchText}
+                    onChange={e => setSearchText(e.target.value)}
+                    style={{ width: 300, marginBottom: 16 }}
+                />
 
                 <Table
                     columns={columns}
                     dataSource={filteredCategories}
                     rowKey="categoryId"
-                    bordered
                     pagination={{
+                        defaultPageSize: 10,
                         showSizeChanger: true,
-                        showTotal: (total, range) =>
-                            `${range[0]}-${range[1]} of ${total} items`,
-                        pageSize: 10,
-                        pageSizeOptions: ['10', '20', '50']
+                        pageSizeOptions: ['10', '20', '50'],
+                        showTotal: (total) => `Total ${total} items`
                     }}
                 />
-            </Card>
 
-            <Modal
-                title={editingCategory ? 'Edit Category' : 'Add New Category'}
-                open={isModalVisible}
-                onCancel={() => {
-                    setIsModalVisible(false);
-                    form.resetFields();
-                }}
-                footer={null}
-            >
-                <Form
-                    form={form}
-                    layout="vertical"
-                    onFinish={handleSubmit}
+                <Modal
+                    title={editingCategory ? "Edit Category" : "Add New Category"}
+                    open={isModalVisible}
+                    onCancel={() => {
+                        setIsModalVisible(false);
+                        form.resetFields();
+                    }}
+                    footer={null}
                 >
-                    <Form.Item
-                        name="CategoryName"
-                        label="Category Name"
-                        rules={[{
-                            required: true,
-                            message: 'Please enter the category name!'
-                        }]}
+                    <Form
+                        form={form}
+                        layout="vertical"
+                        onFinish={handleSubmit}
                     >
-                        <Input placeholder="Enter category name" />
-                    </Form.Item>
+                        <Form.Item
+                            name="CategoryName"
+                            label="Category Name"
+                            rules={[
+                                { required: true, message: 'Please enter a category name' },
+                                { min: 2, message: 'Category name must be at least 2 characters' },
+                                { max: 100, message: 'Category name cannot exceed 100 characters' }
+                            ]}
+                        >
+                            <Input placeholder="Enter category name" />
+                        </Form.Item>
 
-                    <Form.Item>
-                        <Space>
-                            <Button type="primary" htmlType="submit">
-                                {editingCategory ? 'Update Category' : 'Create Category'}
-                            </Button>
-                            <Button onClick={() => setIsModalVisible(false)}>
-                                Cancel
-                            </Button>
-                        </Space>
-                    </Form.Item>
-                </Form>
-            </Modal>
-        </div>
+                        <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
+                            <Space>
+                                <Button onClick={() => {
+                                    setIsModalVisible(false);
+                                    form.resetFields();
+                                }}>
+                                    Cancel
+                                </Button>
+                                <Button type="primary" htmlType="submit">
+                                    {editingCategory ? 'Update' : 'Create'}
+                                </Button>
+                            </Space>
+                        </Form.Item>
+                    </Form>
+                </Modal>
+            </Space>
+        </Card>
     );
 };
 

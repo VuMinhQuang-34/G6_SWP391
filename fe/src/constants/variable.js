@@ -1,20 +1,3 @@
-export const orderStatuses = [
-    { key: 'New', label: 'Khởi tạo', step: 1 },
-    { key: 'Approve', label: 'Phê duyệt', step: 2 },
-    { key: 'Receive', label: 'Nhận hàng', step: 3 },
-    { key: 'ApproveImport', label: 'Hoàn thành', step: 4 },
-    // { key: 'Close', label: 'Đã đóng', step: 5 },
-];
-
-export const exportOrderStatuses = [
-    { key: 'New', label: 'Mới tạo', color: 'blue' },
-    { key: 'Pending', label: 'Chờ duyệt', color: 'orange' },
-    { key: 'Approved', label: 'Đã duyệt', color: 'green' },
-    { key: 'Rejected', label: 'Từ chối', color: 'red' },
-    { key: 'Cancelled', label: 'Đã hủy', color: 'gray' },
-    { key: 'Completed', label: 'Hoàn thành', color: 'purple' }
-];
-
 export const suppliersList = [
     "Trí Tuệ - Công Ty Cổ Phần Sách & Thiết Bị Giáo Dục Trí Tuệ",
     "Công Ty Cổ Phần Sách Mcbooks",
@@ -31,3 +14,19 @@ export const suppliersList = [
 ];
 
 
+export const orderStatuses = [
+    { key: 'New', label: 'Created', step: 1 },
+    { key: 'Approve', label: 'Approved', step: 2 },
+    { key: 'Receive', label: 'Received', step: 3 },
+    { key: 'ApproveImport', label: 'Completed', step: 4 },
+    // { key: 'Close', label: 'Closed', step: 5 },
+];
+
+export const exportOrderStatuses = [
+    { key: 'New', label: 'New', color: 'blue' },
+    { key: 'Pending', label: 'Pending', color: 'orange' },
+    { key: 'Approved', label: 'Approved', color: 'green' },
+    { key: 'Rejected', label: 'Rejected', color: 'red' },
+    { key: 'Cancelled', label: 'Cancelled', color: 'gray' },
+    { key: 'Completed', label: 'Completed', color: 'purple' }
+];

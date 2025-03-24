@@ -27,8 +27,8 @@ const ApproveImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, 
             const existingBook = selectedBooks.find(b => b.BookId === book.BookId);
             return {
                 ...book,
-                Quantity: existingBook ? existingBook.Quantity : 0, // Giữ nguyên số lượng nếu đã có
-                Price: existingBook ? existingBook.Price : 0, // Giữ nguyên giá nếu đã có
+                Quantity: existingBook ? existingBook.Quantity : 0, // Keep existing quantity if available
+                Price: existingBook ? existingBook.Price : 0, // Keep existing price if available
             };
         });
         setSelectedBooks(updatedBooks);
@@ -37,34 +37,34 @@ const ApproveImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, 
     const handleQuantityChange = (bookId, value) => {
         const updatedDetails = selectedBooks.map((book) => {
             if (book.BookId === bookId) {
-                return { ...book, Quantity: value }; // Cập nhật số lượng
+                return { ...book, Quantity: value }; // Update quantity
             }
             return book;
         });
-        setSelectedBooks(updatedDetails); // Cập nhật lại selectedBooks
+        setSelectedBooks(updatedDetails); // Update selectedBooks
     };
 
     const handlePriceChange = (bookId, value) => {
         const updatedDetails = selectedBooks.map((book) => {
             if (book.BookId === bookId) {
-                return { ...book, Price: value }; // Cập nhật đơn giá
+                return { ...book, Price: value }; // Update price
             }
             return book;
         });
-        setSelectedBooks(updatedDetails); // Cập nhật lại selectedBooks
+        setSelectedBooks(updatedDetails); // Update selectedBooks
     };
 
     //#region Approve
     const handleApprove = async () => {
         // Logic for approving the order
         const formData = await form.getFieldsValue();
-        await onEdit({...order, Status: "Approve", LogNote: formData.LogNote}, order.ImportOrderId);
+        await onEdit({ ...order, Status: "Approve", LogNote: formData.LogNote }, order.ImportOrderId);
     };
 
     const handleReject = async () => {
         // Logic for rejecting the order
         const formData = await form.getFieldsValue();
-        await onEdit({...order, Status: "New", LogStatus: "Reject", LogNote: formData.LogNote}, order.ImportOrderId);
+        await onEdit({ ...order, Status: "New", LogStatus: "Reject", LogNote: formData.LogNote }, order.ImportOrderId);
     };
 
     const handleClose = () => {
@@ -73,21 +73,21 @@ const ApproveImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, 
 
     return (
         <Modal
-            title="Phê Duyệt Đơn Nhập"
+            title="Approve Import Order"
             open={visible}
             onCancel={onCancel}
             footer={null}
-            width={800} // Mở rộng chiều rộng của modal
+            width={800} // Increased modal width
         >
             <Form form={form} layout="vertical">
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Form.Item
                         name="SupplierID"
-                        label="Nhà cung cấp"
+                        label="Supplier"
                         style={{ flex: 1, marginRight: '10px' }}
-                        rules={[{ required: true, message: "Vui lòng chọn nhà cung cấp!" }]}
+                        rules={[{ required: true, message: "Please select a supplier!" }]}
                     >
-                        <Select placeholder="Chọn nhà cung cấp" disabled>
+                        <Select placeholder="Select supplier" disabled>
                             {suppliers.map((supplier, index) => (
                                 <Option key={index} value={supplier}>
                                     {supplier}
@@ -98,9 +98,9 @@ const ApproveImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, 
 
                     <Form.Item
                         name="ImportDate"
-                        label="Ngày nhập"
+                        label="Import Date"
                         style={{ flex: 1, marginLeft: '10px' }}
-                        rules={[{ required: true, message: "Vui lòng nhập ngày nhập!" }]}
+                        rules={[{ required: true, message: "Please enter import date!" }]}
                     >
                         <Input type="date" disabled />
                     </Form.Item>
@@ -108,34 +108,34 @@ const ApproveImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, 
 
                 <Form.Item
                     name="Note"
-                    label="Ghi chú"
+                    label="Note"
                 >
-                    <Input.TextArea rows={2} placeholder="Nhập ghi chú nếu có" style={{ resize: 'none' }} disabled />
+                    <Input.TextArea rows={2} placeholder="Enter notes if any" style={{ resize: 'none' }} disabled />
                 </Form.Item>
 
-                {/* Bảng chi tiết đơn nhập */}
-                <h3>Chi tiết đơn nhập</h3>
+                {/* Import order details table */}
+                <h3>Import Order Details</h3>
                 <Table
                     dataSource={selectedBooks}
                     columns={[
                         {
-                            title: 'ID Sách',
+                            title: 'Book ID',
                             dataIndex: 'BookId',
                         },
                         {
-                            title: 'Tên Sách',
+                            title: 'Book Title',
                             //dataIndex: 'Title',
                             render: (_, record) => (
-                                <span>{record.BookInfo ? record.BookInfo.Title : 'Không có thông tin'}</span>
+                                <span>{record.BookInfo ? record.BookInfo.Title : 'No information'}</span>
                             ),
                         },
                         {
-                            title: 'Số Lượng Nhập',
+                            title: 'Import Quantity',
                             render: (_, record) => (
                                 <Input
                                     type="number"
-                                    min={0} // Cho phép nhập số lượng bất kỳ
-                                    value={record.Quantity || 0} // Sử dụng value
+                                    min={0} // Allow any quantity
+                                    value={record.Quantity || 0} // Use value
                                     onChange={(e) => handleQuantityChange(record.BookId, e.target.value)}
                                     required
                                     disabled
@@ -143,12 +143,12 @@ const ApproveImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, 
                             ),
                         },
                         {
-                            title: 'Đơn Giá',
+                            title: 'Unit Price',
                             render: (_, record) => (
                                 <Input
                                     type="number"
-                                    min={0} // Cho phép nhập đơn giá bất kỳ
-                                    value={record.Price || 0} // Sử dụng value
+                                    min={0} // Allow any price
+                                    value={record.Price || 0} // Use value
                                     onChange={(e) => handlePriceChange(record.BookId, e.target.value)}
                                     required
                                     disabled
@@ -156,7 +156,7 @@ const ApproveImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, 
                             ),
                         },
                         {
-                            title: 'Tổng Giá',
+                            title: 'Total Price',
                             render: (_, record) => (
                                 <span>{(record.Quantity || 0) * (record.Price || 0)}</span>
                             ),
@@ -166,17 +166,17 @@ const ApproveImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, 
                     pagination={false}
                 />
 
-                {/* Hiển thị tổng số lượng và tổng số tiền */}
+                {/* Display total quantity and total amount */}
                 <div style={{ marginTop: 20 }}>
-                    <strong>Tổng số lượng sách: {selectedBooks.reduce((sum, book) => sum + (book.Quantity || 0), 0)}</strong>
+                    <strong>Total Book Quantity: {selectedBooks.reduce((sum, book) => sum + (book.Quantity || 0), 0)}</strong>
                     <br />
-                    <strong>Tổng số tiền: {selectedBooks.reduce((sum, book) => sum + (book.Price * (book.Quantity || 0)), 0)}</strong>
+                    <strong>Total Amount: {selectedBooks.reduce((sum, book) => sum + (book.Price * (book.Quantity || 0)), 0)}</strong>
                 </div>
 
-                <Form.Item label="Chọn sách">
+                <Form.Item label="Select Books">
                     <Select
                         mode="multiple"
-                        placeholder="Chọn sách"
+                        placeholder="Select books"
                         onChange={handleBookSelect}
                         style={{ width: '100%' }}
                         disabled
@@ -191,20 +191,20 @@ const ApproveImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, 
 
                 <Form.Item
                     name="LogNote"
-                    label="Ghi chú phê duyệt"
+                    label="Approval Note"
                 >
-                    <Input.TextArea rows={2} placeholder="Nhập ghi phê duyệt" style={{ resize: 'none' }} />
+                    <Input.TextArea rows={2} placeholder="Enter approval note" style={{ resize: 'none' }} />
                 </Form.Item>
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '5px' }}>
                     <Button type="default" onClick={handleClose}>
-                        Đóng
+                        Close
                     </Button>
                     <Button type="default" onClick={handleReject} danger>
-                        Từ chối
+                        Reject
                     </Button>
                     <Button type="primary" onClick={handleApprove} style={{ marginRight: '10px' }}>
-                        Phê duyệt
+                        Approve
                     </Button>
                 </div>
             </Form>
