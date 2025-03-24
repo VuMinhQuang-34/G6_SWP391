@@ -1,18 +1,90 @@
 // src/pages/ExportOrderListAdvanced.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
     Table, Space, Button, Tag, Input, DatePicker, Select,
-    Card, Row, Col, Pagination, Modal, message, Form, InputNumber
+    Card, Row, Col, Pagination, Modal, message, Form, InputNumber, Typography
 } from 'antd';
 import { EyeOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import moment from 'moment';
+import { useNavigate } from 'react-router-dom';
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
 const { TextArea } = Input;
+const { Title, Text } = Typography;
 
-const ExportOrderList = () => {
+// Custom status progress component
+const StatusProgress = ({ status }) => {
+    if (status === 'Rejected' || status === 'Cancelled') {
+        return (
+            <Tag color={status === 'Rejected' ? '#f5222d' : '#8c8c8c'} style={{ padding: '4px 8px' }}>
+                {status}
+            </Tag>
+        );
+    }
+
+    const statusFlow = ['New', 'Pending', 'Approved', 'Shipping', 'Completed'];
+    const currentIndex = statusFlow.indexOf(status);
+
+    const stepColors = {
+        'New': '#1890ff',
+        'Pending': '#fa8c16',
+        'Approved': '#52c41a',
+        'Shipping': '#722ed1',
+        'Completed': '#13c2c2'
+    };
+
+    return (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+            {statusFlow.map((step, index) => {
+                // Determine the status of this step
+                let stepStatus = 'wait';
+                if (index < currentIndex) stepStatus = 'finish';
+                if (index === currentIndex) stepStatus = 'process';
+
+                // Determine the color based on status
+                let color = '#d9d9d9'; // wait color
+                if (stepStatus === 'finish') color = '#52c41a';
+                if (stepStatus === 'process') color = stepColors[step];
+
+                return (
+                    <div key={step} style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        width: '20%'
+                    }}>
+                        <div style={{
+                            width: '20px',
+                            height: '20px',
+                            borderRadius: '50%',
+                            backgroundColor: color,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#fff',
+                            fontSize: '12px',
+                            marginBottom: '4px'
+                        }}>
+                            {index + 1}
+                        </div>
+                        <div style={{
+                            fontSize: '11px',
+                            color: stepStatus === 'process' ? color : 'rgba(0,0,0,0.65)',
+                            fontWeight: stepStatus === 'process' ? 'bold' : 'normal',
+                            textAlign: 'center'
+                        }}>
+                            {step}
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+};
+
+const ExportOrderListAdvanced = () => {
     const [form] = Form.useForm();
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -240,7 +312,7 @@ const ExportOrderList = () => {
     ];
 
     // List view columns
-    const columns = [
+    const columns = useMemo(() => [
         {
             title: 'Order ID',
             dataIndex: 'id',
@@ -255,11 +327,8 @@ const ExportOrderList = () => {
             title: 'Status',
             dataIndex: 'status',
             key: 'status',
-            render: (status) => (
-                <Tag color={statusColors[status]}>
-                    {status}
-                </Tag>
-            )
+            width: 300,
+            render: (status) => <StatusProgress status={status} />
         },
         {
             title: 'Order Date',
@@ -302,7 +371,7 @@ const ExportOrderList = () => {
                 </Space>
             )
         }
-    ];
+    ], []);
 
     return (
         <Card title="Export Orders">
@@ -338,8 +407,8 @@ const ExportOrderList = () => {
                     />
                 </Col>
                 <Col span={4}>
-                    <Button 
-                        type="primary" 
+                    <Button
+                        type="primary"
                         icon={<PlusOutlined />}
                         onClick={() => setCreateModalVisible(true)}
                     >
@@ -428,4 +497,4 @@ const ExportOrderList = () => {
     );
 };
 
-export default ExportOrderList;
+export default ExportOrderListAdvanced;

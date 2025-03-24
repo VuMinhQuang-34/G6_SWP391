@@ -60,21 +60,21 @@ const DefaultLayout = () => {
                                 <Link to="/orders-import">Tạo đơn nhập</Link>
                             </Menu.Item>
                             <Menu.Item key="5.2">
-                                <Link to="/orders-import/approve">Phê duyệt</Link>
+                                <Link to="/orders-import/approve">Phê duyệt đơn nhập</Link>
                             </Menu.Item>
                             <Menu.Item key="5.3">
-                                <Link to="/orders-import/check">Kiểm hàng</Link>
+                                <Link to="/orders-import/check">Nhập hàng</Link>
                             </Menu.Item>
                             <Menu.Item key="5.4">
-                                <Link to="/orders-import/approve/wms">Phê duyệt nhập kho</Link>
+                                <Link to="/orders-import/approve/wms">Lưu kho</Link>
                             </Menu.Item>
                         </Menu.SubMenu>
                         <Menu.SubMenu key="6" icon={<SettingOutlined />} title="Export Orders">
                             <Menu.Item key="6.1">
-                                <Link to="/export-orders">Quản lý đơn xuất</Link>
+                                <Link to="/export-orders">Tạo đơn xuất</Link>
                             </Menu.Item>
                             <Menu.Item key="6.2">
-                                <Link to="/export-orders/status/approve">Phê duyệt</Link>
+                                <Link to="/export-orders/status/approve">Phê duyệt đơn xuất</Link>
                             </Menu.Item>
                             <Menu.Item key="6.3">
                                 <Link to="/export-orders/status/packing">Đóng gói</Link>
@@ -105,7 +105,7 @@ const DefaultLayout = () => {
                             <Link to="/approval-management">Quản lý phê duyệt</Link>
                         </Menu.Item> */}
                         <Menu.Item key="9" icon={<SettingOutlined />}>
-                            <Link to="location">Location</Link>
+                            <Link to="location">Vị trí kho hàng</Link>
                         </Menu.Item>
                         <Menu.Item key="10" icon={<LogoutOutlined />} danger onClick={handleLogout}>
                             Logout

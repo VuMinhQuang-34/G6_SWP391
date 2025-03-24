@@ -1,7 +1,7 @@
 // src/pages/ApproveExportOrder.js
 import React, { useEffect, useState, memo } from 'react';
-import { Table, Button, message, Tag, Space, Modal, Descriptions, Card, Row, Col, Select, Input, DatePicker, Tabs, Timeline } from 'antd';
-import { SearchOutlined } from '@ant-design/icons';
+import { Table, Button, message, Tag, Space, Modal, Descriptions, Card, Row, Col, Select, Input, DatePicker, Tabs, Timeline, Steps, Title, Text } from 'antd';
+import { SearchOutlined, CheckCircleOutlined, CloseCircleOutlined, EyeOutlined, HistoryOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import moment from 'moment';
 import { toast } from 'react-toastify';
@@ -12,6 +12,7 @@ const { RangePicker } = DatePicker;
 const { Option } = Select;
 const { TextArea } = Input;
 const { TabPane } = Tabs;
+const { Step } = Steps;
 
 const ActionButtons = memo(({ Status, onApprove, onReject }) => (
     <Card bordered={false}>
@@ -34,6 +35,76 @@ const ActionButtons = memo(({ Status, onApprove, onReject }) => (
     </Card>
 ));
 
+// Custom status progress component
+const StatusProgress = ({ status }) => {
+    if (status === 'Rejected' || status === 'Cancelled') {
+        return (
+            <Tag color={status === 'Rejected' ? '#f5222d' : '#8c8c8c'} style={{ padding: '4px 8px' }}>
+                {status}
+            </Tag>
+        );
+    }
+
+    const statusFlow = ['New', 'Pending', 'Approved', 'Shipping', 'Completed'];
+    const currentIndex = statusFlow.indexOf(status);
+
+    const stepColors = {
+        'New': '#1890ff',
+        'Pending': '#fa8c16',
+        'Approved': '#52c41a',
+        'Shipping': '#722ed1',
+        'Completed': '#13c2c2'
+    };
+
+    return (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+            {statusFlow.map((step, index) => {
+                // Determine the status of this step
+                let stepStatus = 'wait';
+                if (index < currentIndex) stepStatus = 'finish';
+                if (index === currentIndex) stepStatus = 'process';
+
+                // Determine the color based on status
+                let color = '#d9d9d9'; // wait color
+                if (stepStatus === 'finish') color = '#52c41a';
+                if (stepStatus === 'process') color = stepColors[step];
+
+                return (
+                    <div key={step} style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        width: '20%'
+                    }}>
+                        <div style={{
+                            width: '20px',
+                            height: '20px',
+                            borderRadius: '50%',
+                            backgroundColor: color,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#fff',
+                            fontSize: '12px',
+                            marginBottom: '4px'
+                        }}>
+                            {index + 1}
+                        </div>
+                        <div style={{
+                            fontSize: '11px',
+                            color: stepStatus === 'process' ? color : 'rgba(0,0,0,0.65)',
+                            fontWeight: stepStatus === 'process' ? 'bold' : 'normal',
+                            textAlign: 'center'
+                        }}>
+                            {step}
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+};
+
 function ApproveExportOrder() {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -49,6 +120,49 @@ function ApproveExportOrder() {
     const [reason, setReason] = useState('');
     const [selectedOrderLogs, setSelectedOrderLogs] = useState([]);
     const [activeModalTab, setActiveModalTab] = useState('details');
+
+    // Status flow configuration
+    const statusFlow = ['New', 'Pending', 'Approved', 'Shipping', 'Completed'];
+
+    // Status color configuration
+    const stepColors = {
+        'New': '#1890ff',
+        'Pending': '#fa8c16',
+        'Approved': '#52c41a',
+        'Shipping': '#722ed1',
+        'Completed': '#13c2c2',
+        'Rejected': '#f5222d',
+        'Cancelled': '#8c8c8c'
+    };
+
+    // Status abbreviations for display on small screens
+    const statusAbbr = {
+        'New': 'New',
+        'Pending': 'Pend',
+        'Approved': 'Appr',
+        'Shipping': 'Ship',
+        'Completed': 'Done'
+    };
+
+    const getStatusStepIndex = (status) => {
+        if (status === 'Rejected' || status === 'Cancelled') {
+            return -1; // Special case for rejected/cancelled
+        }
+        return statusFlow.indexOf(status);
+    };
+
+    const getStepStatus = (orderStatus, stepStatus) => {
+        if (orderStatus === 'Rejected' || orderStatus === 'Cancelled') {
+            return 'error'; // All steps show error for rejected/cancelled orders
+        }
+
+        const orderIndex = getStatusStepIndex(orderStatus);
+        const stepIndex = getStatusStepIndex(stepStatus);
+
+        if (orderIndex === stepIndex) return 'process';
+        if (orderIndex > stepIndex) return 'finish';
+        return 'wait';
+    };
 
     const fetchApprovalList = async () => {
         try {
@@ -150,15 +264,6 @@ function ApproveExportOrder() {
         }
     };
 
-    const statusColors = {
-        'New': 'blue',
-        'Pending': 'orange',
-        'Approved': 'green',
-        'Rejected': 'red',
-        'Cancelled': 'gray',
-        'Completed': 'purple'
-    };
-
     const columns = [
         {
             title: 'Order ID',
@@ -168,7 +273,8 @@ function ApproveExportOrder() {
         {
             title: 'Created By',
             dataIndex: 'createdBy',
-            key: 'createdBy'
+            key: 'createdBy',
+            responsive: ['md']
         },
         {
             title: 'Recipient',
@@ -179,25 +285,24 @@ function ApproveExportOrder() {
             title: 'Status',
             dataIndex: 'status',
             key: 'status',
-            render: (status) => (
-                <Tag color={statusColors[status]}>
-                    {status}
-                </Tag>
-            )
+            width: 300,
+            render: (status) => <StatusProgress status={status} />
         },
         {
             title: 'Order Date',
             dataIndex: 'orderDate',
             key: 'orderDate',
-            render: (date) => moment(date).format('DD/MM/YYYY HH:mm')
+            render: (date) => moment(date).format('DD/MM/YYYY HH:mm'),
+            responsive: ['lg']
         },
         {
             title: 'Actions',
             key: 'actions',
             render: (_, record) => (
-                <Space>
+                <Space wrap>
                     <Button
-                        type="link"
+                        type="primary"
+                        icon={<EyeOutlined />}
                         onClick={() => fetchOrderDetail(record.id)}
                     >
                         View Details
@@ -206,6 +311,8 @@ function ApproveExportOrder() {
                         <>
                             <Button
                                 type="primary"
+                                style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
+                                icon={<CheckCircleOutlined />}
                                 onClick={() => {
                                     setSelectedOrder(record);
                                     setApprovalModalVisible(true);
@@ -215,6 +322,7 @@ function ApproveExportOrder() {
                             </Button>
                             <Button
                                 danger
+                                icon={<CloseCircleOutlined />}
                                 onClick={() => {
                                     setSelectedOrder(record);
                                     setRejectModalVisible(true);
@@ -231,7 +339,16 @@ function ApproveExportOrder() {
 
     const DetailModal = () => (
         <Modal
-            title={`Export Order Details #${selectedOrder?.id}`}
+            title={
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span>Export Order #{selectedOrder?.id}</span>
+                    {selectedOrder?.status && (
+                        <Tag color={stepColors[selectedOrder.status]} style={{ marginLeft: 'auto', padding: '2px 8px' }}>
+                            {selectedOrder.status}
+                        </Tag>
+                    )}
+                </div>
+            }
             open={detailModalVisible}
             onCancel={() => {
                 setDetailModalVisible(false);
@@ -246,6 +363,8 @@ function ApproveExportOrder() {
                         <>
                             <Button
                                 type="primary"
+                                style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
+                                icon={<CheckCircleOutlined />}
                                 onClick={() => {
                                     setDetailModalVisible(false);
                                     setApprovalModalVisible(true);
@@ -255,6 +374,7 @@ function ApproveExportOrder() {
                             </Button>
                             <Button
                                 danger
+                                icon={<CloseCircleOutlined />}
                                 onClick={() => {
                                     setDetailModalVisible(false);
                                     setRejectModalVisible(true);
@@ -271,12 +391,12 @@ function ApproveExportOrder() {
             {selectedOrder && (
                 <Tabs activeKey={activeModalTab} onChange={setActiveModalTab}>
                     <TabPane tab="Order Details" key="details">
-                        <Descriptions bordered column={2}>
-                            <Descriptions.Item label="Status">
-                                <Tag color={statusColors[selectedOrder.status]}>
-                                    {selectedOrder.status}
-                                </Tag>
-                            </Descriptions.Item>
+                        <div style={{ marginBottom: 20 }}>
+                            <div style={{ fontWeight: 'bold', marginBottom: 10 }}>Order Status:</div>
+                            <StatusProgress status={selectedOrder.status} />
+                        </div>
+
+                        <Descriptions bordered column={{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }} style={{ marginTop: 20 }}>
                             <Descriptions.Item label="Created By">
                                 {selectedOrder.createdBy}
                             </Descriptions.Item>
@@ -304,6 +424,8 @@ function ApproveExportOrder() {
                         <Table
                             dataSource={selectedOrder.items}
                             pagination={false}
+                            size="small"
+                            scroll={{ x: 'max-content' }}
                             columns={[
                                 {
                                     title: 'Product Name',
@@ -313,17 +435,23 @@ function ApproveExportOrder() {
                                 {
                                     title: 'Quantity',
                                     dataIndex: 'quantity',
-                                    key: 'quantity'
+                                    key: 'quantity',
+                                    align: 'right',
+                                    width: 100
                                 },
                                 {
                                     title: 'Unit Price',
                                     dataIndex: 'unitPrice',
                                     key: 'unitPrice',
+                                    align: 'right',
+                                    width: 120,
                                     render: (price) => `$${Number(price).toFixed(2)}`
                                 },
                                 {
                                     title: 'Total',
                                     key: 'total',
+                                    align: 'right',
+                                    width: 120,
                                     render: (_, record) => `$${(Number(record.quantity) * Number(record.unitPrice)).toFixed(2)}`
                                 }
                             ]}
@@ -333,10 +461,10 @@ function ApproveExportOrder() {
                                 );
                                 return (
                                     <Table.Summary.Row>
-                                        <Table.Summary.Cell index={0} colSpan={3}>
+                                        <Table.Summary.Cell index={0} colSpan={3} align="right">
                                             <strong>Total Amount</strong>
                                         </Table.Summary.Cell>
-                                        <Table.Summary.Cell index={1}>
+                                        <Table.Summary.Cell index={1} align="right">
                                             <strong>${total.toFixed(2)}</strong>
                                         </Table.Summary.Cell>
                                     </Table.Summary.Row>
@@ -344,7 +472,14 @@ function ApproveExportOrder() {
                             }}
                         />
                     </TabPane>
-                    <TabPane tab="Status History" key="history">
+                    <TabPane
+                        tab={
+                            <span>
+                                <HistoryOutlined /> Status History
+                            </span>
+                        }
+                        key="history"
+                    >
                         <div style={{
                             maxHeight: '400px',
                             overflowY: 'auto',
@@ -354,20 +489,20 @@ function ApproveExportOrder() {
                                 {selectedOrderLogs.map((log) => (
                                     <Timeline.Item
                                         key={log.logId}
-                                        color={statusColors[log.status]}
+                                        color={stepColors[log.status]}
                                     >
                                         <Card
                                             size="small"
                                             style={{
                                                 marginBottom: 16,
                                                 borderRadius: '8px',
-                                                backgroundColor: '#fafafa'
+                                                boxShadow: '0 2px 8px rgba(0,0,0,0.09)'
                                             }}
                                         >
                                             <div style={{ fontSize: '14px' }}>
                                                 <div style={{
                                                     fontWeight: 'bold',
-                                                    color: statusColors[log.status]
+                                                    color: stepColors[log.status]
                                                 }}>
                                                     {log.status}
                                                 </div>
@@ -383,7 +518,7 @@ function ApproveExportOrder() {
                                                     <div style={{
                                                         marginTop: 8,
                                                         padding: '8px',
-                                                        backgroundColor: '#f0f0f0',
+                                                        backgroundColor: '#f5f5f5',
                                                         borderRadius: '4px',
                                                         fontSize: '12px'
                                                     }}>
@@ -403,18 +538,23 @@ function ApproveExportOrder() {
     );
 
     return (
-        <Card title="Export Orders Management">
+        <Card
+            title={<h2 style={{ margin: 0, fontSize: '18px' }}>Export Orders Management</h2>}
+            bordered={false}
+            style={{ borderRadius: '8px', boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}
+        >
             {/* Filter Section */}
             <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-                <Col span={6}>
+                <Col xs={24} sm={24} md={8} lg={6}>
                     <Input
                         placeholder="Search by Order ID"
                         prefix={<SearchOutlined />}
                         value={filters.searchId}
                         onChange={e => setFilters({ ...filters, searchId: e.target.value })}
+                        style={{ width: '100%' }}
                     />
                 </Col>
-                <Col span={6}>
+                <Col xs={24} sm={12} md={8} lg={6}>
                     <Select
                         style={{ width: '100%' }}
                         placeholder="Filter by Status"
@@ -430,7 +570,7 @@ function ApproveExportOrder() {
                         <Option value="Completed">Completed</Option>
                     </Select>
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={12} md={8} lg={8}>
                     <RangePicker
                         style={{ width: '100%' }}
                         value={filters.dateRange}
@@ -447,14 +587,21 @@ function ApproveExportOrder() {
                 pagination={{
                     total: orders.length,
                     pageSize: 10,
-                    showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`
+                    showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
+                    showSizeChanger: true
                 }}
+                scroll={{ x: 'max-content' }}
             />
             <DetailModal />
 
             {/* Approval Modal */}
             <Modal
-                title={selectedOrder?.status === 'New' ? 'Submit Export Order for Approval' : 'Approve Export Order'}
+                title={
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} />
+                        {selectedOrder?.status === 'New' ? 'Submit Export Order for Approval' : 'Approve Export Order'}
+                    </div>
+                }
                 open={approvalModalVisible}
                 onOk={handleApprove}
                 onCancel={() => {
@@ -462,14 +609,17 @@ function ApproveExportOrder() {
                     setReason('');
                 }}
                 okText={selectedOrder?.status === 'New' ? 'Submit' : 'Approve'}
+                okButtonProps={{ style: { backgroundColor: '#52c41a', borderColor: '#52c41a' } }}
                 cancelText="Cancel"
             >
-                <p>
-                    {selectedOrder?.status === 'New'
-                        ? 'Are you sure you want to submit this export order for approval?'
-                        : 'Are you sure you want to approve this export order?'
-                    }
-                </p>
+                <div style={{ backgroundColor: '#f6ffed', padding: 12, borderRadius: 6, marginBottom: 16 }}>
+                    <p style={{ margin: 0 }}>
+                        {selectedOrder?.status === 'New'
+                            ? 'Are you sure you want to submit this export order for approval?'
+                            : 'Are you sure you want to approve this export order?'
+                        }
+                    </p>
+                </div>
                 <TextArea
                     rows={4}
                     placeholder={selectedOrder?.status === 'New' ? 'Enter submission note (optional)' : 'Enter approval note (optional)'}
@@ -481,7 +631,12 @@ function ApproveExportOrder() {
 
             {/* Reject Modal */}
             <Modal
-                title="Reject Export Order"
+                title={
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <CloseCircleOutlined style={{ color: '#f5222d', marginRight: 8 }} />
+                        Reject Export Order
+                    </div>
+                }
                 open={rejectModalVisible}
                 onOk={handleReject}
                 onCancel={() => {
@@ -492,7 +647,9 @@ function ApproveExportOrder() {
                 okType="danger"
                 cancelText="Cancel"
             >
-                <p>Please provide a reason for rejecting this export order:</p>
+                <div style={{ backgroundColor: '#fff1f0', padding: 12, borderRadius: 6, marginBottom: 16 }}>
+                    <p style={{ margin: 0 }}>Please provide a reason for rejecting this export order:</p>
+                </div>
                 <TextArea
                     rows={4}
                     placeholder="Enter rejection reason"

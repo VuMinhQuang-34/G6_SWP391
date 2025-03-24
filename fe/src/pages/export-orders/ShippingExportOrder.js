@@ -1,10 +1,142 @@
 // src/pages/ShippingExportOrder.js
 import React, { useEffect, useState } from 'react';
-import { Table, Button, message, Tag, Space, Modal, Descriptions, Divider, Typography } from 'antd';
+import { Table, Button, message, Tag, Space, Modal, Descriptions, Divider, Typography, Steps, Select } from 'antd';
 import axios from 'axios';
 import moment from 'moment';
 
 const { Title, Text } = Typography;
+const { Step } = Steps;
+const { Option } = Select;
+
+// Custom status progress component
+const StatusProgress = ({ status }) => {
+    if (status === 'Rejected' || status === 'Cancelled') {
+        return (
+            <Tag color={status === 'Rejected' ? '#f5222d' : '#8c8c8c'} style={{ padding: '4px 8px' }}>
+                {status}
+            </Tag>
+        );
+    }
+
+    const statusFlow = ['New', 'Pending', 'Approved', 'Shipping', 'Completed'];
+    const currentIndex = statusFlow.indexOf(status);
+
+    const stepColors = {
+        'New': '#1890ff',
+        'Pending': '#fa8c16',
+        'Approved': '#52c41a',
+        'Shipping': '#722ed1',
+        'Completed': '#13c2c2'
+    };
+
+    return (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+            {statusFlow.map((step, index) => {
+                // Determine the status of this step
+                let stepStatus = 'wait';
+                if (index < currentIndex) stepStatus = 'finish';
+                if (index === currentIndex) stepStatus = 'process';
+
+                // Determine the color based on status
+                let color = '#d9d9d9'; // wait color
+                if (stepStatus === 'finish') color = '#52c41a';
+                if (stepStatus === 'process') color = stepColors[step];
+
+                return (
+                    <div key={step} style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        width: '20%'
+                    }}>
+                        <div style={{
+                            width: '20px',
+                            height: '20px',
+                            borderRadius: '50%',
+                            backgroundColor: color,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#fff',
+                            fontSize: '12px',
+                            marginBottom: '4px'
+                        }}>
+                            {index + 1}
+                        </div>
+                        <div style={{
+                            fontSize: '11px',
+                            color: stepStatus === 'process' ? color : 'rgba(0,0,0,0.65)',
+                            fontWeight: stepStatus === 'process' ? 'bold' : 'normal',
+                            textAlign: 'center'
+                        }}>
+                            {step}
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+};
+
+// Component chọn bin cho sản phẩm
+const BinSelection = ({ bookId, onSelectBin, quantity }) => {
+    const [bins, setBins] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [selectedBin, setSelectedBin] = useState(null);
+
+    useEffect(() => {
+        const fetchBins = async () => {
+            setLoading(true);
+            try {
+                const response = await axios.get(`http://localhost:9999/api/books/${bookId}/bins`);
+                if (response.data.success) {
+                    setBins(response.data.data);
+                    // Auto-select bin đầu tiên nếu có
+                    if (response.data.data.length > 0) {
+                        setSelectedBin(response.data.data[0].binId);
+                        onSelectBin(response.data.data[0].binId);
+                    }
+                }
+            } catch (error) {
+                message.error('Failed to load bin data');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (bookId) {
+            fetchBins();
+        }
+    }, [bookId]);
+
+    const handleChange = (value) => {
+        setSelectedBin(value);
+        onSelectBin(value);
+    };
+
+    return (
+        <div>
+            <Select
+                loading={loading}
+                value={selectedBin}
+                onChange={handleChange}
+                style={{ width: '100%' }}
+                placeholder="Select bin"
+                disabled={!bookId || loading}
+            >
+                {bins.map(bin => (
+                    <Option
+                        key={bin.binId}
+                        value={bin.binId}
+                        disabled={bin.availableQuantity < quantity}
+                    >
+                        {bin.binName} ({bin.availableQuantity} available)
+                    </Option>
+                ))}
+            </Select>
+        </div>
+    );
+};
 
 function ShippingExportOrder() {
     const [orders, setOrders] = useState([]);
@@ -18,6 +150,29 @@ function ShippingExportOrder() {
         'Approved': 'green',
         'Shipping': 'blue',
         'Completed': 'purple'
+    };
+
+    const statusFlow = ['New', 'Pending', 'Approved', 'Shipping', 'Completed'];
+
+    const getStatusStepIndex = (status) => {
+        return statusFlow.indexOf(status);
+    };
+
+    const getStepStatus = (orderStatus, stepStatus) => {
+        const orderIndex = getStatusStepIndex(orderStatus);
+        const stepIndex = getStatusStepIndex(stepStatus);
+
+        if (orderIndex === stepIndex) return 'process';
+        if (orderIndex > stepIndex) return 'finish';
+        return 'wait';
+    };
+
+    const stepColors = {
+        'New': '#1890ff',
+        'Pending': '#fa8c16',
+        'Approved': '#52c41a',
+        'Shipping': '#722ed1',
+        'Completed': '#13c2c2'
     };
 
     const fetchOrders = async () => {
@@ -144,11 +299,8 @@ function ShippingExportOrder() {
             title: 'Status',
             dataIndex: 'status',
             key: 'status',
-            render: (status) => (
-                <Tag color={statusColors[status]}>
-                    {status}
-                </Tag>
-            )
+            width: 300,
+            render: (status) => <StatusProgress status={status} />
         },
         {
             title: 'Order Date',
@@ -226,6 +378,13 @@ function ShippingExportOrder() {
                 <div style={{ maxHeight: '60vh', overflow: 'auto', padding: '0 10px' }}>
                     {selectedOrder && orderDetails && (
                         <>
+                            <div style={{ marginBottom: 20 }}>
+                                <Text strong>Order Status:</Text>
+                                <div style={{ marginTop: 10 }}>
+                                    <StatusProgress status={orderDetails.status} />
+                                </div>
+                            </div>
+
                             <Descriptions
                                 title={<Text strong>Order Information</Text>}
                                 bordered
@@ -238,11 +397,6 @@ function ShippingExportOrder() {
                                 </Descriptions.Item>
                                 <Descriptions.Item label="Export Date">
                                     {moment(orderDetails.exportDate).format('DD/MM/YYYY')}
-                                </Descriptions.Item>
-                                <Descriptions.Item label="Status" span={2}>
-                                    <Tag color={statusColors[orderDetails.status]}>
-                                        {orderDetails.status}
-                                    </Tag>
                                 </Descriptions.Item>
                             </Descriptions>
 

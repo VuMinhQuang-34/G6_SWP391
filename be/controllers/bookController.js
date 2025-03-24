@@ -42,7 +42,7 @@ const createBook = async (req, res) => {
                     message: 'Image must be a valid base64 image string'
                 });
             }
-            
+
             // Check image size (limit to 5MB)
             const base64Size = Math.ceil((Image.length - 22) * 3 / 4);
             if (base64Size > 5 * 1024 * 1024) {
@@ -222,11 +222,8 @@ const deleteBook = async (req, res) => {
             });
         }
 
-        // Soft delete - chỉ cập nhật trạng thái
-        await book.update({
-            Status: 'Inactive',
-            Edit_Date: new Date()
-        });
+        // Xóa sách
+        await book.destroy();
 
         return res.status(200).json({
             success: true,
@@ -241,15 +238,78 @@ const deleteBook = async (req, res) => {
     }
 };
 
-// Thêm hàm kiểm tra chuỗi rỗng hoặc chỉ chứa khoảng trắng
-const isEmptyOrWhitespace = (str) => {
-    return !str || str.trim().length === 0;
+// Lấy danh sách bin chứa một sách cụ thể
+const getBookBins = async (req, res) => {
+    try {
+        const bookId = req.params.id;
+
+        // Kiểm tra sách có tồn tại không
+        const book = await Book.findByPk(bookId);
+        if (!book) {
+            return res.status(404).json({
+                success: false,
+                message: `Book with ID ${bookId} not found`
+            });
+        }
+
+        // Lấy tất cả bin chứa sách này từ bảng BookBin
+        const bookBins = await db.BookBin.findAll({
+            where: { BookId: bookId },
+            attributes: ['BookBinId', 'BinId', 'BookId', 'Quantity']
+        });
+
+        if (bookBins.length === 0) {
+            return res.status(200).json({
+                success: true,
+                message: `No bins found containing book ID ${bookId}`,
+                data: []
+            });
+        }
+
+        // Lấy thông tin chi tiết về các bin
+        const binIds = bookBins.map(bb => bb.BinId);
+        const bins = await db.Bin.findAll({
+            where: { BinId: binIds },
+            attributes: ['BinId', 'Name', 'ShelfId']
+        });
+
+        // Kết hợp dữ liệu từ bookBins và bins
+        const result = bookBins.map(bb => {
+            const bin = bins.find(b => b.BinId === bb.BinId);
+            return {
+                binId: bb.BinId,
+                binName: bin ? bin.Name : 'Unknown Bin',
+                shelfId: bin ? bin.ShelfId : null,
+                bookBinId: bb.BookBinId,
+                availableQuantity: parseInt(bb.Quantity) // Đảm bảo trả về kiểu số
+            };
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: `Bins containing book ID ${bookId} retrieved successfully`,
+            data: result
+        });
+    } catch (error) {
+        console.error('Error in getBookBins:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error retrieving bins for book',
+            error: error.message
+        });
+    }
 };
+
+// Helper function to check if a string is empty or contains only whitespace
+function isEmptyOrWhitespace(str) {
+    return !str || str.trim() === '';
+}
 
 export {
     createBook,
     getAllBooks,
     getBookById,
     updateBook,
-    deleteBook
+    deleteBook,
+    getBookBins
 };
