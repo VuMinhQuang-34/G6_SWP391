@@ -45,7 +45,7 @@ const UserDetail = () => {
     // Validate Vietnamese Phone Number (10 digits, starting with 0)
     const phoneRegex = /^0[3|5|7|8|9][0-9]{8}$/;
     if (!formData.phoneNumber.match(phoneRegex)) {
-      newErrors.phoneNumber = "Invalid phone number! (10 digits, starting with 0)";
+      newErrors.phoneNumber = "Invalid phone number! (10 digits, starting with 03, 05, 07, 08, 09)";
       isValid = false;
     }
 

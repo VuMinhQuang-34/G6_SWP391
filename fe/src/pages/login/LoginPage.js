@@ -170,7 +170,7 @@ const LoginPage = () => {
                             Login
                         </Button>
                     </Form.Item>
-                    <Form.Item>
+                    {/* <Form.Item>
                         <Tooltip title="Click to reset your password">
                             <Button
                                 type="link"
@@ -185,7 +185,7 @@ const LoginPage = () => {
                                 Forgot Password?
                             </Button>
                         </Tooltip>
-                    </Form.Item>
+                    </Form.Item> */}
                 </Form>
 
                 <Modal

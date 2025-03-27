@@ -27,7 +27,7 @@ const AppFooter = () => {
                 </Text>
               </div>
               <Text style={{ color: '#1976d2', opacity: 0.8 }}>
-                © 2024 Warehouse Management System. All Rights Reserved
+                © 2025 Warehouse Management System. Group6
               </Text>
             </Space>
           </Col>

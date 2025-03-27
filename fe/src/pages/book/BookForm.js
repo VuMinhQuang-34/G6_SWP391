@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Form, Input, Select, Button, InputNumber, message, Space, Upload } from 'antd';
+import { Form, Input, Select, Button, InputNumber, Space } from 'antd';
 import axios from '../../configs/axios';
 import { getCurrentYear } from '../../utils/dateUtils';
 import { EditOutlined, PlusOutlined } from '@ant-design/icons';
+import { toast } from 'react-toastify';
 
 const { Option } = Select;
 
@@ -91,9 +92,9 @@ const getValidationRules = () => {
         Language: [
             { required: true, message: 'Please select the language!' }
         ],
-        Status: [
-            { required: true, message: 'Please select the status!' }
-        ]
+        // Status: [
+        //     { required: true, message: 'Please select the status!' }
+        // ]
     };
 };
 
@@ -102,16 +103,16 @@ const BookForm = ({ initialValues, onCancel }) => {
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
-    const [imageUrl, setImageUrl] = useState(initialValues?.Image || null);
 
     useEffect(() => {
         const fetchCategories = async () => {
             try {
                 setLoading(true);
                 const { data } = await axios.get('/categories');
+                console.log('Fetched categories:', data);
                 setCategories(data);
             } catch (error) {
-                message.error('Failed to fetch categories');
+                toast.error('Failed to fetch categories');
                 console.error('Error fetching categories:', error);
             } finally {
                 setLoading(false);
@@ -122,10 +123,9 @@ const BookForm = ({ initialValues, onCancel }) => {
     }, []);
 
     useEffect(() => {
-        console.log('initialValues in BookForm:', initialValues); // Debug log
+        console.log('initialValues in BookForm:', initialValues);
 
         if (initialValues?.BookId) {
-            // Đảm bảo set tất cả các trường form
             const formValues = {
                 Title: initialValues.Title,
                 Author: initialValues.Author,
@@ -134,103 +134,92 @@ const BookForm = ({ initialValues, onCancel }) => {
                 PublishingYear: initialValues.PublishingYear,
                 NumberOfPages: initialValues.NumberOfPages,
                 Language: initialValues.Language,
-                Status: initialValues.Status || 'Active'
+                // Status: initialValues.Status || 'Active'
+                Status: 'Active'
             };
-            console.log('Setting form values:', formValues); // Debug log
+            console.log('Setting form values:', formValues);
             form.setFieldsValue(formValues);
         } else {
-            console.log('Resetting form to defaults'); // Debug log
+            console.log('Resetting form to defaults');
             form.resetFields();
             form.setFieldsValue(DEFAULT_VALUES);
         }
     }, [initialValues, form]);
 
-    // Add function to handle image upload
-    const handleImageChange = (info) => {
-        if (info.file.status === 'uploading') {
-            return;
-        }
-        if (info.file.status === 'done') {
-            const reader = new FileReader();
-            reader.addEventListener('load', () => {
-                const base64String = reader.result;
-                setImageUrl(base64String);
-                form.setFieldsValue({ Image: base64String });
-            });
-            reader.readAsDataURL(info.file.originFileObj);
-        }
-    };
-
-    // Hiển thị ảnh trong form
-    const renderImage = () => {
-        if (!imageUrl && initialValues?.Image) {
-            const image = initialValues.Image;
-            if (typeof image === 'string') {
-                return image;
-            } else if (image.type === 'Buffer' && Array.isArray(image.data)) {
-                // Convert Buffer data to base64
-                const bytes = new Uint8Array(image.data);
-                const binary = bytes.reduce((acc, byte) => acc + String.fromCharCode(byte), '');
-                return `data:image/jpeg;base64,${btoa(binary)}`;
-            }
-        }
-        return imageUrl;
-    };
-
-    // Modify handleSubmit function to add validation before sending
     const handleSubmit = async (e) => {
         e?.preventDefault();
         try {
             setSubmitting(true);
             const values = await form.validateFields();
 
-            // Add image to values if available
-            if (imageUrl) {
-                values.Image = imageUrl;
-            }
-
-            // Check one more time before sending
+            // Check string fields before sending
             const stringFields = ['Title', 'Author', 'Publisher'];
             for (const field of stringFields) {
                 if (isEmptyOrWhitespace(values[field])) {
-                    message.error(`${field} cannot be empty or contain only whitespace!`);
+                    toast.error(`${field} cannot be empty or contain only whitespace!`);
+                    setSubmitting(false);
                     return;
                 }
             }
 
+            // Ensure other required fields are present
+            if (!values.CategoryId) {
+                toast.error('Please select a category');
+                setSubmitting(false);
+                return;
+            }
+
+            if (!values.PublishingYear) {
+                toast.error('Please enter publishing year');
+                setSubmitting(false);
+                return;
+            }
+
+            if (!values.NumberOfPages) {
+                toast.error('Please enter number of pages');
+                setSubmitting(false);
+                return;
+            }
+
+            if (!values.Language) {
+                toast.error('Please select a language');
+                setSubmitting(false);
+                return;
+            }
+
             const currentDate = new Date();
 
-            // Sửa lại logic kiểm tra để sử dụng BookId
             const isUpdate = initialValues?.BookId;
             const endpoint = isUpdate ? `/books/${initialValues.BookId}` : '/books';
             const method = isUpdate ? 'put' : 'post';
 
-            // Set các giá trị ngày tháng
             values.Edit_Date = currentDate;
             if (!isUpdate) {
                 values.Created_Date = currentDate;
             }
 
-            // Trim các giá trị string trước khi gửi
+            // Trim string values before sending
             stringFields.forEach(field => {
                 if (values[field]) {
                     values[field] = values[field].trim();
                 }
             });
 
-            console.log('Sending request:', { method, endpoint, values }); // Debug log
+            console.log('Sending request:', { method, endpoint, values });
 
             const { data } = await axios[method](endpoint, values);
 
             if (data.success) {
-                message.success(`Book ${isUpdate ? 'updated' : 'created'} successfully`);
+                toast.success(`Book ${isUpdate ? 'updated' : 'created'} successfully`);
                 if (!isUpdate) form.resetFields();
                 onCancel();
                 window.dispatchEvent(new CustomEvent('REFRESH_BOOKS'));
+            } else {
+                toast.error(data.message || `Failed to ${isUpdate ? 'update' : 'create'} book`);
             }
         } catch (error) {
-            const errorMsg = error.response?.data?.message || 'Failed to save book';
-            message.error(errorMsg);
+            const errorMessage = error.response?.data?.message || `Failed to save book: ${error.message}`;
+            toast.error(errorMessage);
             console.error('Error:', error);
         } finally {
             setSubmitting(false);
@@ -242,46 +231,6 @@ const BookForm = ({ initialValues, onCancel }) => {
         const currentYear = getCurrentYear();
 
         return [
-            {
-                name: "Image",
-                label: "Book Cover",
-                component: (
-                    <Upload
-                        listType="picture-card"
-                        showUploadList={false}
-                        beforeUpload={(file) => {
-                            const isImage = file.type.startsWith('image/');
-                            if (!isImage) {
-                                message.error('You can only upload image files!');
-                            }
-                            const isLt2M = file.size / 1024 / 1024 < 2;
-                            if (!isLt2M) {
-                                message.error('Image must smaller than 2MB!');
-                            }
-                            return isImage && isLt2M;
-                        }}
-                        customRequest={({ file, onSuccess }) => {
-                            setTimeout(() => {
-                                onSuccess("ok");
-                            }, 0);
-                        }}
-                        onChange={handleImageChange}
-                    >
-                        {renderImage() ? (
-                            <img
-                                src={renderImage()}
-                                alt="Book cover"
-                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                            />
-                        ) : (
-                            <div>
-                                <PlusOutlined />
-                                <div style={{ marginTop: 8 }}>Upload</div>
-                            </div>
-                        )}
-                    </Upload>
-                )
-            },
             {
                 name: "Title",
                 label: "Title",
@@ -301,7 +250,11 @@ const BookForm = ({ initialValues, onCancel }) => {
                 component: (
                     <Select loading={loading}>
                         {categories.map(category => (
-                            <Option key={category.categoryId} value={category.categoryId}>
+                            <Option
+                                key={category.categoryId}
+                                value={category.categoryId}
+                                label={category.CategoryName}
+                            >
                                 {category.CategoryName}
                             </Option>
                         ))}
@@ -346,22 +299,22 @@ const BookForm = ({ initialValues, onCancel }) => {
                     </Select>
                 )
             },
-            {
-                name: "Status",
-                label: "Status",
-                rules: rules.Status,
-                component: (
-                    <Select>
-                        {STATUS_OPTIONS.map(option => (
-                            <Option key={option.value} value={option.value}>
-                                {option.label}
-                            </Option>
-                        ))}
-                    </Select>
-                )
-            }
+            // {
+            //     name: "Status",
+            //     label: "Status",
+            //     rules: rules.Status,
+            //     component: (
+            //         <Select>
+            //             {STATUS_OPTIONS.map(option => (
+            //                 <Option key={option.value} value={option.value}>
+            //                     {option.label}
+            //                 </Option>
+            //             ))}
+            //         </Select>
+            //     )
+            // }
         ];
-    }, [categories, loading, imageUrl]);
+    }, [categories, loading]);
 
     if (loading) {
         return <div>Loading categories...</div>;

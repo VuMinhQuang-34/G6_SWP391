@@ -14,8 +14,9 @@ const { TextArea } = Input;
 const { confirm } = Modal;
 const { Title, Text } = Typography;
 const { Option } = Select;
+// Memoized Header Component
 
-// BinSelection component từ CreateExportRequest.js
+// Modify BinSelection component to match CreateExportRequest.js style
 const BinSelection = React.memo(({ bookId, onSelectBins, totalQuantity, selectedBins = [] }) => {
     const [bins, setBins] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -25,6 +26,7 @@ const BinSelection = React.memo(({ bookId, onSelectBins, totalQuantity, selected
     const [lastUpdated, setLastUpdated] = useState(null);
     const prevBinsRef = useRef(selectedBins);
     const onSelectBinsRef = useRef(onSelectBins);
+    const initialLoadRef = useRef(true);
 
     // Cập nhật ref khi onSelectBins thay đổi
     useEffect(() => {
@@ -34,7 +36,7 @@ const BinSelection = React.memo(({ bookId, onSelectBins, totalQuantity, selected
     // Khởi tạo selectedBinItems từ selectedBins ban đầu
     useEffect(() => {
         if (selectedBins && selectedBins.length > 0 &&
-            JSON.stringify(selectedBins) !== JSON.stringify(prevBinsRef.current)) {
+            (initialLoadRef.current || JSON.stringify(selectedBins) !== JSON.stringify(prevBinsRef.current))) {
             // Gộp các bin có cùng binId
             const groupedBins = {};
             selectedBins.forEach(bin => {
@@ -51,6 +53,7 @@ const BinSelection = React.memo(({ bookId, onSelectBins, totalQuantity, selected
 
             setSelectedBinItems(Object.values(groupedBins));
             prevBinsRef.current = selectedBins;
+            initialLoadRef.current = false;
         }
     }, [selectedBins]);
 
@@ -63,8 +66,22 @@ const BinSelection = React.memo(({ bookId, onSelectBins, totalQuantity, selected
             try {
                 const response = await axios.get(`http://localhost:9999/api/books/${bookId}/bins`);
                 if (response.data.success) {
-                    setBins(response.data.data);
-                    setAvailableBins(response.data.data);
+                    const fetchedBins = response.data.data;
+                    setBins(fetchedBins);
+
+                    // Cập nhật availableBins và maxQuantity cho các bin đã chọn
+                    const updatedAvailableBins = fetchedBins.map(bin => {
+                        const selectedBin = selectedBinItems.find(sb => sb.binId === bin.binId);
+                        if (selectedBin) {
+                            return {
+                                ...bin,
+                                availableQuantity: bin.availableQuantity + selectedBin.quantity
+                            };
+                        }
+                        return bin;
+                    });
+
+                    setAvailableBins(updatedAvailableBins);
                 }
             } catch (error) {
                 message.error('Failed to load bin data');
@@ -75,14 +92,14 @@ const BinSelection = React.memo(({ bookId, onSelectBins, totalQuantity, selected
         };
 
         fetchBins();
-    }, [bookId]);
+    }, [bookId, selectedBinItems]);
 
     // Tính toán tổng số lượng đã chọn 
     useEffect(() => {
         const total = selectedBinItems.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
         setTotalSelected(total);
 
-        // Gọi onSelectBins chỉ khi selectedBinItems thay đổi bởi người dùng (thông qua addBin, removeBin, updateQuantity)
+        // Gọi onSelectBins chỉ khi selectedBinItems thay đổi bởi người dùng
         if (lastUpdated) {
             const formattedBins = selectedBinItems.map(item => ({
                 binId: item.binId,
@@ -91,7 +108,6 @@ const BinSelection = React.memo(({ bookId, onSelectBins, totalQuantity, selected
                 maxQuantity: item.maxQuantity
             }));
 
-            // Sử dụng ref để tránh vòng lặp vô hạn
             onSelectBinsRef.current(formattedBins);
         }
     }, [selectedBinItems, lastUpdated]);
@@ -187,7 +203,7 @@ const BinSelection = React.memo(({ bookId, onSelectBins, totalQuantity, selected
             </div>
 
             {selectedBinItems.map((item, index) => (
-                <div key={index} style={{ display: 'flex', marginBottom: 8, alignItems: 'center' }}>
+                <div key={`${item.binId}-${index}`} style={{ display: 'flex', marginBottom: 8, alignItems: 'center' }}>
                     <div style={{ width: '60%', paddingRight: 8 }}>
                         <Tag color="blue">
                             {item.binName} (Max: {item.maxQuantity})
@@ -329,34 +345,7 @@ const StatusProgress = memo(({ status }) => {
     );
 });
 
-// Memoized Header Component
-const Header = memo(({ ExportOrderId, Status, statusColors, navigate }) => (
-    <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 24,
-        backgroundColor: 'white',
-        padding: '16px 24px',
-        borderRadius: '8px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-    }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <Button
-                onClick={() => navigate(-1)}
-                icon={<ArrowLeftOutlined />}
-            >
-                Back to List
-            </Button>
-            <span style={{ fontSize: '20px', fontWeight: 'bold' }}>
-                Export Order #{ExportOrderId}
-            </span>
-        </div>
-        <div style={{ width: '300px' }}>
-            <StatusProgress status={Status} />
-        </div>
-    </div>
-));
+
 
 // Memoized Order Information Component
 const OrderInfo = memo(({ CreatedBy, Created_Date, exportDate, Note }) => (
@@ -484,6 +473,140 @@ const StatusHistory = memo(({ logs, statusColors }) => (
     </Card>
 ));
 
+// BookSelection component
+const BookSelection = memo(({ availableBooks, onSelectBooks, existingBooks = [] }) => {
+    const [selectedBooks, setSelectedBooks] = useState([]);
+    const [loading, setLoading] = useState(false);
+
+    // Initialize selectedBooks with existingBooks
+    useEffect(() => {
+        if (existingBooks.length > 0) {
+            setSelectedBooks(existingBooks);
+        }
+    }, [existingBooks]);
+
+    // Get current selected book IDs for Select value
+    const selectedBookIds = useMemo(() => {
+        return selectedBooks.map(book => book.productId);
+    }, [selectedBooks]);
+
+    // Handle book selection
+    const handleBookSelect = async (bookIds) => {
+        if (!bookIds || bookIds.length === 0) {
+            setSelectedBooks([]);
+            onSelectBooks([]);
+            return;
+        }
+
+        try {
+            setLoading(true);
+            // Lọc những sách mới được chọn (chưa có trong existingBooks)
+            const existingBookIds = existingBooks.map(item => item.productId);
+            const newBookIds = bookIds.filter(id => !existingBookIds.includes(id));
+
+            // Giữ lại những sách đã chọn trước đó và còn nằm trong danh sách hiện tại
+            const remainingItems = existingBooks.filter(item => bookIds.includes(item.productId));
+
+            // Nếu không có sách mới, chỉ cần cập nhật danh sách đã chọn
+            if (newBookIds.length === 0) {
+                setSelectedBooks(remainingItems);
+                onSelectBooks(remainingItems);
+                return;
+            }
+
+            // Lấy thông tin sách từ danh sách availableBooks
+            const newBooks = availableBooks.filter(book => newBookIds.includes(book.BookId));
+
+            // Lấy thông tin stock cho các sách mới
+            const stockPromises = newBooks.map(book =>
+                axios.get(`http://localhost:9999/api/stocks/${book.BookId}`)
+                    .then(response => {
+                        const stockResponse = response.data;
+                        const stockQuantity = stockResponse.code === 200 ? stockResponse.data[0].quantity : 0;
+
+                        return {
+                            productId: book.BookId,
+                            productName: book.Title,
+                            quantity: 1,
+                            unitPrice: 0,
+                            note: '',
+                            bins: []
+                        };
+                    })
+                    .catch(error => {
+                        console.error(`Error fetching stock for book ${book.BookId}:`, error);
+                        return {
+                            productId: book.BookId,
+                            productName: book.Title,
+                            quantity: 1,
+                            unitPrice: 0,
+                            note: '',
+                            bins: []
+                        };
+                    })
+            );
+
+            const newBookItems = await Promise.all(stockPromises);
+            // Kết hợp sách cũ và sách mới
+            const updatedBooks = [...remainingItems, ...newBookItems];
+            setSelectedBooks(updatedBooks);
+            onSelectBooks(updatedBooks);
+        } catch (error) {
+            message.error('Failed to fetch stock information');
+            console.error('Error fetching stock information:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <Select
+            mode="multiple"
+            placeholder="Select books to add"
+            onChange={handleBookSelect}
+            style={{ width: 300 }}
+            optionFilterProp="children"
+            showSearch
+            loading={loading}
+            value={selectedBookIds}
+        >
+            {availableBooks.map((book) => (
+                <Option
+                    key={book.BookId}
+                    value={book.BookId}
+                    disabled={book.Status !== 'Active'}
+                >
+                    {book.Title} - {book.Author} - {book.Publisher}
+                </Option>
+            ))}
+        </Select>
+    );
+});
+
+// Memoized Table Component
+const ProductTable = memo(({ data, columns, isEditMode }) => (
+    <Table
+        dataSource={data}
+        columns={columns}
+        pagination={false}
+        rowKey="productId"
+        style={{ marginTop: 16, width: '100%' }}
+        scroll={{ x: isEditMode ? 1200 : 1000 }}
+    />
+));
+
+// Memoized Product Card Component
+const ProductCard = memo(({ title, extra, children }) => (
+    <Card
+        title={<span style={{ fontSize: '16px' }}>{title}</span>}
+        bordered={false}
+        style={{ width: '100%' }}
+        extra={extra}
+    >
+        {children}
+    </Card>
+));
+
 // Main Component
 const ExportOrderDetailAdvanced = () => {
     const { id } = useParams();
@@ -501,7 +624,23 @@ const ExportOrderDetailAdvanced = () => {
     const [itemBins, setItemBins] = useState({});
     const [hasChanges, setHasChanges] = useState(false);
     const [deletingOrder, setDeletingOrder] = useState(false);
+    const [availableBooks, setAvailableBooks] = useState([]);
 
+    // Destructure order properties early
+    const {
+        id: ExportOrderId,
+        status: Status,
+        note: Note,
+        createdBy: CreatedBy,
+        orderDate: Created_Date,
+        exportDate,
+        recipientName,
+        recipientPhone,
+        shippingAddress,
+        items: ExportOrderDetails
+    } = order || {};
+
+    // Memoize status colors and actions
     const statusColors = useMemo(() => ({
         'New': 'blue',
         'Pending': 'orange',
@@ -520,6 +659,7 @@ const ExportOrderDetailAdvanced = () => {
         'Completed': []
     }), []);
 
+    // Memoize fetch functions
     const fetchOrderDetail = useCallback(async () => {
         try {
             setLoading(true);
@@ -538,6 +678,54 @@ const ExportOrderDetailAdvanced = () => {
         }
     }, [id]);
 
+    const fetchAvailableBooks = useCallback(async () => {
+        try {
+            const response = await axios.get('http://localhost:9999/api/books');
+            if (response.data.success) {
+                // Filter out books that are already in the order
+                const selectedBookIds = editableDetails.map(item => item.productId);
+                const filteredBooks = response.data.data.filter(book =>
+                    !selectedBookIds.includes(book.BookId)
+                );
+                setAvailableBooks(filteredBooks);
+            }
+        } catch (error) {
+            console.error('Error fetching available books:', error);
+            message.error('Failed to load available books');
+        }
+    }, []);
+
+    // Add useEffect to initialize editableDetails when order is loaded
+    useEffect(() => {
+        if (order && order.items) {
+            // Transform order items to match editableDetails format
+            const transformedItems = order.items.map(item => ({
+                productId: item.productId,
+                productName: item.productName,
+                quantity: item.quantity,
+                unitPrice: parseFloat(item.unitPrice),
+                note: item.note || '',
+                bins: item.bins || []
+            }));
+            setEditableDetails(transformedItems);
+
+            // Initialize itemBins with the exact bin data from API
+            const initialItemBins = {};
+            order.items.forEach(item => {
+                if (item.bins && item.bins.length > 0) {
+                    initialItemBins[item.productId] = item.bins.map(bin => ({
+                        binId: bin.binId,
+                        binName: bin.binName,
+                        quantity: bin.quantity,
+                        maxQuantity: bin.quantity // Use current quantity as max
+                    }));
+                }
+            });
+            setItemBins(initialItemBins);
+        }
+    }, [order]);
+
+    // Memoize handlers
     const handleDetailChange = useCallback((index, field, value) => {
         setEditableDetails(prevDetails => {
             const newDetails = [...prevDetails];
@@ -546,18 +734,15 @@ const ExportOrderDetailAdvanced = () => {
                 [field]: value
             };
 
-            // Nếu thay đổi quantity, cần kiểm tra và xóa bins nếu tổng qty vượt quá
             if (field === 'quantity') {
                 const detail = newDetails[index];
                 const detailBins = itemBins[detail.productId] || [];
-
                 const totalBinQuantity = detailBins.reduce((sum, bin) => sum + bin.quantity, 0);
 
-                // Nếu quantity mới nhỏ hơn tổng bin hiện tại, reset bins
                 if (value < totalBinQuantity) {
                     setItemBins(prev => ({
                         ...prev,
-                        [detail.productId]: [] // Reset bins for this product
+                        [detail.productId]: []
                     }));
                 }
             }
@@ -567,7 +752,6 @@ const ExportOrderDetailAdvanced = () => {
         setHasChanges(true);
     }, [itemBins]);
 
-    // Hàm xử lý khi chọn bin cho sản phẩm
     const handleBinSelect = useCallback((productId, bins) => {
         setItemBins(prev => ({
             ...prev,
@@ -576,237 +760,105 @@ const ExportOrderDetailAdvanced = () => {
         setHasChanges(true);
     }, []);
 
-    const handleUpdateStatus = useCallback(async (newStatus) => {
-        try {
-            await axios.patch(`http://localhost:9999/api/export-orders/${id}/status`, {
-                status: newStatus,
-                reason: reason
-            });
-            toast.success(`✨ Status updated to "${newStatus}" successfully`);
-            fetchOrderDetail();
-            setStatusModalVisible(false);
-            setReason('');
-        } catch (error) {
-            toast.error('Failed to update status');
-        }
-    }, [id, reason, fetchOrderDetail]);
+    const handleBookSelection = useCallback((newBooks) => {
+        setEditableDetails(newBooks);
+        setHasChanges(true);
+    }, []);
 
-    // Hàm xử lý xóa đơn hàng
+    const handleUpdate = useCallback(async () => {
+        try {
+            // Validate quantities before updating
+            const invalidItems = editableDetails.map(detail => {
+                const detailBins = itemBins[detail.productId] || [];
+                const totalBinQuantity = detailBins.reduce((sum, bin) => sum + (bin.quantity || 0), 0);
+
+                return {
+                    productName: detail.productName,
+                    requestedQuantity: detail.quantity,
+                    binQuantity: totalBinQuantity,
+                    isValid: detail.quantity === totalBinQuantity
+                };
+            }).filter(item => !item.isValid);
+
+            if (invalidItems.length > 0) {
+                const errorMessages = invalidItems.map(item =>
+                    `"${item.productName}": Requested quantity (${item.requestedQuantity}) does not match bin quantity (${item.binQuantity})`
+                );
+
+                toast.error(
+                    <div>
+                        <div>Cannot update order. Please fix the following issues:</div>
+                        {errorMessages.map((msg, index) => (
+                            <div key={index} style={{ marginTop: '8px' }}>• {msg}</div>
+                        ))}
+                    </div>
+                );
+                return;
+            }
+
+            // Validate required fields
+            const invalidFields = editableDetails.filter(detail =>
+                !detail.quantity ||
+                !detail.unitPrice ||
+                detail.quantity <= 0 ||
+                detail.unitPrice <= 0
+            );
+
+            if (invalidFields.length > 0) {
+                toast.error('Please fill in all required fields (Quantity and Unit Price must be greater than 0)');
+                return;
+            }
+
+            setLoading(true);
+            const updatedItems = editableDetails.map(detail => ({
+                productId: detail.productId,
+                quantity: detail.quantity,
+                price: detail.unitPrice,
+                note: detail.note,
+                bins: itemBins[detail.productId] || []
+            }));
+
+            const response = await axios.put(`http://localhost:9999/api/export-orders/${id}`, {
+                items: updatedItems
+            });
+
+            if (response.data.success) {
+                toast.success('Order updated successfully');
+                setHasChanges(false);
+                navigate('/export-orders');
+            }
+        } catch (error) {
+            console.error('Error updating order:', error);
+            toast.error('Failed to update order');
+        } finally {
+            setLoading(false);
+        }
+    }, [id, editableDetails, itemBins, navigate]);
+
+    const showDeleteConfirm = useCallback(() => {
+        setDeleteModalVisible(true);
+    }, []);
+
     const handleDelete = useCallback(async () => {
         try {
-            console.log('Executing delete for order:', id);
             setDeletingOrder(true);
-            message.loading('Deleting order...', 1);
-
             const response = await axios.delete(`http://localhost:9999/api/export-orders/${id}`);
-            console.log('Delete response:', response.data);
 
             if (response.data.success) {
                 message.success('Order deleted successfully');
-                toast.success('🗑️ Order deleted successfully');
                 navigate('/export-orders');
-            } else {
-                message.error(response.data.message || 'Failed to delete order');
-                toast.error(response.data.message || 'Failed to delete order');
             }
         } catch (error) {
             console.error('Error deleting order:', error);
-
-            if (error.response?.status === 400) {
-                message.error('Cannot delete order that is not in New status');
-                toast.error('⚠️ Cannot delete order that is not in New status');
-            } else if (error.response?.status === 404) {
-                message.error('Order not found');
-                toast.error('Order not found. It may have been deleted already.');
-            } else {
-                message.error('Failed to delete order');
-                toast.error('Failed to delete order: ' + (error.response?.data?.message || error.message));
-            }
+            message.error('Failed to delete order');
         } finally {
             setDeletingOrder(false);
             setDeleteModalVisible(false);
         }
     }, [id, navigate]);
 
-    // Function to show delete confirmation dialog - thay vì dùng Modal.confirm, mở modal riêng
-    const showDeleteConfirm = useCallback(() => {
-        console.log('Showing delete confirmation modal');
-        setDeleteModalVisible(true);
-    }, []);
-
-    const handleUpdate = async () => {
-        try {
-            // Validate items before sending
-            const invalidItems = editableDetails.filter(
-                item => !item.quantity || item.quantity <= 0 || !item.unitPrice || item.unitPrice <= 0
-            );
-
-            if (invalidItems.length > 0) {
-                toast.error('Please check quantities and prices. They must be greater than 0.');
-                return;
-            }
-
-            // Log để debug
-            console.log('Item bins:', itemBins);
-            console.log('Editable details:', editableDetails);
-
-            // Validate bin selections
-            for (const item of editableDetails) {
-                const bins = itemBins[item.productId] || [];
-                console.log(`Bins for product ${item.productId}:`, bins);
-
-                const totalBinQuantity = bins.reduce((sum, bin) => sum + bin.quantity, 0);
-
-                if (bins.length === 0) {
-                    toast.error(`Please select at least one bin for "${item.productName}"`);
-                    return;
-                }
-
-                if (totalBinQuantity !== item.quantity) {
-                    toast.error(`Total bin quantity (${totalBinQuantity}) must match requested quantity (${item.quantity}) for "${item.productName}"`);
-                    return;
-                }
-            }
-
-            // Prepare bin allocations for each product
-            const items = [];
-            editableDetails.forEach(item => {
-                const bins = itemBins[item.productId] || [];
-
-                // For each bin allocation, create an item entry
-                bins.forEach(bin => {
-                    items.push({
-                        productId: item.productId,
-                        binId: bin.binId,
-                        quantity: bin.quantity,
-                        price: item.unitPrice,
-                        note: item.note || ''
-                    });
-                });
-            });
-
-            console.log('Submitting items:', items);
-
-            // Hiển thị thông báo đang xử lý
-            toast.info('Updating export order...');
-
-            const response = await axios.put(`http://localhost:9999/api/export-orders/${id}`, {
-                items
-            });
-
-            if (response.data.success) {
-                toast.success('🎉 Order details updated successfully!');
-                setHasChanges(false);
-                // Navigate back to view mode
-                navigate(`/export-orders/`);
-            } else {
-                toast.error('Failed to update order details');
-            }
-        } catch (error) {
-            console.error('Error updating order:', error);
-            if (error.response?.status === 400) {
-                toast.error(error.response.data.message || 'Invalid data provided');
-            } else if (error.response?.status === 404) {
-                toast.error('Export order not found');
-            } else {
-                toast.error('Failed to update order details');
-            }
-        }
-    };
-
-    useEffect(() => {
-        fetchOrderDetail();
-    }, [fetchOrderDetail]);
-
-    useEffect(() => {
-        if (order?.items) {
-            setEditableDetails(order.items.map(item => ({ ...item })));
-
-            // Initialize bins from order data
-            const initialBins = {};
-
-            // Khởi tạo mảng promise để fetch thông tin bin cho từng sản phẩm
-            const fetchPromises = [];
-
-            order.items.forEach(item => {
-                if (item.bins && item.bins.length > 0) {
-                    // Gộp các bin có cùng ID
-                    const groupedBins = {};
-                    item.bins.forEach(bin => {
-                        const binKey = bin.binId;
-                        if (!groupedBins[binKey]) {
-                            groupedBins[binKey] = {
-                                binId: bin.binId,
-                                binName: bin.binName,
-                                quantity: 0,
-                                maxQuantity: bin.quantity // Mặc định là số lượng hiện tại
-                            };
-                        }
-                        groupedBins[binKey].quantity += bin.quantity;
-                    });
-
-                    initialBins[item.productId] = Object.values(groupedBins);
-
-                    // Thêm promise để fetch thông tin mới nhất về các bin có sẵn
-                    fetchPromises.push(
-                        axios.get(`http://localhost:9999/api/books/${item.productId}/bins`)
-                            .then(response => {
-                                if (response.data.success) {
-                                    const availableBins = response.data.data;
-
-                                    // Cập nhật thông tin maxQuantity từ dữ liệu mới nhất
-                                    initialBins[item.productId] = initialBins[item.productId].map(selectedBin => {
-                                        const matchingBin = availableBins.find(b => b.binId === selectedBin.binId);
-                                        if (matchingBin) {
-                                            // maxQuantity = số lượng đã chọn + số lượng còn lại trong kho
-                                            return {
-                                                ...selectedBin,
-                                                maxQuantity: selectedBin.quantity + matchingBin.availableQuantity
-                                            };
-                                        }
-                                        return selectedBin;
-                                    });
-                                }
-                            })
-                            .catch(error => {
-                                console.error(`Error fetching bins for product ${item.productId}:`, error);
-                            })
-                    );
-                }
-            });
-
-            // Set giá trị ban đầu trước khi fetch data
-            setItemBins(initialBins);
-
-            // Chạy tất cả promise để lấy thông tin cập nhật
-            if (fetchPromises.length > 0) {
-                Promise.all(fetchPromises)
-                    .then(() => {
-                        // Sau khi tất cả bin được cập nhật, set lại itemBins
-                        setItemBins({ ...initialBins });
-                    })
-                    .catch(error => {
-                        console.error('Error updating bin information:', error);
-                    });
-            }
-        }
-    }, [order]);
-
-    const {
-        id: ExportOrderId,
-        status: Status,
-        note: Note,
-        createdBy: CreatedBy,
-        orderDate: Created_Date,
-        exportDate,
-        recipientName,
-        recipientPhone,
-        shippingAddress,
-        items: ExportOrderDetails
-    } = order || {};
-
+    // Memoize columns
     const columns = useMemo(() => {
-        // Base columns
         const baseColumns = [
             {
                 title: 'Book ID',
@@ -816,11 +868,10 @@ const ExportOrderDetailAdvanced = () => {
             {
                 title: 'Book Title',
                 dataIndex: 'productName',
-                width: 250,
+                width: 200,
             }
         ];
 
-        // Additional columns based on mode
         if (Status === 'New' && isEditMode) {
             return [
                 ...baseColumns,
@@ -848,7 +899,8 @@ const ExportOrderDetailAdvanced = () => {
                             value={value}
                             onChange={(value) => handleDetailChange(index, 'unitPrice', parseFloat(value) || 0)}
                             style={{ width: '100%' }}
-                            prefix="$"
+                            formatter={value => value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                            parser={value => value.replace(/,/g, '')}
                         />
                     )
                 },
@@ -882,7 +934,7 @@ const ExportOrderDetailAdvanced = () => {
                     align: 'right',
                     render: (_, record) => (
                         <span style={{ fontWeight: 'bold' }}>
-                            ${(record.quantity * Number(record.unitPrice)).toFixed(2)}
+                            {(record.quantity * Number(record.unitPrice)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                         </span>
                     )
                 }
@@ -901,7 +953,7 @@ const ExportOrderDetailAdvanced = () => {
                     dataIndex: 'unitPrice',
                     width: 140,
                     align: 'right',
-                    render: (value) => `$${Number(value).toFixed(2)}`
+                    render: (value) => Number(value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
                 },
                 {
                     title: 'Bins',
@@ -922,7 +974,7 @@ const ExportOrderDetailAdvanced = () => {
                     align: 'right',
                     render: (_, record) => (
                         <span style={{ fontWeight: 'bold' }}>
-                            ${(record.quantity * Number(record.unitPrice)).toFixed(2)}
+                            {(record.quantity * Number(record.unitPrice)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                         </span>
                     )
                 },
@@ -935,6 +987,12 @@ const ExportOrderDetailAdvanced = () => {
         }
     }, [Status, isEditMode, handleDetailChange, handleBinSelect, itemBins]);
 
+    // Memoize table data
+    const tableData = useMemo(() => {
+        return Status === 'New' && isEditMode ? editableDetails : ExportOrderDetails || [];
+    }, [Status, isEditMode, editableDetails, ExportOrderDetails]);
+
+    // Memoize total amount
     const totalAmount = useMemo(() => {
         if (Status === 'New' && isEditMode) {
             return editableDetails?.reduce((sum, item) =>
@@ -943,6 +1001,30 @@ const ExportOrderDetailAdvanced = () => {
         return ExportOrderDetails?.reduce((sum, item) =>
             sum + (item.quantity * Number(item.unitPrice)), 0) || 0;
     }, [ExportOrderDetails, editableDetails, Status, isEditMode]);
+
+    // Memoize card extra content
+    const cardExtra = useMemo(() => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            {Status === 'New' && isEditMode && (
+                <BookSelection
+                    availableBooks={availableBooks}
+                    onSelectBooks={handleBookSelection}
+                    existingBooks={editableDetails}
+                />
+            )}
+            <div style={{ fontWeight: 'bold', fontSize: '16px', color: '#1890ff' }}>
+                Total price: {totalAmount.toFixed(2)}
+            </div>
+        </div>
+    ), [Status, isEditMode, availableBooks, handleBookSelection, editableDetails, totalAmount]);
+
+    // Add useEffect to fetch order details and available books when component mounts
+    useEffect(() => {
+        fetchOrderDetail();
+        if (isEditMode) {
+            fetchAvailableBooks();
+        }
+    }, [fetchOrderDetail, fetchAvailableBooks, isEditMode]);
 
     if (loading) {
         return (
@@ -981,7 +1063,7 @@ const ExportOrderDetailAdvanced = () => {
                     Back to List
                 </Button>
                 <span style={{ fontSize: '20px', fontWeight: 'bold' }}>
-                    Export Order #{ExportOrderId} {isEditMode && <Tag color="blue">Edit Mode</Tag>}
+                    Export Order #{ExportOrderId}
                 </span>
             </div>
             <div style={{ width: '300px' }}>
@@ -1015,25 +1097,16 @@ const ExportOrderDetailAdvanced = () => {
                             </Col>
                         </Row>
 
-                        <Card
-                            title={<span style={{ fontSize: '16px' }}>Product List</span>}
-                            bordered={false}
-                            style={{ width: '100%' }}
-                            extra={
-                                <div style={{ fontWeight: 'bold', fontSize: '16px', color: '#1890ff' }}>
-                                    Total: ${totalAmount.toFixed(2)}
-                                </div>
-                            }
+                        <ProductCard
+                            title="Product List"
+                            extra={cardExtra}
                         >
-                            <Table
-                                dataSource={Status === 'New' && isEditMode ? editableDetails : ExportOrderDetails || []}
+                            <ProductTable
+                                data={tableData}
                                 columns={columns}
-                                pagination={false}
-                                rowKey="productId"
-                                style={{ marginTop: 16, width: '100%' }}
-                                scroll={{ x: isEditMode ? 1200 : 1000 }}
+                                isEditMode={isEditMode}
                             />
-                        </Card>
+                        </ProductCard>
 
                         {Status === 'New' && (
                             <Card bordered={false} style={{ width: '100%' }}>

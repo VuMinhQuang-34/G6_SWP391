@@ -15,13 +15,142 @@ const { Content, Sider } = Layout;
 
 const DefaultLayout = () => {
     const [collapsed, setCollapsed] = useState(false);
-    const { logout } = useContext(AuthContext);
+    const { logout, user } = useContext(AuthContext);
     const navigate = useNavigate();
 
     // Handle logout
     const handleLogout = () => {
         logout(); // Call logout function from AuthContext
         navigate("/login"); // Redirect to login page
+    };
+
+    // Kiểm tra role để hiển thị menu
+    const isAdmin = user?.roleId == 0;
+    const isManager = user?.roleId == 1;
+    const isStaff = user?.roleId == 2;
+
+    // Menu items dựa trên role
+    const getMenuItems = () => {
+        const menuItems = [
+            // Dashboard - tất cả role đều thấy
+            {
+                key: "1",
+                icon: <HomeOutlined />,
+                label: <Link to="/dashboard">Dashboard</Link>,
+            }
+        ];
+
+        // Menu items chỉ dành cho Admin và Manager
+        // if (isAdmin || isManager || isStaff) {
+        if (isAdmin || isManager) {
+            menuItems.push(
+                {
+                    key: "2",
+                    icon: <UserOutlined />,
+                    label: <Link to="/admin/users">Staff</Link>,
+                },
+                {
+                    key: "3",
+                    icon: <SettingOutlined />,
+                    label: <Link to="/admin/categories">Book Categories</Link>,
+                },
+                {
+                    key: "4",
+                    icon: <SettingOutlined />,
+                    label: <Link to="/admin/books">Books</Link>,
+                }
+            );
+        }
+
+        // Menu Import Orders
+        const importOrdersSubMenu = {
+            key: "5",
+            icon: <SettingOutlined />,
+            label: "Import Orders",
+            children: [
+                {
+                    key: "5.1",
+                    label: <Link to="/orders-import">Create Import Order</Link>,
+                },
+                {
+                    key: "5.2",
+                    label: <Link to="/orders-import/approve">Approve Import Order</Link>,
+                },
+                {
+                    key: "5.3",
+                    label: <Link to="/orders-import/check">Receive Order </Link>,
+                }
+            ]
+        };
+
+        // Chỉ thêm "Store in Warehouse" cho Admin và Manager
+        if (isAdmin || isManager) {
+            importOrdersSubMenu.children.push({
+                key: "5.4",
+                label: <Link to="/orders-import/approve/wms">Store in Warehouse</Link>,
+            });
+        }
+
+        menuItems.push(importOrdersSubMenu);
+
+        // Menu Export Orders
+        menuItems.push({
+            key: "6",
+            icon: <SettingOutlined />,
+            label: "Export Orders",
+            children: [
+                {
+                    key: "6.1",
+                    label: <Link to="/export-orders">Create Export Order</Link>,
+                },
+                {
+                    key: "6.2",
+                    label: <Link to="/export-orders/status/approve">Approve Export Order</Link>,
+                },
+                {
+                    key: "6.3",
+                    label: <Link to="/export-orders/status/packing">Packaging</Link>,
+                },
+                {
+                    key: "6.4",
+                    label: <Link to="/export-orders/status/shipping">Shipping & Completion</Link>,
+                }
+            ]
+        });
+
+        // Các menu items khác
+        menuItems.push(
+            {
+                key: "7",
+                icon: <SettingOutlined />,
+                label: <Link to="stock">Inventory</Link>,
+            },
+            {
+                key: "9",
+                icon: <SettingOutlined />,
+                label: <Link to="location">Warehouse Location</Link>,
+            }
+        );
+
+        // Menu Supplier chỉ cho Admin và Manager
+        if (isAdmin || isManager || isStaff) {
+            menuItems.push({
+                key: "10",
+                icon: <SettingOutlined />,
+                label: <Link to="supplier">Supplier</Link>,
+            });
+        }
+
+        // Logout button - tất cả role đều thấy
+        menuItems.push({
+            key: "100",
+            icon: <LogoutOutlined />,
+            danger: true,
+            label: "Logout",
+            onClick: handleLogout
+        });
+
+        return menuItems;
     };
 
     return (
@@ -38,79 +167,12 @@ const DefaultLayout = () => {
                     onCollapse={(value) => setCollapsed(value)}
                     style={{ background: "#001529", color: "#fff" }}
                 >
-                    <Menu theme="dark" mode="inline" defaultSelectedKeys={["1"]}>
-
-                        <Menu.Item key="1" icon={<HomeOutlined />}>
-                            <Link to="/dashboard">Dashboard</Link>
-                        </Menu.Item>
-                        <Menu.Item key="2" icon={<UserOutlined />}>
-                            <Link to="/admin/users">Staff</Link>
-                        </Menu.Item>
-                        <Menu.Item key="3" icon={<SettingOutlined />}>
-                            <Link to="admin/categories">Book Categories</Link>
-                        </Menu.Item>
-                        <Menu.Item key="4" icon={<SettingOutlined />}>
-                            <Link to="admin/books">Books</Link>
-                        </Menu.Item>
-                        {/* <Menu.Item key="5" icon={<SettingOutlined />}>
-                            <Link to="orders-import">Import Order</Link>
-                        </Menu.Item> */}
-                        <Menu.SubMenu key="5" icon={<SettingOutlined />} title="Import Orders">
-                            <Menu.Item key="5.1">
-                                <Link to="/orders-import">Create Import Order</Link>
-                            </Menu.Item>
-                            <Menu.Item key="5.2">
-                                <Link to="/orders-import/approve">Approve Import Order</Link>
-                            </Menu.Item>
-                            <Menu.Item key="5.3">
-                                <Link to="/orders-import/check">Receive Goods</Link>
-                            </Menu.Item>
-                            <Menu.Item key="5.4">
-                                <Link to="/orders-import/approve/wms">Store in Warehouse</Link>
-                            </Menu.Item>
-                        </Menu.SubMenu>
-                        <Menu.SubMenu key="6" icon={<SettingOutlined />} title="Export Orders">
-                            <Menu.Item key="6.1">
-                                <Link to="/export-orders">Create Export Order</Link>
-                            </Menu.Item>
-                            <Menu.Item key="6.2">
-                                <Link to="/export-orders/status/approve">Approve Export Order</Link>
-                            </Menu.Item>
-                            <Menu.Item key="6.3">
-                                <Link to="/export-orders/status/packing">Packaging</Link>
-                            </Menu.Item>
-                            <Menu.Item key="6.4">
-                                <Link to="/export-orders/status/shipping">Shipping & Completion</Link>
-                            </Menu.Item>
-                        </Menu.SubMenu>
-                        <Menu.Item key="7" icon={<SettingOutlined />}>
-                            <Link to="stock">Inventory</Link>
-                        </Menu.Item>
-                        {/* <Menu.Item key="3" icon={<SettingOutlined />}>  
-                            <Link to="/books">Book Inventory</Link>
-                        </Menu.Item> */}
-                        {/* <Menu.Item key="4" icon={<SettingOutlined />}>
-                            <Link to="/inventory">Stock</Link>
-                        </Menu.Item>
-                        <Menu.Item key="5" icon={<SettingOutlined />}>
-                            <Link to="/import-orders">Import Orders</Link>
-                        </Menu.Item>
-                        <Menu.Item key="6" icon={<SettingOutlined />}>
-                            <Link to="/export-orders">Export Orders</Link>
-                        </Menu.Item>
-                        <Menu.Item key="7" icon={<SettingOutlined />}>
-                            <Link to="/history">History</Link>
-                        </Menu.Item>
-                        <Menu.Item key="8" icon={<SettingOutlined />}>
-                            <Link to="/approval-management">Approval Management</Link>
-                        </Menu.Item> */}
-                        <Menu.Item key="9" icon={<SettingOutlined />}>
-                            <Link to="location">Warehouse Location</Link>
-                        </Menu.Item>
-                        <Menu.Item key="10" icon={<LogoutOutlined />} danger onClick={handleLogout}>
-                            Logout
-                        </Menu.Item>
-                    </Menu>
+                    <Menu
+                        theme="dark"
+                        mode="inline"
+                        defaultSelectedKeys={["1"]}
+                        items={getMenuItems()}
+                    />
                 </Sider>
 
                 {/* Content Area */}

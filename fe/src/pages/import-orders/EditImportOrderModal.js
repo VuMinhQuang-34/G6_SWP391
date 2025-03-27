@@ -5,10 +5,10 @@ import { AuthContext } from "../../context/AuthContext";
 const { Option } = Select;
 
 const EditImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, order }) => {
-    console.log(" EditImportOrderModal => ", { visible, onCancel, onEdit, suppliers, books, order })
     const { isAuthenticated, user, logout } = useContext(AuthContext);
     const [form] = Form.useForm();
     const [selectedBooks, setSelectedBooks] = useState([]);
+    const [selectedBookIds, setSelectedBookIds] = useState([]);
 
     useEffect(() => {
         if (order) {
@@ -17,90 +17,134 @@ const EditImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, ord
                 ImportDate: order.ImportDate ? order.ImportDate.split('T')[0] : '',
                 Note: order.Note,
             });
-            setSelectedBooks(order.details || []);
+
+            // Set selected books
+            const orderDetails = order.details || [];
+            setSelectedBooks(orderDetails);
+
+            // Set selected book IDs for the Select component
+            const bookIds = orderDetails.map(book => book.BookId);
+            setSelectedBookIds(bookIds);
+
+            // Set the book IDs in the form
+            form.setFieldsValue({
+                BookIds: bookIds
+            });
         }
     }, [order, form, visible]);
 
-    //#region EDIT
     const handleEditOrder = async (values) => {
         try {
+            if (selectedBooks.length === 0) {
+                toast.error("Please select at least one book!");
+                return;
+            }
+
+            // Validate quantities and prices
+            const invalidBooks = selectedBooks.filter(book =>
+                !book.Quantity || book.Quantity <= 0 || !book.Price || book.Price <= 0
+            );
+
+            if (invalidBooks.length > 0) {
+                toast.error("Please enter valid quantity and price for all books!");
+                return;
+            }
+
             const updatedOrder = {
                 SupplierID: values.SupplierID,
                 ImportDate: values.ImportDate,
                 Note: values.Note,
-                Status: "New", // Keep status as "New"
-                CreatedBy: user.userId, // Or get from current user information
+                Status: "New",
+                CreatedBy: user.userId,
                 orderDetails: selectedBooks.map(book => ({
                     BookId: book.BookId,
-                    Quantity: book.Quantity,
-                    Price: book.Price,
-                    // Add other information if needed
+                    Quantity: parseInt(book.Quantity),
+                    Price: parseFloat(book.Price),
                 })),
             };
 
-            console.log("Payload being sent:", updatedOrder); // Check payload before sending
-
-            await onEdit(updatedOrder, order.ImportOrderId); // Pass ID to onEdit function
-            form.resetFields(); // Reset form after editing
-            setSelectedBooks([]); // Reset selected books list
-            //toast.success(`Update successful`, { autoClose: 2000 });
+            await onEdit(updatedOrder, order.ImportOrderId);
+            toast.success("Import order updated successfully!");
+            onCancel();
         } catch (error) {
-            message.error("Error editing import order!");
+            console.error("Error editing import order:", error);
+            toast.error("Failed to update import order!");
         }
     };
 
     const handleBookSelect = (bookIds) => {
-        const selected = books.filter(book => bookIds.includes(book.BookId));
-        const updatedBooks = selected.map(book => {
-            const existingBook = selectedBooks.find(b => b.BookId === book.BookId);
-            return {
-                ...book,
-                Quantity: existingBook ? existingBook.Quantity : 0, // Keep existing quantity if available
-                Price: existingBook ? existingBook.Price : 0, // Keep existing price if available
-            };
-        });
-        setSelectedBooks(updatedBooks);
+        setSelectedBookIds(bookIds);
+
+        // Keep existing books that are still selected
+        const existingBooks = selectedBooks.filter(book => bookIds.includes(book.BookId));
+
+        // Add newly selected books
+        const newBookIds = bookIds.filter(id => !selectedBooks.find(book => book.BookId === id));
+        const newBooks = books
+            .filter(book => newBookIds.includes(book.BookId))
+            .map(book => ({
+                BookId: book.BookId,
+                BookInfo: book,
+                Quantity: 0,
+                Price: 0
+            }));
+
+        // Combine existing and new books
+        setSelectedBooks([...existingBooks, ...newBooks]);
     };
 
     const handleQuantityChange = (bookId, value) => {
-        const updatedDetails = selectedBooks.map((book) => {
-            if (book.BookId === bookId) {
-                return { ...book, Quantity: value }; // Update quantity
-            }
-            return book;
-        });
-        setSelectedBooks(updatedDetails); // Update selectedBooks
+        const quantity = parseInt(value) || 0;
+        setSelectedBooks(prev =>
+            prev.map(book =>
+                book.BookId === bookId
+                    ? { ...book, Quantity: quantity }
+                    : book
+            )
+        );
     };
 
     const handlePriceChange = (bookId, value) => {
-        const updatedDetails = selectedBooks.map((book) => {
-            if (book.BookId === bookId) {
-                return { ...book, Price: value }; // Update price
-            }
-            return book;
-        });
-        setSelectedBooks(updatedDetails); // Update selectedBooks
+        const price = parseFloat(value) || 0;
+        setSelectedBooks(prev =>
+            prev.map(book =>
+                book.BookId === bookId
+                    ? { ...book, Price: price }
+                    : book
+            )
+        );
     };
+
+    // Calculate totals
+    const totalQuantity = selectedBooks.reduce((sum, book) => sum + (parseInt(book.Quantity) || 0), 0);
+    const totalAmount = selectedBooks.reduce((sum, book) => sum + ((parseFloat(book.Price) || 0) * (parseInt(book.Quantity) || 0)), 0);
 
     return (
         <Modal
             title="Edit Import Order"
             open={visible}
             onCancel={onCancel}
-            footer={null}
-            width={800} // Increased modal width
+            footer={[
+                <Button key="cancel" onClick={onCancel}>
+                    Cancel
+                </Button>,
+                <Button key="submit" type="primary" onClick={() => form.submit()}>
+                    Save Changes
+                </Button>
+            ]}
+            width={800}
         >
             <Form form={form} layout="vertical" onFinish={handleEditOrder}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px' }}>
                     <Form.Item
                         name="SupplierID"
                         label="Supplier"
-                        style={{ flex: 1, marginRight: '10px' }}
+                        style={{ flex: 1 }}
                         rules={[{ required: true, message: "Please select a supplier!" }]}
                     >
                         <Select placeholder="Select supplier">
-                            {suppliers.map((supplier, index) => (
-                                <Option key={index} value={supplier}>
+                            {suppliers.map((supplier) => (
+                                <Option key={supplier} value={supplier}>
                                     {supplier}
                                 </Option>
                             ))}
@@ -110,7 +154,7 @@ const EditImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, ord
                     <Form.Item
                         name="ImportDate"
                         label="Import Date"
-                        style={{ flex: 1, marginLeft: '10px' }}
+                        style={{ flex: 1 }}
                         rules={[{ required: true, message: "Please enter import date!" }]}
                     >
                         <Input type="date" />
@@ -118,88 +162,111 @@ const EditImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, ord
                 </div>
 
                 <Form.Item
-                    name="Note"
-                    label="Note"
+                    name="BookIds"
+                    label="Select Books"
+                    rules={[{ required: true, message: "Please select at least one book!" }]}
                 >
-                    <Input.TextArea rows={2} placeholder="Enter notes if any" style={{ resize: 'none' }} />
+                    <Select
+                        mode="multiple"
+                        placeholder="Select books to import"
+                        value={selectedBookIds}
+                        onChange={handleBookSelect}
+                        style={{ width: '100%' }}
+                        optionFilterProp="children"
+                        showSearch
+                    >
+                        {books.map((book) => (
+                            <Option key={book.BookId} value={book.BookId}>
+                                {book.Title} - {book.Author}
+                            </Option>
+                        ))}
+                    </Select>
                 </Form.Item>
 
-                {/* Import order details table */}
-                <h3>Import Order Details</h3>
                 <Table
                     dataSource={selectedBooks}
                     columns={[
                         {
                             title: 'Book ID',
                             dataIndex: 'BookId',
+                            width: '100px'
                         },
                         {
                             title: 'Book Title',
-                            //dataIndex: 'Title',
                             render: (_, record) => (
                                 <span>{record.BookInfo ? record.BookInfo.Title : 'No information'}</span>
                             ),
+                            width: '300px'
                         },
                         {
-                            title: 'Import Quantity',
+                            title: 'Quantity',
+                            width: '150px',
                             render: (_, record) => (
                                 <Input
                                     type="number"
-                                    min={0} // Allow any quantity
-                                    value={record.Quantity || 0} // Use value
+                                    min={1}
+                                    value={record.Quantity}
                                     onChange={(e) => handleQuantityChange(record.BookId, e.target.value)}
-                                    required
+                                    style={{ width: '100%' }}
                                 />
                             ),
                         },
                         {
                             title: 'Unit Price',
+                            width: '150px',
                             render: (_, record) => (
                                 <Input
                                     type="number"
-                                    min={0} // Allow any price
-                                    value={record.Price || 0} // Use value
+                                    min={0}
+                                    step="0.01"
+                                    value={record.Price}
                                     onChange={(e) => handlePriceChange(record.BookId, e.target.value)}
-                                    required
+                                    style={{ width: '100%' }}
                                 />
                             ),
                         },
                         {
-                            title: 'Total Price',
+                            title: 'Total',
+                            width: '150px',
                             render: (_, record) => (
-                                <span>{(record.Quantity || 0) * (record.Price || 0)}</span>
+                                <span>
+                                    {((parseFloat(record.Price) || 0) * (parseInt(record.Quantity) || 0)).toFixed(2)}
+                                </span>
                             ),
                         },
                     ]}
                     rowKey="BookId"
                     pagination={false}
+                    size="middle"
                 />
 
-                {/* Display total quantity and total amount */}
-                <div style={{ marginTop: 20 }}>
-                    <strong>Total Book Quantity: {selectedBooks.reduce((sum, book) => sum + (book.Quantity || 0), 0)}</strong>
-                    <br />
-                    <strong>Total Amount: {selectedBooks.reduce((sum, book) => sum + (book.Price * (book.Quantity || 0)), 0)}</strong>
+                <div style={{
+                    marginTop: 16,
+                    padding: '16px',
+                    background: '#f5f5f5',
+                    borderRadius: '4px',
+                    display: 'flex',
+                    justifyContent: 'space-between'
+                }}>
+                    <span>
+                        <strong>Total Quantity:</strong> {totalQuantity}
+                    </span>
+                    <span>
+                        <strong>Total Amount:</strong> {totalAmount.toFixed(2)}
+                    </span>
                 </div>
 
-                <Form.Item label="Select Books">
-                    <Select
-                        mode="multiple"
-                        placeholder="Select books"
-                        onChange={handleBookSelect}
-                        style={{ width: '100%' }}
-                    >
-                        {books.map((book) => (
-                            <Option key={book.BookId} value={book.BookId}>
-                                {book.Title} - {book.Author} - {book.Publisher}
-                            </Option>
-                        ))}
-                    </Select>
+                <Form.Item
+                    name="Note"
+                    label="Note"
+                    style={{ marginTop: 16 }}
+                >
+                    <Input.TextArea
+                        rows={3}
+                        placeholder="Enter notes if any"
+                        style={{ resize: 'none' }}
+                    />
                 </Form.Item>
-
-                <Button type="primary" htmlType="submit" style={{ width: '100%' }}>
-                    Save
-                </Button>
             </Form>
         </Modal>
     );

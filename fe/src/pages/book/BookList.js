@@ -1,13 +1,14 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     Table, Space, Button, Input, Select, Popconfirm, Card,
-    message, Tag, Pagination, Modal
+    Tag, Pagination, Modal
 } from 'antd';
 import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import axios from '../../configs/axios';
 import BookForm from './BookForm';
 import { API_BASE_URL } from '../../configs/api';
 import { EventEmitter } from '../../utils/events';
+import { toast } from 'react-toastify';
 
 const { Search } = Input;
 const { Option } = Select;
@@ -38,13 +39,19 @@ const BookList = () => {
                     categoryId: selectedCategory
                 }
             });
-            console.log('Fetched books:', response.data); // Debug log
-            if (response.data && response.data.data) {
+
+            if (response.data?.success && response.data?.data) {
                 setBooks(response.data.data);
                 setTotal(response.data.total);
+            } else {
+                setBooks([]);
+                setTotal(0);
+                toast.error('Failed to load books');
             }
         } catch (error) {
-            message.error('Failed to fetch books');
+            setBooks([]);
+            setTotal(0);
+            toast.error('Failed to fetch books');
             console.error('Error fetching books:', error);
         } finally {
             setLoading(false);
@@ -58,7 +65,7 @@ const BookList = () => {
             const response = await axios.get('/categories');
             setCategories(response.data);
         } catch (error) {
-            message.error('Failed to fetch categories');
+            toast.error('Failed to fetch categories');
             console.error('Error fetching categories:', error);
         } finally {
             setCategoriesLoading(false);
@@ -89,23 +96,23 @@ const BookList = () => {
     // Handle book deletion
     const handleDelete = async (id) => {
         try {
-            // Check token with correct key
             const token = localStorage.getItem('accessToken');
             if (!token) {
-                message.error('Please login to perform this action');
+                toast.error('Please login to perform this action');
                 window.location.href = '/login';
                 return;
             }
 
             const response = await axios.delete(`/books/${id}`);
             if (response.data.success) {
-                message.success('Book deleted successfully');
+                toast.success('Book deleted successfully');
                 fetchBooks();
             } else {
-                message.error(response.data.message || 'Failed to delete book');
+                toast.error(response.data.message || 'Failed to delete book');
             }
         } catch (error) {
-            message.error('Error deleting book');
+            const errorMessage = error.response?.data?.message || 'Error deleting book';
+            toast.error(errorMessage);
             console.error('Error:', error);
         }
     };
@@ -125,43 +132,24 @@ const BookList = () => {
     // Handle form save
     const handleSave = async (values) => {
         try {
-            let formData = new FormData();
-
-            // Append all form values to FormData
-            Object.keys(values).forEach(key => {
-                if (key === 'Image' && values[key] && values[key][0] && values[key][0].originFileObj) {
-                    formData.append(key, values[key][0].originFileObj);
-                } else if (values[key] !== undefined && values[key] !== null) {
-                    formData.append(key, values[key]);
-                }
-            });
-
             let response;
 
             if (editingBook) {
                 // Update existing book
-                response = await axios.put(`/books/${editingBook.BookId}`, formData, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data'
-                    }
-                });
-                message.success('Book updated successfully');
+                response = await axios.put(`/books/${editingBook.BookId}`, values);
+                toast.success('Book updated successfully');
             } else {
                 // Create new book
-                response = await axios.post('/books', formData, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data'
-                    }
-                });
-                message.success('Book added successfully');
+                response = await axios.post('/books', values);
+                toast.success('Book added successfully');
             }
 
             // Close modal and refresh book list
             handleModalClose();
             fetchBooks();
-
         } catch (error) {
-            message.error('Error saving book');
+            const errorMessage = error.response?.data?.message || 'Error saving book';
+            toast.error(errorMessage);
             console.error('Error saving book:', error);
         }
     };
@@ -174,20 +162,6 @@ const BookList = () => {
 
     // Table columns configuration
     const columns = [
-        {
-            title: 'Image',
-            dataIndex: 'Image',
-            key: 'Image',
-            render: (text, record) => (
-                <div style={{ width: '50px', height: '70px', overflow: 'hidden' }}>
-                    <img
-                        src={record.Image ? `${API_BASE_URL}/books/image/${record.BookId}` : 'https://via.placeholder.com/150x200?text=No+Image'}
-                        alt={record.Title}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
-                </div>
-            ),
-        },
         {
             title: 'Title',
             dataIndex: 'Title',
@@ -208,7 +182,7 @@ const BookList = () => {
             title: 'Category',
             dataIndex: 'Category',
             key: 'Category',
-            render: (_, record) => record.Category?.Name || 'N/A',
+            render: (_, record) => record.Category?.CategoryName || 'N/A',
         },
         {
             title: 'Publishing Year',
@@ -221,16 +195,16 @@ const BookList = () => {
             dataIndex: 'Language',
             key: 'Language',
         },
-        {
-            title: 'Status',
-            dataIndex: 'Status',
-            key: 'Status',
-            render: (status) => (
-                <Tag color={status === 'Active' ? 'green' : 'red'}>
-                    {status}
-                </Tag>
-            ),
-        },
+        // {
+        //     title: 'Status',
+        //     dataIndex: 'Status',
+        //     key: 'Status',
+        //     render: (status) => (
+        //         <Tag color={status === 'Active' ? 'green' : 'red'}>
+        //             {status}
+        //         </Tag>
+        //     ),
+        // },
         {
             title: 'Actions',
             key: 'action',
@@ -296,8 +270,8 @@ const BookList = () => {
                             onChange={handleCategoryChange}
                         >
                             {categories.map(category => (
-                                <Option key={category.CategoryId} value={category.CategoryId}>
-                                    {category.Name}
+                                <Option key={category.categoryId} value={category.categoryId}>
+                                    {category.CategoryName}
                                 </Option>
                             ))}
                         </Select>
@@ -323,7 +297,7 @@ const BookList = () => {
 
             <Modal
                 title={editingBook ? "Edit Book" : "Add New Book"}
-                visible={modalVisible}
+                open={modalVisible}
                 onCancel={handleModalClose}
                 footer={null}
                 width={800}
@@ -341,3 +315,4 @@ const BookList = () => {
 };
 
 export default BookList;
+

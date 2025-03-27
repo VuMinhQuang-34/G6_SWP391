@@ -2,7 +2,9 @@ import axios from 'axios';
 import { API_BASE_URL } from './api';
 
 const instance = axios.create({
-    baseURL: API_BASE_URL
+    baseURL: API_BASE_URL,
+    timeout: 30000, // Tăng timeout lên 30 giây để xử lý hình ảnh lớn
+    maxContentLength: 50 * 1024 * 1024 // Tăng kích thước tối đa của phản hồi lên 50MB
 });
 
 // Add a request interceptor

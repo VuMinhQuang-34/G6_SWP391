@@ -13,6 +13,12 @@ const { Op } = db.Sequelize;
  */
 const convertBinId = (binId) => {
     if (typeof binId === 'string') {
+        // If it's a simple string like "a", "b", etc., convert to number based on position
+        const letter = binId.toUpperCase();
+        if (letter.length === 1 && letter >= 'A' && letter <= 'Z') {
+            return letter.charCodeAt(0) - 64; // A=1, B=2, etc.
+        }
+        // If it has a numeric part, use that
         const numericPart = binId.match(/\d+/);
         if (numericPart) {
             return parseInt(numericPart[0]);
@@ -30,6 +36,15 @@ const convertBinId = (binId) => {
  */
 export const createExportOrder = async (req, res, next) => {
     try {
+        console.log('Request headers:', req.headers);
+        console.log('Request body type:', typeof req.body);
+        console.log('Request body:', JSON.stringify(req.body, null, 2));
+
+        // Check if body is empty or not an object
+        if (!req.body || typeof req.body !== 'object') {
+            throw new ApiError(httpStatus.BAD_REQUEST, 'Request body must be a valid JSON object');
+        }
+
         const {
             items,
             note,
@@ -42,11 +57,13 @@ export const createExportOrder = async (req, res, next) => {
 
         // Validate input data
         if (!items || !Array.isArray(items) || items.length === 0) {
+            console.log('Invalid items:', items);
             throw new ApiError(httpStatus.BAD_REQUEST, 'Items array is required and must not be empty');
         }
 
         // Validate required fields
         if (!recipientName || !recipientPhone || !shippingAddress || !exportDate) {
+            console.log('Missing required fields:', { recipientName, recipientPhone, shippingAddress, exportDate });
             throw new ApiError(httpStatus.BAD_REQUEST, 'Recipient information, shipping address and export date are required');
         }
 
@@ -59,7 +76,10 @@ export const createExportOrder = async (req, res, next) => {
         const productItems = {};
 
         for (const item of items) {
+            console.log('Processing item:', JSON.stringify(item, null, 2));
+
             if (!item.productId || !item.quantity || !item.price) {
+                console.log('Invalid item data:', item);
                 throw new ApiError(httpStatus.BAD_REQUEST, 'Each item must have productId, quantity, and price');
             }
             if (item.quantity <= 0 || item.price <= 0) {
@@ -72,8 +92,7 @@ export const createExportOrder = async (req, res, next) => {
 
             // Convert string binId to integer if needed
             const numericBinId = convertBinId(item.binId);
-
-            console.log(`Looking up bin with ID: ${item.binId}`);
+            console.log(`Converted binId ${item.binId} to numeric value: ${numericBinId}`);
 
             // Check if bin exists - use the ORIGINAL binId string for lookup, not the numeric version
             const bin = await Bin.findByPk(item.binId);
@@ -82,8 +101,6 @@ export const createExportOrder = async (req, res, next) => {
             if (!bin) {
                 throw new ApiError(httpStatus.NOT_FOUND, `Bin with ID ${item.binId} not found`);
             }
-
-            console.log(`Looking up BookBin for Book ${item.productId} and Bin ${item.binId}`);
 
             // Check quantity in bin - use the ORIGINAL binId string 
             const bookBin = await BookBin.findOne({
@@ -496,225 +513,171 @@ export const updateExportOrder = async (req, res, next) => {
 
         // Update order details
         if (items && items.length > 0) {
-            // Validate items
-            for (const item of items) {
-                if (!item.productId) {
-                    throw new ApiError(httpStatus.BAD_REQUEST, 'Product ID is required');
-                }
-                if (!item.quantity || item.quantity <= 0) {
-                    throw new ApiError(httpStatus.BAD_REQUEST, 'Quantity must be greater than 0');
-                }
-                if (!item.unitPrice || item.unitPrice <= 0) {
-                    throw new ApiError(httpStatus.BAD_REQUEST, 'Unit price must be greater than 0');
-                }
-
-                // Validate bin data if provided
-                if (item.bins && Array.isArray(item.bins)) {
-                    // Check if total bin quantity matches item quantity
-                    const totalBinQuantity = item.bins.reduce((sum, bin) => sum + (parseInt(bin.quantity) || 0), 0);
-                    if (totalBinQuantity !== item.quantity) {
-                        throw new ApiError(
-                            httpStatus.BAD_REQUEST,
-                            `Total bin quantity (${totalBinQuantity}) must match item quantity (${item.quantity}) for product ${item.productId}`
-                        );
-                    }
-
-                    // Validate each bin entry
-                    for (const bin of item.bins) {
-                        if (!bin.binId) {
-                            throw new ApiError(httpStatus.BAD_REQUEST, 'Bin ID is required for each bin entry');
-                        }
-                        if (!bin.quantity || bin.quantity <= 0) {
-                            throw new ApiError(httpStatus.BAD_REQUEST, 'Bin quantity must be greater than 0');
-                        }
-                    }
-                } else {
-                    throw new ApiError(httpStatus.BAD_REQUEST, 'Bins array is required for each item');
-                }
-            }
-
-            // Begin transaction
             await db.sequelize.transaction(async (transaction) => {
-                // STEP 1: Restore inventory from current order details and bins
-                // Get current bins data
+                // Get current order details and bins
+                const currentDetails = await ExportOrderDetails.findAll({
+                    where: { ExportOrderId: exportOrderId },
+                    transaction
+                });
+
                 const currentBins = await db.ExportOrderBins.findAll({
                     where: { ExportOrderId: exportOrderId },
                     transaction
                 });
 
-                // Restore inventory for each bin allocation
-                for (const bin of currentBins) {
-                    // Check if BookBin exists
-                    let bookBin = await BookBin.findOne({
-                        where: {
-                            BookId: bin.BookId,
-                            BinId: bin.BinId
-                        },
-                        transaction
-                    });
+                // Create maps for quick lookup
+                const currentDetailsMap = new Map(currentDetails.map(detail => [detail.BookId, detail]));
+                const currentBinsMap = new Map(currentBins.map(bin => [`${bin.BookId}-${bin.BinId}`, bin]));
 
-                    if (bookBin) {
-                        // Update existing record
-                        const currentQuantity = parseInt(bookBin.Quantity);
-                        await BookBin.update(
-                            { Quantity: currentQuantity + bin.Quantity },
+                // Group items by product
+                const itemsByProduct = {};
+                items.forEach(item => {
+                    if (!itemsByProduct[item.productId]) {
+                        itemsByProduct[item.productId] = {
+                            totalQuantity: 0,
+                            price: item.price,
+                            bins: []
+                        };
+                    }
+                    itemsByProduct[item.productId].totalQuantity += item.quantity;
+                    itemsByProduct[item.productId].bins.push(...item.bins);
+                });
+
+                // Process each product group
+                for (const [productId, productData] of Object.entries(itemsByProduct)) {
+                    const existingDetail = currentDetailsMap.get(parseInt(productId));
+                    const price = Number(productData.price);
+                    if (isNaN(price) || price <= 0) {
+                        throw new ApiError(httpStatus.BAD_REQUEST, 'Price must be greater than 0');
+                    }
+
+                    // Update or create order detail
+                    if (existingDetail) {
+                        await ExportOrderDetails.update(
                             {
-                                where: { BookBinId: bookBin.BookBinId },
+                                Quantity: productData.totalQuantity,
+                                UnitPrice: price,
+                                Note: productData.bins[0]?.note || null
+                            },
+                            {
+                                where: {
+                                    ExportOrderId: exportOrderId,
+                                    BookId: parseInt(productId)
+                                },
                                 transaction
                             }
                         );
                     } else {
-                        // Create new record
-                        await BookBin.create({
-                            BookId: bin.BookId,
-                            BinId: bin.BinId,
-                            Quantity: bin.Quantity
+                        await ExportOrderDetails.create({
+                            ExportOrderId: exportOrderId,
+                            BookId: parseInt(productId),
+                            Quantity: productData.totalQuantity,
+                            UnitPrice: price,
+                            Note: productData.bins[0]?.note || null
                         }, { transaction });
                     }
 
-                    // Update Bin.Quantity_Current
-                    const binRecord = await Bin.findByPk(bin.BinId, { transaction });
-                    if (binRecord) {
-                        const currentBinQuantity = binRecord.Quantity_Current !== null ? parseInt(binRecord.Quantity_Current) : 0;
-                        const newBinQuantity = currentBinQuantity + bin.Quantity;
+                    // Process each bin for this product
+                    for (const binItem of productData.bins) {
+                        const binKey = `${productId}-${binItem.binId}`;
+                        const existingBin = currentBinsMap.get(binKey);
 
-                        await Bin.update(
-                            { Quantity_Current: newBinQuantity },
-                            {
-                                where: { BinId: bin.BinId },
-                                transaction
-                            }
-                        );
-                    }
-
-                    // Update Stock quantity
-                    const stock = await Stock.findOne({
-                        where: { BookId: bin.BookId },
-                        transaction
-                    });
-
-                    if (stock) {
-                        const currentStockQuantity = parseInt(stock.Quantity);
-                        await Stock.update(
-                            { Quantity: currentStockQuantity - bin.Quantity },
-                            {
-                                where: { BookId: bin.BookId },
-                                transaction
-                            }
-                        );
-                    }
-                }
-
-                // STEP 2: Delete existing order details and bins
-                await ExportOrderDetails.destroy({
-                    where: { ExportOrderId: exportOrderId },
-                    transaction
-                });
-
-                await db.ExportOrderBins.destroy({
-                    where: { ExportOrderId: exportOrderId },
-                    transaction
-                });
-
-                // STEP 3: Create new order details and bin allocations
-                // Create new order details
-                const orderDetails = items.map(item => ({
-                    ExportOrderId: exportOrderId,
-                    BookId: item.productId,
-                    Quantity: item.quantity,
-                    UnitPrice: item.unitPrice,
-                    Note: item.note || null
-                }));
-
-                await ExportOrderDetails.bulkCreate(orderDetails, { transaction });
-
-                // Process new bin allocations and update inventory
-                for (const item of items) {
-                    // Process each bin allocation
-                    for (const bin of item.bins) {
-                        console.log(`Processing bin: ${bin.binId}, type: ${typeof bin.binId}`);
-
-                        try {
-                            // Create bin allocation record - sử dụng binId gốc cho database
-                            await db.ExportOrderBins.create({
-                                ExportOrderId: exportOrderId,
-                                BookId: parseInt(item.productId),
-                                BinId: bin.binId, // Sử dụng binId gốc (chuỗi) thay vì numericBinId
-                                Quantity: bin.quantity
-                            }, { transaction });
-
-                            console.log(`Created ExportOrderBins record with binId: ${bin.binId}`);
-                        } catch (error) {
-                            console.error(`Error creating ExportOrderBins record:`, error);
-                            throw error;
-                        }
-
-                        // QUAN TRỌNG: Tìm BookBin bằng binId gốc (chuỗi), KHÔNG dùng numericBinId
-                        // Vì BookBin trong database có thể đang lưu binId dạng chuỗi
-                        const bookBin = await BookBin.findOne({
-                            where: {
-                                BookId: parseInt(item.productId),
-                                BinId: bin.binId
-                            },
-                            transaction
-                        });
-
-                        if (!bookBin) {
-                            throw new ApiError(
-                                httpStatus.BAD_REQUEST,
-                                `Book ${parseInt(item.productId)} not found in bin ${bin.binId}`
-                            );
-                        }
-
-                        if (bookBin.Quantity < bin.quantity) {
-                            throw new ApiError(
-                                httpStatus.BAD_REQUEST,
-                                `Not enough quantity in bin ${bin.binId} for book ${parseInt(item.productId)}. Available: ${bookBin.Quantity}, Requested: ${bin.quantity}`
-                            );
-                        }
-
-                        const newBinQuantity = bookBin.Quantity - bin.quantity;
-                        await BookBin.update(
-                            { Quantity: newBinQuantity },
-                            {
-                                where: { BookBinId: bookBin.BookBinId },
-                                transaction
-                            }
-                        );
-
-                        // Bin cũng có thể đang lưu BinId dạng chuỗi, dùng binId gốc
-                        const binRecord = await Bin.findByPk(bin.binId, { transaction });
-                        if (binRecord) {
-                            const currentBinQuantity = binRecord.Quantity_Current !== null ? parseInt(binRecord.Quantity_Current) : 0;
-                            const newBinCurrentQuantity = currentBinQuantity - bin.quantity;
-
-                            await Bin.update(
-                                { Quantity_Current: newBinCurrentQuantity },
+                        if (existingBin) {
+                            // Update existing bin allocation
+                            await db.ExportOrderBins.update(
                                 {
-                                    where: { BinId: bin.binId },
+                                    Quantity: binItem.quantity
+                                },
+                                {
+                                    where: {
+                                        ExportOrderId: exportOrderId,
+                                        BookId: parseInt(productId),
+                                        BinId: binItem.binId
+                                    },
                                     transaction
                                 }
                             );
                         } else {
-                            throw new ApiError(httpStatus.NOT_FOUND, `Bin ${bin.binId} not found`);
+                            // Create new bin allocation
+                            await db.ExportOrderBins.create({
+                                ExportOrderId: exportOrderId,
+                                BookId: parseInt(productId),
+                                BinId: binItem.binId,
+                                Quantity: binItem.quantity
+                            }, { transaction });
                         }
 
-                        // Update Stock quantity
-                        const stock = await Stock.findOne({
-                            where: { BookId: parseInt(item.productId) },
+                        // Update inventory for new bin allocation
+                        const newBin = await BookBin.findOne({
+                            where: {
+                                BookId: parseInt(productId),
+                                BinId: binItem.binId
+                            },
                             transaction
                         });
 
-                        if (stock) {
-                            const currentStockQuantity = parseInt(stock.Quantity);
-                            await Stock.update(
-                                { Quantity: currentStockQuantity - bin.quantity },
+                        if (newBin) {
+                            const currentQuantity = parseInt(newBin.Quantity);
+                            await BookBin.update(
+                                { Quantity: currentQuantity - binItem.quantity },
                                 {
-                                    where: { BookId: parseInt(item.productId) },
+                                    where: { BookBinId: newBin.BookBinId },
                                     transaction
                                 }
                             );
                         }
+                    }
+                }
+
+                // Remove items that are no longer in the update request
+                const updatedProductIds = new Set(items.map(item => item.productId));
+                const updatedBinKeys = new Set(items.flatMap(item =>
+                    item.bins.map(bin => `${item.productId}-${bin.binId}`)
+                ));
+
+                for (const detail of currentDetails) {
+                    if (!updatedProductIds.has(detail.BookId)) {
+                        await ExportOrderDetails.destroy({
+                            where: {
+                                ExportOrderId: exportOrderId,
+                                BookId: detail.BookId
+                            },
+                            transaction
+                        });
+                    }
+                }
+
+                for (const bin of currentBins) {
+                    const binKey = `${bin.BookId}-${bin.BinId}`;
+                    if (!updatedBinKeys.has(binKey)) {
+                        // Restore inventory before removing bin allocation
+                        const bookBin = await BookBin.findOne({
+                            where: {
+                                BookId: bin.BookId,
+                                BinId: bin.BinId
+                            },
+                            transaction
+                        });
+
+                        if (bookBin) {
+                            const currentQuantity = parseInt(bookBin.Quantity);
+                            await BookBin.update(
+                                { Quantity: currentQuantity + bin.Quantity },
+                                {
+                                    where: { BookBinId: bookBin.BookBinId },
+                                    transaction
+                                }
+                            );
+                        }
+
+                        await db.ExportOrderBins.destroy({
+                            where: {
+                                ExportOrderId: exportOrderId,
+                                BookId: bin.BookId,
+                                BinId: bin.BinId
+                            },
+                            transaction
+                        });
                     }
                 }
             });
@@ -778,20 +741,15 @@ export const updateExportOrder = async (req, res, next) => {
                 });
             });
 
-            // Build response
             const response = {
                 success: true,
-                message: 'Export order updated successfully',
                 data: {
                     id: updatedOrder.ExportOrderId,
-                    createdBy: updatedOrder.Creator?.FullName,
-                    approvedBy: updatedOrder.Approver?.FullName,
                     status: updatedOrder.Status,
+                    note: updatedOrder.Note,
+                    createdBy: updatedOrder.Creator?.FullName || updatedOrder.CreatedBy,
                     orderDate: updatedOrder.Created_Date,
                     exportDate: updatedOrder.ExportDate,
-                    approvedDate: updatedOrder.ApprovedDate,
-                    note: updatedOrder.Note,
-                    reason: updatedOrder.Reason,
                     recipientName: updatedOrder.RecipientName,
                     recipientPhone: updatedOrder.RecipientPhone,
                     shippingAddress: updatedOrder.ShippingAddress,

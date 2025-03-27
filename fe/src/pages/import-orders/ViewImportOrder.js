@@ -64,10 +64,16 @@ const ViewImportOrder = () => {
             key: 'Quantity',
         },
         {
-            title: 'Price',
+            title: 'Unit Price',
             dataIndex: 'Price',
             key: 'Price',
             render: (text) => <span style={{ color: '#ff4d4f', fontWeight: 'bold' }}>{text} VND</span>, // Highlight price
+        },
+        {
+            title: 'Total Price / Book',
+            dataIndex: 'Price',
+            key: 'Price',
+            render: (text, record) => <span style={{ color: 'green', fontWeight: 'bold' }}>{text * record.Quantity} VND</span>, // Highlight price
         },
     ];
 
@@ -95,8 +101,8 @@ const ViewImportOrder = () => {
                             <Descriptions.Item label="Import Date">{new Date(orderDetails.ImportDate).toLocaleDateString()}</Descriptions.Item>
                             <Descriptions.Item label="Note">{orderDetails.Note}</Descriptions.Item>
                             <Descriptions.Item label="Status">{orderDetails.Status}</Descriptions.Item>
-                            <Descriptions.Item label="Total Quantity" style={{ color: '#52c41a', fontWeight: 'bold' }}>{orderDetails.totalQuantity}</Descriptions.Item>
-                            <Descriptions.Item label="Total Price" style={{ color: '#52c41a', fontWeight: 'bold' }}>{orderDetails.totalPrice} VND</Descriptions.Item>
+                            {/* <Descriptions.Item label="Total Quantity" style={{ color: '#52c41a', fontWeight: 'bold' }}>{orderDetails.totalQuantity}</Descriptions.Item> */}
+                            {/* <Descriptions.Item label="Total Price" style={{ color: '#52c41a', fontWeight: 'bold' }}>{orderDetails.totalPrice} VND</Descriptions.Item> */}
                         </Descriptions>
                     </Card>
 
@@ -120,9 +126,9 @@ const ViewImportOrder = () => {
                                 return (
                                     <Table.Summary fixed>
                                         <Table.Summary.Row>
-                                            <Table.Summary.Cell index={0} colSpan={4}>Total</Table.Summary.Cell>
-                                            <Table.Summary.Cell index={1} style={{ color: '#52c41a', fontWeight: 'bold' }}>{totalQuantity}</Table.Summary.Cell>
-                                            <Table.Summary.Cell index={2} style={{ color: '#52c41a', fontWeight: 'bold' }}>{totalPrice} VND</Table.Summary.Cell>
+                                            <Table.Summary.Cell index={0} colSpan={6}>Total</Table.Summary.Cell>
+                                            {/* <Table.Summary.Cell index={2} style={{ color: '#52c41a', fontWeight: 'bold' }}>{totalQuantity}</Table.Summary.Cell> */}
+                                            <Table.Summary.Cell index={1} style={{ color: 'green', fontWeight: 'bold' }}>{totalPrice} VND</Table.Summary.Cell>
                                         </Table.Summary.Row>
                                     </Table.Summary>
                                 );

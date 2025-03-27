@@ -438,14 +438,14 @@ function ShippingExportOrder() {
                                             key: 'unitPrice',
                                             width: 120,
                                             align: 'right',
-                                            render: (price) => `$${Number(price).toFixed(2)}`
+                                            render: (price) => Number(price).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
                                         },
                                         {
                                             title: 'Total',
                                             key: 'total',
                                             width: 120,
                                             align: 'right',
-                                            render: (_, record) => `$${(record.quantity * record.unitPrice).toFixed(2)}`
+                                            render: (_, record) => (record.quantity * record.unitPrice).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
                                         }
                                     ]}
                                     summary={(data) => {
@@ -458,7 +458,7 @@ function ShippingExportOrder() {
                                                     <strong>Total Amount:</strong>
                                                 </Table.Summary.Cell>
                                                 <Table.Summary.Cell align="right">
-                                                    <strong>${total.toFixed(2)}</strong>
+                                                    <strong>{total.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</strong>
                                                 </Table.Summary.Cell>
                                             </Table.Summary.Row>
                                         );

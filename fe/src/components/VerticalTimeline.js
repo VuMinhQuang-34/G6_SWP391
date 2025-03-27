@@ -33,7 +33,7 @@ const VerticalTimeline = ({ orderId, orderStatuses, orderType }) => {
     if (loading) return <Spin size="large" />;
 
     return (
-        <Card title="Lưu Trình" style={{ borderRadius: '10px', boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)' }}>
+        <Card title="Import Order Flow" style={{ borderRadius: '10px', boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)' }}>
             <Timeline>
                 {orderStatuses.map((status, index) => (
                     <Timeline.Item key={status.key} color={index === currentIndex ? 'green' : 'gray'}>

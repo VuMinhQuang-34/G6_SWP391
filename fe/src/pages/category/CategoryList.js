@@ -59,6 +59,8 @@ const CategoryList = () => {
             form.resetFields();
             fetchCategories();
         } catch (error) {
+            console.log(error);
+            
             toast.error(editingCategory
                 ? 'Error: Failed to update category. Please try again.'
                 : 'Error: Failed to create category. Please try again.'

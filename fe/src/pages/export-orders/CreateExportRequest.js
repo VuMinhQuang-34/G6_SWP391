@@ -868,10 +868,10 @@ const CreateExportRequest = () => {
                     value={record.Price}
                     onChange={(value) => handlePriceChange(record.BookId, value)}
                     style={{ width: '100%' }}
-                    formatter={value => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                    parser={value => value.replace(/\$\s?|(,*)/g, '')}
-                    precision={2}
-                    step={0.01}
+                    formatter={value => value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                    parser={value => value.replace(/,/g, '')}
+                    precision={0}
+                    step={1}
                 />
             )
         },
@@ -920,7 +920,7 @@ const CreateExportRequest = () => {
             key: 'Total',
             render: (_, record) => {
                 const total = (record.Quantity || 0) * (record.Price || 0);
-                return `$ ${total.toFixed(2)}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                return total.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
             }
         }
     ], [handlePriceChange, handleQuantityChange, handleBinSelect, handleNoteChange]);
@@ -1087,7 +1087,7 @@ const CreateExportRequest = () => {
                                 <strong>Total Items:</strong> {selectedItems.reduce((sum, item) => sum + (item.Quantity || 0), 0)}
                             </span>
                             <span style={{ marginRight: 16 }}>
-                                <strong>Total Amount:</strong> $ {selectedItems.reduce((sum, item) => sum + ((item.Quantity || 0) * (item.Price || 0)), 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                                <strong>Total Amount:</strong> {selectedItems.reduce((sum, item) => sum + ((item.Quantity || 0) * (item.Price || 0)), 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                             </span>
                             <Button onClick={() => {
                                 setCreateModalVisible(false);

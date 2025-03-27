@@ -9,7 +9,6 @@ export default (sequelize, DataTypes) => {
     Title: DataTypes.STRING,
     Author: DataTypes.STRING,
     Publisher: DataTypes.STRING,
-    Image: DataTypes.BLOB('long'),
     CategoryId: DataTypes.INTEGER,
     PublishingYear: DataTypes.INTEGER,
     NumberOfPages: DataTypes.INTEGER,
@@ -22,14 +21,11 @@ export default (sequelize, DataTypes) => {
     timestamps: false
   });
 
-
-
   Book.associate = function (models) {
     Book.belongsTo(models.Category, {
       foreignKey: 'CategoryId',
       constraints: false
     });
-
 
     Book.hasMany(models.ImportOrderDetails, { foreignKey: 'BookId', constraints: false });
     Book.hasMany(models.ExportOrderDetails, { foreignKey: 'BookId', constraints: false });

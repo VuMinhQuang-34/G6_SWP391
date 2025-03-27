@@ -26,6 +26,7 @@ import ApproveExportOrder from "./pages/export-orders/ApproveExportOrder";
 import PackingExportOrder from "./pages/export-orders/PackingExportOrder";
 import ShippingExportOrder from "./pages/export-orders/ShippingExportOrder";
 import Location from "./pages/location/Location";
+import Supplier from "./pages/supplier/Supplier";
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useContext(AuthContext);
@@ -80,6 +81,7 @@ const App = () => {
 
             {/* admin */}
             <Route path="dashboard" element={<Dashboard />} />
+            <Route path="supplier" element={<Supplier />} />
             <Route path="admin/users" element={<UserList />} />
             <Route path="admin/categories" element={<CategoryList />} />
             <Route path="admin/books" element={<BookList />} />

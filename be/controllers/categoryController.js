@@ -56,6 +56,17 @@ const updateCategory = async (req, res) => {
             return res.status(404).json({ message: 'Category not found' });
         }
 
+          // Kiểm tra xem thể loại đã được sử dụng trong sách nào chưa
+          const booksUsingCategory = await db.Book.count({
+            where: { CategoryId: req.params.id }
+        });
+
+        if (booksUsingCategory > 0) {
+            return res.status(400).json({ 
+                message: `Không thể cập nhật thể loại này vì đã có ${booksUsingCategory} sách đang sử dụng` 
+            });
+        }
+
         // Check if new name already exists (excluding current category)
         const existingCategory = await Category.findOne({
             where: { 
@@ -91,6 +102,16 @@ const updateCategory = async (req, res) => {
 // Delete category
 const deleteCategory = async (req, res) => {
     try {
+              // Kiểm tra xem thể loại đã được sử dụng trong sách nào chưa
+              const booksUsingCategory = await db.Book.count({
+                where: { CategoryId: req.params.id }
+            });
+    
+            if (booksUsingCategory > 0) {
+                return res.status(400).json({ 
+                    message: `Không thể cập nhật thể loại này vì đã có ${booksUsingCategory} sách đang sử dụng` 
+                });
+            }
         const deleted = await Category.destroy({
             where: { categoryId: req.params.id }
         });

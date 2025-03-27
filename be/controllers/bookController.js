@@ -181,6 +181,23 @@ const updateBook = async (req, res) => {
             });
         }
 
+        // Check if book exists in import orders
+        const importOrderCount = await db.ImportOrderDetails.count({
+            where: { BookId: req.params.id }
+        });
+
+        // Check if book exists in export orders
+        const exportOrderCount = await db.ExportOrderDetails.count({
+            where: { BookId: req.params.id }
+        });
+
+        if (importOrderCount > 0 || exportOrderCount > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Cannot update book because it is already in import or export orders'
+            });
+        }
+
         const updateData = {
             ...req.body,
             Image: req.body.Image || book.Image,
@@ -219,6 +236,23 @@ const deleteBook = async (req, res) => {
             return res.status(404).json({
                 success: false,
                 message: 'Book not found'
+            });
+        }
+
+        // Check if book exists in import orders
+        const importOrderCount = await db.ImportOrderDetails.count({
+            where: { BookId: req.params.id }
+        });
+
+        // Check if book exists in export orders
+        const exportOrderCount = await db.ExportOrderDetails.count({
+            where: { BookId: req.params.id }
+        });
+
+        if (importOrderCount > 0 || exportOrderCount > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Cannot delete book because it is already in import or export orders'
             });
         }
 

@@ -80,7 +80,7 @@ export const updateImportOrder = async (req, res) => {
         }
         console.log("order-edit1 =>", order);
         console.log("order-edit2 =>", order.Status);
-        
+
         // Kiểm tra trạng thái của đơn nhập
         if (order.Status !== 'New') { // Truy cập trực tiếp vào thuộc tính
             return res.status(400).json({ message: 'Chỉ cho phép cập nhật đơn nhập có trạng thái New!' });
@@ -227,7 +227,7 @@ export const getImportOrderDetails = async (req, res) => {
 
 
         const faultBooksFromDB = await Fault.findAll({
-            where: {OrderId: id, OrderType: "Import"},
+            where: { OrderId: id, OrderType: "Import" },
         });
 
         // Map qua từng fault book để lấy thông tin sách
@@ -433,10 +433,10 @@ export const checkImportOrder = async (req, res) => {
 export const approveWMS = async (req, res) => {
     const { id } = req.params;
     const { Status, LogStatus, CreatedBy, LogNote, FaultBooks, BinAllocations } = req.body;
-    
+
     console.log("Request params:", req.params);
     console.log("Request body:", req.body);
-    
+
     try {
         // Kiểm tra xem đơn nhập có tồn tại không
         const order = await ImportOrders.findOne({
@@ -449,28 +449,45 @@ export const approveWMS = async (req, res) => {
 
         // Bắt đầu transaction để đảm bảo tính nhất quán dữ liệu
         const t = await db.sequelize.transaction();
-        
+
         try {
             //Cập nhật kho
-            if(LogNote == "Approve") {
-                const books = await util.getAllBookByIO(id);
+            if (Status === "Done" || Status === "ApproveImport") {
+                const books = await ImportOrderDetails.findAll({
+                    where: { ImportOrderId: id }
+                });
                 console.log("Books retrieved from import order:", books);
-                
+
                 for (const book of books) {
                     if (book) {
-                        const stock = await util.getOneStock(book.BookId);
+                        const stock = await Stock.findOne({
+                            where: { BookId: book.BookId }
+                        });
                         console.log(`Current stock for book ${book.BookId}:`, stock);
 
-                        // Đảm bảo giá trị là số khi cộng
-                        const currentQuantity = parseInt(stock.Quantity) || 0;
-                        const addQuantity = parseInt(book.Quantity) || 0;
-                        const newStockQuantity = currentQuantity + addQuantity;
+                        if (!stock) {
+                            // Tạo mới stock nếu chưa tồn tại
+                            await Stock.create({
+                                BookId: book.BookId,
+                                Quantity: book.Quantity,
+                                MaxStockQuantity: 0,
+                                MinStockQuantity: 0,
+                                Note: '',
+                                Status: ''
+                            }, { transaction: t });
+                            console.log(`Created new stock for book ${book.BookId} with quantity ${book.Quantity}`);
+                        } else {
+                            // Đảm bảo giá trị là số khi cộng
+                            const currentQuantity = parseInt(stock.Quantity) || 0;
+                            const addQuantity = parseInt(book.Quantity) || 0;
+                            const newStockQuantity = currentQuantity + addQuantity;
 
-                        await Stock.update(
-                            { Quantity: newStockQuantity },
-                            { where: { BookId: book.BookId }, transaction: t }
-                        );
-                        console.log(`Updated stock for book ${book.BookId}: ${currentQuantity} + ${addQuantity} = ${newStockQuantity}`);
+                            await Stock.update(
+                                { Quantity: newStockQuantity },
+                                { where: { BookId: book.BookId }, transaction: t }
+                            );
+                            console.log(`Updated stock for book ${book.BookId}: ${currentQuantity} + ${addQuantity} = ${newStockQuantity}`);
+                        }
                     }
                 }
             }
@@ -492,18 +509,18 @@ export const approveWMS = async (req, res) => {
                 Created_Date: new Date(),
             }, { transaction: t });
             console.log("Created order status log:", newLog);
-            
-            // Xử lý phân bổ sách vào bin nếu có
-            if (Status === "ApproveImport" && BinAllocations && BinAllocations.length > 0) {
+
+            // Xử lý phân bổ sách vào bin
+            if ((Status === "Done" || Status === "ApproveImport") && BinAllocations && BinAllocations.length > 0) {
                 console.log("Processing bin allocations:", BinAllocations);
-                
+
                 for (const allocation of BinAllocations) {
                     const { BookId, BinId, Quantity } = allocation;
                     // Đảm bảo Quantity là số
                     const quantityToAdd = parseInt(Quantity) || 0;
-                    
+
                     console.log(`Processing allocation: Book ${BookId}, Bin ${BinId}, Quantity ${quantityToAdd}`);
-                    
+
                     // Kiểm tra bin có tồn tại không
                     const bin = await Bin.findByPk(BinId, { transaction: t });
                     if (!bin) {
@@ -512,35 +529,35 @@ export const approveWMS = async (req, res) => {
                         return res.status(404).json({ message: `Không tìm thấy bin với ID ${BinId}` });
                     }
                     console.log(`Found bin ${BinId}:`, bin.Name);
-                    
+
                     // Đảm bảo các giá trị là số khi so sánh
                     const currentBinQuantity = parseInt(bin.Quantity_Current) || 0;
                     const maxBinLimit = parseInt(bin.Quantity_Max_Limit) || 0;
                     const remainingCapacity = maxBinLimit - currentBinQuantity;
-                    
+
                     console.log(`Bin ${bin.Name} - Current: ${currentBinQuantity}, Max: ${maxBinLimit}, Remaining: ${remainingCapacity}`);
-                    
+
                     if (currentBinQuantity + quantityToAdd > maxBinLimit) {
                         console.error(`Bin ${bin.Name} capacity exceeded - Need: ${quantityToAdd}, Available: ${remainingCapacity}`);
                         await t.rollback();
-                        return res.status(400).json({ 
-                            message: `Bin ${bin.Name} không đủ dung lượng. Còn trống: ${remainingCapacity}, Cần thêm: ${quantityToAdd}` 
+                        return res.status(400).json({
+                            message: `Bin ${bin.Name} không đủ dung lượng. Còn trống: ${remainingCapacity}, Cần thêm: ${quantityToAdd}`
                         });
                     }
-                    
+
                     // Tìm bản ghi BookBin hiện có
                     const existingBookBin = await BookBin.findOne({
                         where: { BookId, BinId },
                         transaction: t
                     });
-                    
+
                     console.log(`Checking if book ${BookId} exists in bin ${BinId}:`, existingBookBin ? 'YES' : 'NO');
-                    
+
                     if (existingBookBin) {
                         // Cập nhật số lượng nếu đã tồn tại - đảm bảo là số
                         const currentBookBinQuantity = parseInt(existingBookBin.Quantity) || 0;
                         const newQuantity = currentBookBinQuantity + quantityToAdd;
-                        
+
                         await BookBin.update(
                             {
                                 Quantity: newQuantity,
@@ -558,14 +575,14 @@ export const approveWMS = async (req, res) => {
                             {
                                 BookId,
                                 BinId,
-                                Quantity: quantityToAdd, // Đã là số
+                                Quantity: quantityToAdd,
                                 Created_Date: new Date()
                             },
                             { transaction: t }
                         );
                         console.log(`Created new BookBin ${newBookBin.BookBinId} with quantity ${quantityToAdd}`);
                     }
-                    
+
                     // Cập nhật số lượng hiện tại trong bin
                     const newBinQuantity = currentBinQuantity + quantityToAdd;
                     await Bin.update(
@@ -580,21 +597,16 @@ export const approveWMS = async (req, res) => {
                     );
                     console.log(`Updated Bin ${BinId} quantity: ${currentBinQuantity} + ${quantityToAdd} = ${newBinQuantity}`);
                 }
-            } else {
-                console.log("Skipping bin allocation processing:", {
-                    Status,
-                    HasBinAllocations: BinAllocations && BinAllocations.length > 0
-                });
             }
-            
+
             // Xử lý sách lỗi nếu có
             if (FaultBooks && FaultBooks.length > 0) {
                 console.log("Processing fault books:", FaultBooks);
-                
+
                 for (const b of FaultBooks) {
                     // Đảm bảo Quantity là số
                     const faultQuantity = parseInt(b.Quantity) || 0;
-                    
+
                     const newFault = await Fault.create({
                         OrderId: id,
                         OrderType: 'Import',
@@ -605,7 +617,7 @@ export const approveWMS = async (req, res) => {
                         CreatedBy: CreatedBy,
                         Created_date: new Date(),
                     }, { transaction: t });
-                    
+
                     console.log(`Created fault record for book ${b.BookId}: ${newFault.FaultId} with quantity ${faultQuantity}`);
                 }
             }

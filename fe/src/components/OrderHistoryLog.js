@@ -40,7 +40,7 @@ const OrderHistoryLog = ({ orderId, orderType }) => {
 
     return (
         <div style={{ padding: '20px', background: '#fff', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)' }}>
-            <Title level={4}>Lịch Sử Đơn Hàng</Title>
+            <Title level={4}>Status Order History</Title>
             <Timeline>
                 {logs.map((item, index) => (
                     <Timeline.Item key={index} color={item.Status == 'Approve' ? 'green' : item.Status == 'Reject' ? 'red' : 'blue'}>

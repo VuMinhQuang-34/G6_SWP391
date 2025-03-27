@@ -36,23 +36,86 @@ const ChangePassword = () => {
   };
 
   return (
-    <div style={{ maxWidth: 400, margin: "50px auto", padding: "20px", backgroundColor: "#fff", borderRadius: "10px" }}>
-      <h2 style={{ textAlign: "center", color: "#1890ff" }}>Đổi mật khẩu</h2>
-      <Form onFinish={handleChangePassword}>
+    <div 
+      style={{ 
+        maxWidth: 400, 
+        margin: "50px auto", 
+        padding: "30px",
+        backgroundColor: "#fff", 
+        borderRadius: "15px",
+        boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+      }}
+    >
+      <h2 
+        style={{ 
+          textAlign: "center", 
+          color: "#1890ff",
+          marginBottom: "30px",
+          fontSize: "24px",
+          fontWeight: "600"
+        }}
+      >
+        Đổi mật khẩu
+      </h2>
+      <Form 
+        onFinish={handleChangePassword}
+        layout="vertical"
+        size="large"
+      >
         <Form.Item
           name="oldPassword"
           rules={[{ required: true, message: "Vui lòng nhập mật khẩu cũ!" }]}
         >
-          <Input.Password placeholder="Mật khẩu cũ" />
+          <Input.Password 
+            placeholder="Mật khẩu cũ"
+            style={{ borderRadius: "8px" }}
+          />
         </Form.Item>
         <Form.Item
           name="newPassword"
-          rules={[{ required: true, message: "Vui lòng nhập mật khẩu mới!" }, { min: 6, message: "Mật khẩu phải có ít nhất 6 ký tự!" }]}
+          rules={[
+            { required: true, message: "Vui lòng nhập mật khẩu mới!" },
+            { min: 6, message: "Mật khẩu phải có ít nhất 6 ký tự!" }
+          ]}
         >
-          <Input.Password placeholder="Mật khẩu mới" />
+          <Input.Password 
+            placeholder="Mật khẩu mới"
+            style={{ borderRadius: "8px" }}
+          />
         </Form.Item>
-        <Form.Item>
-          <Button type="primary" block htmlType="submit" loading={loading}>
+        <Form.Item
+          name="confirmPassword"
+          dependencies={['newPassword']}
+          rules={[
+            { required: true, message: "Vui lòng nhập lại mật khẩu mới!" },
+            ({ getFieldValue }) => ({
+              validator(_, value) {
+                if (!value || getFieldValue('newPassword') === value) {
+                  return Promise.resolve();
+                }
+                return Promise.reject(new Error('Mật khẩu nhập lại không khớp!'));
+              },
+            }),
+          ]}
+        >
+          <Input.Password 
+            placeholder="Nhập lại mật khẩu mới"
+            style={{ borderRadius: "8px" }}
+          />
+        </Form.Item>
+        <Form.Item style={{ marginBottom: 0 }}>
+          <Button 
+            type="primary" 
+            block 
+            htmlType="submit" 
+            loading={loading}
+            style={{
+              height: "40px",
+              borderRadius: "8px",
+              fontSize: "16px",
+              fontWeight: "500"
+            }}
+          >
             Xác nhận đổi mật khẩu
           </Button>
         </Form.Item>
