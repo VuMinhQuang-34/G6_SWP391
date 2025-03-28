@@ -84,7 +84,7 @@ const EditImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, ord
             .filter(book => newBookIds.includes(book.BookId))
             .map(book => ({
                 BookId: book.BookId,
-                BookInfo: book,
+                BookInfo: book, // Lưu thông tin đầy đủ của sách
                 Quantity: 0,
                 Price: 0
             }));
@@ -194,7 +194,10 @@ const EditImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, ord
                         {
                             title: 'Book Title',
                             render: (_, record) => (
-                                <span>{record.BookInfo ? record.BookInfo.Title : 'No information'}</span>
+                                <span>
+                                    {record.BookInfo ? record.BookInfo.Title :
+                                        books.find(b => b.BookId === record.BookId)?.Title || 'No information'}
+                                </span>
                             ),
                             width: '300px'
                         },
@@ -252,7 +255,7 @@ const EditImportOrderModal = ({ visible, onCancel, onEdit, suppliers, books, ord
                         <strong>Total Quantity:</strong> {totalQuantity}
                     </span>
                     <span>
-                        <strong>Total Amount:</strong> {totalAmount.toFixed(2)}
+                        <strong>Total Amount:</strong> ${totalAmount.toFixed(2)}
                     </span>
                 </div>
 

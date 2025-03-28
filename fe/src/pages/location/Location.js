@@ -336,6 +336,13 @@ const Location = () => {
     const handleAddBin = async (values) => {
         setIsSaving(true);
         try {
+            // Validate Quantity_Max_Limit before sending
+            if (!values.Quantity_Max_Limit || values.Quantity_Max_Limit <= 0) {
+                toast.error('Số lượng sách tối đa phải lớn hơn 0!');
+                setIsSaving(false);
+                return;
+            }
+
             const binData = {
                 ...values,
                 Quantity_Current: 0 // Mặc định số lượng hiện tại là 0
@@ -670,18 +677,9 @@ const Location = () => {
                                 message: 'Vui lòng nhập số lượng sách tối đa!'
                             },
                             {
-                                validator: (_, value) => {
-                                    if (value === undefined || value === null) {
-                                        return Promise.reject('Vui lòng nhập số lượng sách tối đa!');
-                                    }
-                                    if (!Number.isInteger(value)) {
-                                        return Promise.reject('Số lượng phải là số nguyên!');
-                                    }
-                                    if (value <= 0) {
-                                        return Promise.reject('Số lượng phải lớn hơn 0!');
-                                    }
-                                    return Promise.resolve();
-                                }
+                                type: 'number',
+                                min: 1,
+                                message: 'Số lượng phải lớn hơn 0!'
                             }
                         ]}
                     >

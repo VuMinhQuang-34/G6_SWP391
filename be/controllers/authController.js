@@ -15,6 +15,7 @@ import logger from "../configs/logger.js"; // Import logger của Winston
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const { User, Role } = model;
+
 /**
  * Hàm tạo OTP ngẫu nhiên (6 số)
  * @returns {string} - OTP
@@ -83,6 +84,7 @@ export const register = async (req, res) => {
     // Trích xuất các trường từ req.body với tên chính xác
     const { email, password, registerWithGoogle, firstName, lastName, image } =
       req.body;
+
 
     // Kiểm tra xem người dùng đã tồn tại chưa
     const existingUsers = await authRepository.findUserByEmail(
@@ -610,244 +612,7 @@ export const verifyPasswordResetOTP = async (req, res) => {
  * @param {Object} req - Request object
  * @param {Object} res - Response object
  */
-// controllers/authController.js
 
-export const googleIdTokenHandler = async (req, res) => {
-  const { token } = req.body;
-
-  if (!token) {
-    logger.warn(`GoogleIdTokenHandler failed - Token is missing.`);
-    return res.status(400).json({ message: "Token is required." });
-  }
-
-  // Determine if token is directly provided or nested under credential
-  const idToken = token.credential || token;
-
-  if (!idToken) {
-    logger.warn(`GoogleIdTokenHandler failed - ID token is missing.`);
-    return res.status(400).json({ message: "ID token is required." });
-  }
-
-  try {
-    // Verify the ID token
-    const ticket = await client.verifyIdToken({
-      idToken: idToken,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
-
-    const payload = ticket.getPayload();
-    const email = payload?.email;
-
-    if (!email) {
-      logger.warn(`GoogleIdTokenHandler failed - Email not found in ID token.`);
-      return res
-        .status(400)
-        .json({ message: "Invalid ID token: Email not found." });
-    }
-
-    // Check if the user exists
-    let user = await authRepository.findUserByEmail(email);
-
-    if (!user || user.length === 0) {
-      // User does not exist, create new user
-      const newUserId = await authRepository.insertUser(email, "google", true); // hashedPassword as "google" and registerWithGoogle as true
-
-      // Get user's Google profile image
-      const imageUrl = payload.picture;
-      let base64Image = null;
-
-      if (imageUrl) {
-        try {
-          const response = await axios.get(imageUrl, {
-            responseType: "arraybuffer",
-          });
-          base64Image = Buffer.from(response.data, "binary").toString("base64");
-        } catch (imgError) {
-          logger.warn(
-            `Failed to fetch profile image for ${email}: ${imgError.message}`
-          );
-          // Proceed without the image
-        }
-      }
-
-      // Insert user profile data
-      await authRepository.insertUserProfile(
-        newUserId,
-        payload.family_name || "N/A",
-        payload.given_name || "N/A",
-        base64Image // Save the Base64 encoded image in the database
-      );
-
-      user = { ID: newUserId, email };
-      logger.info(`Created new user via Google OAuth: ${email}`);
-    } else {
-      user = user[0];
-      logger.info(`Existing user logged in via Google OAuth: ${email}`);
-
-      // Add status check before further authentication
-      if (user.Status === 0 || user.Status === "0") {
-        logger.warn(`Login failed - Unverified email: ${email}`);
-        return res.status(401).json({
-          code: 402,
-          message: "Email not verified. Please verify your email.",
-        });
-      }
-
-      if (user.Status === 2 || user.Status === "2") {
-        logger.warn(`Login failed - Disabled account: ${email}`);
-        return res.status(401).json({
-          code: 403,
-          message: "This account has been disabled. Please contact support.",
-        });
-      }
-    }
-
-    // Generate access and refresh tokens
-    const accessToken = await jwtHelpers.signAccessToken(user.ID);
-    const refreshToken = await jwtHelpers.signRefreshToken(user.ID);
-
-    // Fetch user profile
-    const profile = await authRepository.getUserProfile(user.ID);
-
-    // Include the Base64 image in the profile data (for example, from the database)
-    if (profile.ProfileImage) {
-      profile.ProfileImage = `data:image/jpeg;base64,${profile.ProfileImage}`;
-    }
-
-    logger.info(`User logged in successfully via Google OAuth: ${email}`);
-
-    // Return tokens and profile data to the client
-    return res.status(200).json({
-      code: 200,
-      message: "Login successfully!",
-      tokens: {
-        accessToken,
-        refreshToken,
-      },
-      data: {
-        role: profile.role, // role of the user
-        profile,
-      },
-    });
-  } catch (error) {
-    // Differentiate between token verification errors and other errors
-    // if (error instanceof client.constructor.Error) {
-    //   logger.error(`GoogleIdTokenHandler verification error: ${error.message}`);
-    //   return res.status(401).json({ message: "Invalid ID token." });
-    // }
-
-    logger.error(`GoogleIdTokenHandler internal error: ${error.message}`);
-    return res.status(500).json({ message: "Internal server error." });
-  }
-};
-/**
- * Hàm forgotPasswordRequest - Yêu cầu đặt lại mật khẩu bằng cách gửi OTP
- * @param {Object} req - Request object
- * @param {Object} res - Response object
- */
-export const forgotPasswordRequest = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    logger.warn(
-      `ForgotPasswordRequest validation failed: ${JSON.stringify(
-        errors.array()
-      )}`
-    );
-    return res.status(400).json({ errors: errors.array() });
-  }
-
-  const { email } = req.body;
-
-  try {
-    // Kiểm tra xem người dùng có tồn tại không
-    const users = await authRepository.findUserByEmailForgotPassword(email);
-    if (users.length === 0) {
-      logger.warn(`ForgotPasswordRequest - Email không tồn tại: ${email}`);
-      // Để bảo mật, không tiết lộ thông tin này cho người dùng
-      return res.status(404).json({
-        code: 404,
-        message: "Email can't be found.", // Thông báo cho người dùng bằng tiếng Anh
-      });
-    }
-
-    // Kiểm tra nếu email đã được xác minh
-    const user = users[0];
-    if (user.Status !== "1") {
-      logger.warn(`ForgotPasswordRequest - Email chưa được xác minh: ${email}`);
-      return res.status(400).json({
-        code: 400,
-        message:
-          "Email not verified. Please verify your email before resetting the password.", // Thông báo cho người dùng bằng tiếng Anh
-      });
-    }
-
-    // Giới hạn số lần gửi lại (ví dụ: tối đa 5 lần trong 20 phút)
-    const resendLimit = 5;
-    const windowSeconds = 1200; // 20 phút
-    const currentCount = await authRepository.incrementResendCount(
-      email,
-      resendLimit,
-      windowSeconds
-    );
-
-    if (currentCount > resendLimit) {
-      logger.warn(`ForgotPasswordRequest rate limit exceeded for: ${email}`);
-      return res.status(429).json({
-        code: 429,
-        message:
-          "You have requested too many password resets. Please try again in an hour.", // Thông báo cho người dùng bằng tiếng Anh
-      });
-    }
-
-    // Tạo OTP mới với mục đích 'resetPassword'
-    const otp = generateOTP();
-    const mailSubject = "Password Reset OTP";
-    const content = `<p>Hi ${email},<br>
-      Your OTP for password reset is: <strong>${otp}</strong><br>
-      Please enter this OTP in the application to reset your password.</p>`;
-
-    // Cập nhật OTP cho người dùng trong Redis với mục đích 'resetPassword'
-    await authRepository.updateUserOTP(email, otp, "resetPassword");
-
-    // Gửi email chứa OTP
-    await sendMail(email, mailSubject, content);
-
-    logger.info(`ForgotPasswordRequest thành công cho: ${email}`); // Log lỗi bằng tiếng Việt
-    return res.status(200).json({
-      code: 200,
-      message: "OTP has been sent to your email.", // Thông báo cho người dùng bằng tiếng Anh
-      email: email,
-    });
-  } catch (error) {
-    logger.error(
-      `ForgotPasswordRequest failed for email ${email}: ${error.message}` // Log lỗi bằng tiếng Việt
-    );
-    return res
-      .status(500)
-      .json({ code: 500, message: "Failed to send password reset email." }); // Thông báo cho người dùng bằng tiếng Anh
-  }
-};
-/**
- * Hàm healthCheck - Kiểm tra tình trạng hoạt động của ứng dụng
- * @param {Object} req - Request object
- * @param {Object} res - Response object
- */
-export const healthCheck = async (req, res) => {
-  try {
-    // Kiểm tra DB
-    const connection = await db.getConnection(); // Sử dụng db thay vì dbPool
-    connection.release();
-
-    // Kiểm tra Redis
-    const redisStatus = await authRepository.pingRedis();
-    if (redisStatus !== "PONG") throw new Error("Redis không phản hồi");
-
-    res.status(200).json({ status: "OK" });
-  } catch (err) {
-    logger.error(`Health check failed: ${err.message}`);
-    res.status(500).json({ status: "FAIL", error: err.message });
-  }
-};
 /**
  * Hàm resetPassword - Đặt lại mật khẩu sau khi OTP đã được xác nhận
  * @param {Object} req - Request object
@@ -934,10 +699,7 @@ const authController = {
   logout,
   verifyEmail,
   verifyToken,
-  googleIdTokenHandler,
-  healthCheck,
   resendVerificationEmail,
-  forgotPasswordRequest,
   verifyPasswordResetOTP,
   resetPassword,
   changePassword

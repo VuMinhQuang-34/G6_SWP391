@@ -8,15 +8,6 @@ const AddImportOrderModal = ({ visible, onCancel, onAdd, suppliers, books }) => 
     const { isAuthenticated, user, logout } = useContext(AuthContext);
     const [form] = Form.useForm();
     const [selectedBooks, setSelectedBooks] = useState([]);
-    const [searchText, setSearchText] = useState('');
-
-    // Function to filter books based on search text
-    const filterBooks = (input, option) => {
-        const bookTitle = option?.children?.toLowerCase() || '';
-        const searchLower = input.toLowerCase();
-        return bookTitle.includes(searchLower) ||
-            bookTitle.split(' ').some(word => word.startsWith(searchLower));
-    };
 
     const handleAddOrder = async (values) => {
         try {
@@ -44,32 +35,24 @@ const AddImportOrderModal = ({ visible, onCancel, onAdd, suppliers, books }) => 
     };
 
     const handleQuantityChange = (bookId, value) => {
-        // Remove any non-digit characters
-        const cleanValue = value.replace(/[^\d]/g, '');
         const updatedDetails = selectedBooks.map((book) => {
             if (book.BookId === bookId) {
-                return { ...book, Quantity: cleanValue }; // Keep as string to preserve leading zeros
+                return { ...book, Quantity: value }; // Update quantity
             }
             return book;
         });
-        setSelectedBooks(updatedDetails);
+        setSelectedBooks(updatedDetails); // Update selectedBooks
     };
 
     const handlePriceChange = (bookId, value) => {
-        // Remove any non-digit characters
-        const cleanValue = value.replace(/[^\d]/g, '');
         const updatedDetails = selectedBooks.map((book) => {
             if (book.BookId === bookId) {
-                return { ...book, Price: cleanValue }; // Keep as string to preserve leading zeros
+                return { ...book, Price: value }; // Update price
             }
             return book;
         });
-        setSelectedBooks(updatedDetails);
+        setSelectedBooks(updatedDetails); // Update selectedBooks
     };
-
-    // Calculate total quantity and amount
-    const totalQuantity = selectedBooks.reduce((sum, book) => sum + (parseInt(book.Quantity) || 0), 0);
-    const totalAmount = selectedBooks.reduce((sum, book) => sum + ((parseInt(book.Quantity) || 0) * (parseInt(book.Price) || 0)), 0);
 
     return (
         <Modal
@@ -77,7 +60,7 @@ const AddImportOrderModal = ({ visible, onCancel, onAdd, suppliers, books }) => 
             open={visible}
             onCancel={onCancel}
             footer={null}
-            width={800}
+            width={800} // Increased modal width
         >
             <Form form={form} layout="vertical" onFinish={handleAddOrder}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -113,31 +96,8 @@ const AddImportOrderModal = ({ visible, onCancel, onAdd, suppliers, books }) => 
                     <Input.TextArea rows={2} placeholder="Enter notes if any" style={{ resize: 'none' }} />
                 </Form.Item>
 
-                <Form.Item label="Select Books">
-                    <Select
-                        mode="multiple"
-                        placeholder="Search and select books"
-                        onChange={handleBookSelect}
-                        style={{ width: '100%' }}
-                        showSearch
-                        filterOption={filterBooks}
-                        maxTagCount={3}
-                        maxTagTextLength={20}
-                        optionFilterProp="children"
-                        optionLabelProp="label"
-                    >
-                        {books.map((book) => (
-                            <Option
-                                key={book.BookId}
-                                value={book.BookId}
-                                label={`${book.Title}`}
-                            >
-                                {`${book.Title} - ${book.Author} - ${book.Publisher} (ID: ${book.BookId})`}
-                            </Option>
-                        ))}
-                    </Select>
-                </Form.Item>
-
+                {/* Import order details table */}
+                <h3>Import Order Details</h3>
                 <Table
                     dataSource={selectedBooks}
                     columns={[
@@ -153,12 +113,11 @@ const AddImportOrderModal = ({ visible, onCancel, onAdd, suppliers, books }) => 
                             title: 'Import Quantity',
                             render: (_, record) => (
                                 <Input
-                                    type="text"
-                                    pattern="[0-9]*"
-                                    value={record.Quantity || ''}
+                                    type="number"
+                                    min={0} // Allow any quantity
+                                    value={record.Quantity || 0} // Use value
                                     onChange={(e) => handleQuantityChange(record.BookId, e.target.value)}
                                     required
-                                    maxLength={10}
                                 />
                             ),
                         },
@@ -166,33 +125,46 @@ const AddImportOrderModal = ({ visible, onCancel, onAdd, suppliers, books }) => 
                             title: 'Unit Price',
                             render: (_, record) => (
                                 <Input
-                                    type="text"
-                                    pattern="[0-9]*"
-                                    value={record.Price || ''}
+                                    type="number"
+                                    min={0} // Allow any price
+                                    value={record.Price || 0} // Use value
                                     onChange={(e) => handlePriceChange(record.BookId, e.target.value)}
                                     required
-                                    maxLength={10}
                                 />
                             ),
                         },
                         {
                             title: 'Total Price',
-                            render: (_, record) => {
-                                const quantity = parseInt(record.Quantity) || 0;
-                                const price = parseInt(record.Price) || 0;
-                                return <span>{quantity * price}</span>;
-                            },
+                            render: (_, record) => (
+                                <span>{(record.Quantity || 0) * (record.Price || 0)}</span>
+                            ),
                         },
                     ]}
                     rowKey="BookId"
                     pagination={false}
                 />
 
+                {/* Display total quantity and total amount */}
                 <div style={{ marginTop: 20 }}>
-                    <strong>Total Book Quantity: {totalQuantity}</strong>
+                    <strong>Total Book Quantity: {selectedBooks.reduce((sum, book) => sum + (book.Quantity || 0), 0)}</strong>
                     <br />
-                    <strong>Total Amount: {totalAmount} VND</strong>
+                    <strong>Total Amount: {selectedBooks.reduce((sum, book) => sum + (book.Price * (book.Quantity || 0)), 0)}</strong>
                 </div>
+
+                <Form.Item label="Select Books">
+                    <Select
+                        mode="multiple"
+                        placeholder="Select books"
+                        onChange={handleBookSelect}
+                        style={{ width: '100%' }}
+                    >
+                        {books.map((book) => (
+                            <Option key={book.BookId} value={book.BookId}>
+                                {book.Title} - {book.Author} - {book.Publisher}
+                            </Option>
+                        ))}
+                    </Select>
+                </Form.Item>
 
                 <Button type="primary" htmlType="submit" style={{ width: '100%' }}>
                     Save
